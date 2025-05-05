@@ -40,7 +40,7 @@ You can also explicitly link with XSched and use XQueue APIs & Hint APIs in your
     <th align="center">Level-3</th>
   </tr>
   <tr>
-    <td align="center" rowspan="4"><a href="platform/cuda">CUDA</a></td>
+    <td align="center" rowspan="4"><a href="platforms/cuda">CUDA</a></td>
     <td align="center">NVIDIA Ampere GPUs (sm86)</td>
     <td align="center" rowspan="4">✅</td>
     <td align="center" rowspan="4">✅</td>
@@ -63,7 +63,7 @@ You can also explicitly link with XSched and use XQueue APIs & Hint APIs in your
     <td align="center">🔘</td>
   </tr>
   <tr>
-    <td align="center" rowspan="1"><a href="platform/hip">HIP</a></td>
+    <td align="center" rowspan="1"><a href="platforms/hip">HIP</a></td>
     <td align="center">AMD GPUs</td>
     <td align="center" rowspan="1">✅</td>
     <td align="center" rowspan="1">✅</td>
@@ -71,7 +71,7 @@ You can also explicitly link with XSched and use XQueue APIs & Hint APIs in your
     <td align="center">🔘</td>
   </tr>
   <tr>
-    <td align="center" rowspan="2"><a href="platform/levelzero">LevelZero</a></td>
+    <td align="center" rowspan="2"><a href="platforms/levelzero">LevelZero</a></td>
     <td align="center">Intel GPUs</td>
     <td align="center" rowspan="2">✅</td>
     <td align="center" rowspan="2">✅</td>
@@ -84,7 +84,7 @@ You can also explicitly link with XSched and use XQueue APIs & Hint APIs in your
     <td align="center">❌</td>
   </tr>
   <tr>
-    <td align="center" rowspan="4"><a href="platform/opencl">OpenCL</a></td>
+    <td align="center" rowspan="4"><a href="platforms/opencl">OpenCL</a></td>
     <td align="center">NVIDIA GPUs</td>
     <td align="center" rowspan="4">✅</td>
     <td align="center" rowspan="4">✅</td>
@@ -107,7 +107,7 @@ You can also explicitly link with XSched and use XQueue APIs & Hint APIs in your
     <td align="center">❌</td>
   </tr>
   <tr>
-    <td align="center" rowspan="1"><a href="platform/ascend">AscendCL</a></td>
+    <td align="center" rowspan="1"><a href="platforms/ascend">AscendCL</a></td>
     <td align="center">Ascend NPUs</td>
     <td align="center" rowspan="1">✅</td>
     <td align="center" rowspan="1">✅</td>
@@ -115,7 +115,7 @@ You can also explicitly link with XSched and use XQueue APIs & Hint APIs in your
     <td align="center">❌</td>
   </tr>
   <tr>
-    <td align="center" rowspan="1"><a href="platform/cudla">cuDLA</a></td>
+    <td align="center" rowspan="1"><a href="platforms/cudla">cuDLA</a></td>
     <td align="center">NVIDIA DLA</td>
     <td align="center" rowspan="1">✅</td>
     <td align="center" rowspan="1">✅</td>
@@ -123,7 +123,7 @@ You can also explicitly link with XSched and use XQueue APIs & Hint APIs in your
     <td align="center">❌</td>
   </tr>
   <tr>
-    <td align="center" rowspan="2"><a href="platform/vpi">VPI</a></td>
+    <td align="center" rowspan="2"><a href="platforms/vpi">VPI</a></td>
     <td align="center">NVIDIA OFA</td>
     <td align="center" rowspan="2">✅</td>
     <td align="center" rowspan="2">✅</td>
@@ -139,7 +139,7 @@ You can also explicitly link with XSched and use XQueue APIs & Hint APIs in your
 
 
 
-## XSched Architecture and Workflow
+## Architecture and Workflow
 
 
 ## TODOs
@@ -153,6 +153,13 @@ We will continue to support XSched on more OSes and platforms, and improve the p
 
 ## Contributing
 
+XSched is designed to be extensible and flexible.
+
+We welcome contributions:
+
+- Support more platforms, or a higher preemption level on existing platforms. See [guide](platforms/README.md)
+- Implement a new scheduling policy. See [guide](sched/README.md)
+- Report or fix issues.
 
 ## Paper and Citation
 
