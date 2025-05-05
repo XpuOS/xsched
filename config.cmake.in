@@ -1,0 +1,22 @@
+# - Config file for the XSched package
+# It defines the following variables:
+#  XSched_FOUND - True if XSched has been found
+#  XSched_INCLUDE_DIRS - The paths where to find XSched headers
+#  XSched_VERSION - The version of XSched
+#  XSched_VERSION_MAJOR - The major version of XSched
+#  XSched_VERSION_MINOR - The minor version of XSched
+#  XSched_VERSION_PATCH - The patch version of XSched
+
+@PACKAGE_INIT@
+
+include("${CMAKE_CURRENT_LIST_DIR}/XSchedTargets.cmake")
+
+set_and_check(XSched_INCLUDE_DIRS "@PACKAGE_CMAKE_INSTALL_INCLUDEDIR@")
+
+# versions
+set(XSched_VERSION @PROJECT_VERSION@)
+set(XSched_VERSION_MAJOR @PROJECT_VERSION_MAJOR@)
+set(XSched_VERSION_MINOR @PROJECT_VERSION_MINOR@)
+set(XSched_VERSION_PATCH @PROJECT_VERSION_PATCH@)
+
+check_required_components(XSched)
