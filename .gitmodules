@@ -13,3 +13,6 @@
 [submodule "3rdparty/tabulate"]
 	path = 3rdparty/tabulate
 	url = https://github.com/XpuOS/thirdparty-tabulate.git
+[submodule "3rdparty/cuxtra"]
+	path = 3rdparty/cuxtra
+	url = https://github.com/XpuOS/cuxtra.git
