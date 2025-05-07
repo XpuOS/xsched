@@ -14,7 +14,7 @@ XSched is a preemptive scheduling framework for XPUs.
 
 ### Transparently Schedule Applications
 
-XSched is designed to be transparent to applications. By setting a few environment variables, you can schedule your application with XSched. See our [example](examples/1_transparency) for transparent scheduling.
+XSched is designed to be transparent to applications. By setting a few [environment variables](protocol/README.md), you can schedule your application with XSched. See our [example](examples/1_transparency) for transparent scheduling.
 
 ### Linking with XSched for Customized Scheduling
 
