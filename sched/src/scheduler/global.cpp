@@ -4,7 +4,7 @@
 
 using namespace xsched::sched;
 
-GlobalScheduler::GlobalScheduler(): Scheduler(kSchedulerGlobal)
+GlobalScheduler::GlobalScheduler(): Scheduler(kSchedulerTypeGlobal)
 {
 
 }

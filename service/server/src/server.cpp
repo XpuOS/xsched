@@ -18,7 +18,7 @@ Server::Server(const std::string &policy_name, const std::string &port)
 
     PolicyType type = GetPolicyType(policy_name);
     if (type == kPolicyTypeUnknown) XERRO("invalid policy name %s", policy_name.c_str());
-    XASSERT(type > kPolicyTypeInternalMax, "server policy must be a customized policy");
+    XASSERT(type > kPolicyTypeUnknown && type < kPolicyTypeMax, "server policy must be a customized policy");
 
     scheduler_ = std::make_unique<LocalScheduler>(type);
     XINFO("scheduler created with policy %s", policy_name.c_str());
@@ -380,7 +380,7 @@ void Server::PostSchedulerPolicy(const httplib::Request &req, httplib::Response 
     }
 
     PolicyType type = (PolicyType)std::stoi(type_str, &pos, 10);
-    if (pos != type_str.length() || type <= kPolicyTypeInternalMax || type >= kPolicyTypeMax) {
+    if (pos != type_str.length() || type <= kPolicyTypeUnknown || type >= kPolicyTypeMax) {
         res.status = httplib::StatusCode::BadRequest_400;
         return;
     }

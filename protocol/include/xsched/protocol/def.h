@@ -30,11 +30,13 @@
 #define XSCHED_SERVER_CHANNEL_NAME   "xsched-server"
 #define XSCHED_CLIENT_CHANNEL_PREFIX "xsched-client-"
 
+#define XSCHED_SCHEDULER_ENV_NAME  "XSCHED_SCHEDULER" // e.g., export XSCHED_SCHEDULER=GLB
+#define XSCHED_SCHEDULER_NAME_LCL  "LCL" // Local Scheduler
+#define XSCHED_SCHEDULER_NAME_GLB  "GLB" // Global Scheduler
+#define XSCHED_SCHEDULER_NAME_AMG  "AMG" // Application Managed
+
 #define XSCHED_POLICY_ENV_NAME  "XSCHED_POLICY" // e.g., export XSCHED_POLICY=HPF
-#define XSCHED_POLICY_NAME_GLB  "GLB" // Global Scheduler
-#define XSCHED_POLICY_NAME_AMG  "AMG" // Application Managed
 #define XSCHED_POLICY_NAME_HPF  "HPF" // Highest Priority First
-#define XSCHED_POLICY_NAME_RR   "RR"  // Round Robin
 #define XSCHED_POLICY_NAME_UP   "UP"  // Utilization Partition
 #define XSCHED_POLICY_NAME_PUP  "PUP" // Process Utilization Partition
 #define XSCHED_POLICY_NAME_EDF  "EDF" // Earliest Deadline First
