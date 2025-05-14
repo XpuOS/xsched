@@ -1,6 +1,6 @@
 # CUDA Platform Support for XSched
 
-## Supported interception level
+## Supported preemption level
 
 <table>
   <tr>

@@ -8,7 +8,7 @@ XSched is a preemptive scheduling framework for XPUs. It provides unified interf
 
 - **Transparency:** Don't require any code changes to existing applications.
 - **Flexibility:** Support multiple scheduling policies and XPUs.
-- **Extensibility:** Easy to apapt new scheduling policies and XPUs.
+- **Extensibility:** Easy to adapt new scheduling policies and XPUs.
 - **Performance:** Achieve high performance with low overhead.
 
 ## XPU Support Matrix

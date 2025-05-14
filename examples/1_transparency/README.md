@@ -33,7 +33,7 @@ This example is a simple vector addition program, but running many times.
 
 You will see the output like this:
 
-```
+```txt
 Task 0 completed in 66 ms
 Task 1 completed in 66 ms
 Task 2 completed in 66 ms
@@ -53,7 +53,7 @@ Now, you can open a new terminal and run two apps simultaneously.
 
 You will see the output like this:
 
-```
+```txt
 # In the first terminal
 Task 0 completed in 114 ms
 Task 1 completed in 134 ms
@@ -62,7 +62,7 @@ Task 3 completed in 145 ms
 Task 4 completed in 132 ms
 ```
 
-```
+```txt
 # In the second terminal
 Task 13 completed in 78 ms
 Task 14 completed in 115 ms
@@ -79,6 +79,7 @@ The two apps have the same performance (double the time as the single app) as th
 Now, let's use XSched to prioritize one of the apps.
 
 First, we should start the XSched server (xserver). It is a daemon process for scheduling the GPU processes.
+
 ```bash
 # Open a new terminal
 cd xsched/output/bin/xserver HPF 50000
@@ -92,7 +93,7 @@ In the first terminal, we run the app and set it to high priority.
 
 ```bash
 # the process will be scheduled according to the global (GLB) scheduler, i.e., the xserver
-export XSCHED_POLICY=GLB
+export XSCHED_SCHEDULER=GLB
 
 # automatically create an XQueue for each created HwQueue (in this case, CUDA stream)
 export XSCHED_AUTO_XQUEUE=ON
@@ -128,7 +129,7 @@ export LD_LIBRARY_PATH=<XSCHED_ROOT>/output/lib:$LD_LIBRARY_PATH
 In the second terminal, we run the app and set it to low priority.
 
 ```bash
-export XSCHED_POLICY=GLB
+export XSCHED_SCHEDULER=GLB
 export XSCHED_AUTO_XQUEUE=ON
 export XSCHED_AUTO_XQUEUE_PRIORITY=0
 export XSCHED_AUTO_XQUEUE_LEVEL=1
@@ -141,7 +142,7 @@ export LD_LIBRARY_PATH=<XSCHED_ROOT>/output/lib:$LD_LIBRARY_PATH
 
 You will see the output like this:
 
-```
+```txt
 # In the first terminal
 Task 25 completed in 67 ms
 Task 26 completed in 67 ms
@@ -151,7 +152,7 @@ Task 29 completed in 69 ms
 Task 30 completed in 67 ms
 ```
 
-```
+```txt
 # In the second terminal
 Task 1 completed in 207 ms
 Task 2 completed in 195 ms

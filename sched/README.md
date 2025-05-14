@@ -22,7 +22,7 @@
 
 <img src="/docs/img/global-scheduler-comm.png" alt="XSched framework" width="600" />
 
-Actually, global scheduler only achieves two IPC channel. Its `Worker` thread just receive `Operation` by `rece_chan_` and call `Execute` bound when created (refering to `AddExecutor` of `preempt::SchedExecutor` in file `preempt/src/sched/executor.cpp`).
+Actually, global scheduler only achieves two IPC channel. Its `Worker` thread just receive `Operation` by `rece_chan_` and call `Execute` bound when created (refering to `SetExecutor()` of `sched::Scheduler` in file [scheduler.h](../sched/include/xsched/sched/scheduler/scheduler.h)).
 
 - `send_chan_` uses name `XSCHED_SERVER_CHANNEL_NAME` and its type is sender. When `preempt::SchedAgent` call `RecvEvent` to force scheduler to receive events, `send_chan_` will send event to receiver and do nothing else.
 - `rece_chan_` uses name bound to its PID and its type is receiver.

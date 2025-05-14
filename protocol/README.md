@@ -2,7 +2,7 @@
 
 `protocol` defines macro and constant parameters used in XSched, also provide some functions to get these constant parameters.
 
-It also defines configurations that can be changed by command "export Name=VALUE" in shell.
+It also defines configurations that can be changed by command `export Name=VALUE` in shell.
 
 ## XQueue configuration
 
@@ -16,21 +16,26 @@ It also defines configurations that can be changed by command "export Name=VALUE
 | XSCHED_AUTO_XQUEUE_UTILIZATION | int    | [0, 100]       | 100           | Default  utilization  of   "UP" and "PUP" policy                                                                   |
 | XSCHED_AUTO_XQUEUE_TIMESLICE   | int    | [100, 100000]  | 5000          | Default  time slice  of   "RR" policy                                                                              |
 
+## Scheduler configuration
+
+Change default scheduler type of processes by setting `XSCHED_SCHEDULER` to type name. The default value is `GLB`.
+
+| Value | Full Name           | Transparency | Description                                                                              |
+| ----- | ------------------- | ------------ | ---------------------------------------------------------------------------------------- |
+| LCL   | Local Scheduler     | ✅            | Process has its own scheduler, it only schedules xqueues created by itself.              |
+| GLB   | Global Scheduler    | ✅            | Process use global scheduler in XServer.                                                 |
+| AMG   | Application Managed | ❌            | There is no scheduler in process, application needs to use XQueue API to manage xqueues. |
+
 ## Policy configuration
 
 Change default scheduling policy in XServer by setting `XSCHED_POLICY` to policy name. The default value is `HPF`.
 
-| Value | Description                   |
+| Value | Full Name                   |
 | ----- | ----------------------------- |
 | HPF   | Highest Priority First        |
-| AMG   | Application Managed           |
-| RR    | Round Robin                   |
 | UP    | Utilization Partition         |
 | PUP   | Process Utilization Partition |
 | EDF   | Earliest Deadline First       |
 | LAX   | Laxity-based                  |
 
-**NOTE:**
-**There is a special value of "GLB", which means "Global Scheduler". It is not a specific scheduling policy and cannot be used for XServer. It is used for applications.**
-**Before starting an application, user must set `XSCHED_POLICY` to "GLB" to use the global scheduler. Otherwise, application will create a local scheduler which can only schedule xqueues created by the application itself.**
-**We offer this option only to provide convenience for developers during single process testing.**
+*(refering to [policies](../sched/README.md))*

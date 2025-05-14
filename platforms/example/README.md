@@ -49,7 +49,7 @@ python3 tools/autogen/gen.py \
 
 ## Step 2: Define HwQueue & HwCommand abstraction
 
-For `HwQueue`, we have implemented its parent class - `preempt::HwQueue`(`preempt/include/xsched/preempt/hal/hw_queue.h`). What you need is to inherit this parent class, and finish interfaces in the table below.
+For `HwQueue`, we have implemented its parent class - `preempt::HwQueue`(refer to [hw_queue.h](../../preempt/include/xsched/preempt/hal/hw_queue.h)). What you need is to inherit this parent class, and finish interfaces in the table below.
 
 <table>
   <tr>
@@ -104,7 +104,7 @@ For `HwQueue`, we have implemented its parent class - `preempt::HwQueue`(`preemp
 
 Note that only the Level-1 interfaces are mandatory for supporting a new XPU, while the Level-2 and Level-3 interfaces are optional since they necessitate additional hardware capabilities.
 
-For `HwCommand`, we have also implemented its parent class - `preempt::HwCommand`. The meaning of interfaces have been explain in detail in `preempt/include/xsched/preempt/hal/hw_command.h`, you can implement these interfaces by your need.
+For `HwCommand`, we have also implemented its parent class - `preempt::HwCommand`. The meaning of interfaces have been explain in detail in [hw_command.h](../../preempt/include/xsched/preempt/hal/hw_command.h), you can implement these interfaces by your need.
 
 ## Step 3: Finish XShim Lib
 

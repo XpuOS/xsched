@@ -1,6 +1,6 @@
 # LevelZero Platform Support for XSched
 
-## Supported interception level
+## Supported preemption level
 
 <table>
   <tr>
@@ -46,7 +46,7 @@ export LD_LIBRARY_PATH=path/to/xsched/output/lib:$LD_LIBRARY_PATH;
 
 ```bash
 export LD_LIBRARY_PATH=path/to/xsched/output/lib:$LD_LIBRARY_PATH;
-export XSCHED_POLICY=GBL XSCHED_AUTO_XQUEUE=1;
+export XSCHED_SCHEDULER=GLB XSCHED_AUTO_XQUEUE=1;
 ```
 
 ### 4. Run the application
