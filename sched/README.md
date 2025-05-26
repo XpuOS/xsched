@@ -20,7 +20,7 @@
 
 ### Global Scheduler
 
-<img src="/docs/img/global-scheduler-comm.png" alt="XSched framework" width="600" />
+<img src="/docs/img/global-scheduler.png" alt="Global Scheduler Framework" width="600" />
 
 Actually, global scheduler only achieves two IPC channel. Its `Worker` thread just receive `Operation` by `rece_chan_` and call `Execute` bound when created (refering to `SetExecutor()` of `sched::Scheduler` in file [scheduler.h](../sched/include/xsched/sched/scheduler/scheduler.h)).
 
