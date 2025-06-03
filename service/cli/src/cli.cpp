@@ -162,7 +162,7 @@ int Cli::QueryPolicy()
                     ? (PolicyType)response["policy"].asInt() : kPolicyTypeUnknown;
     std::cout << "Current policy: \n  " << GetPolicyTypeName(type) << std::endl;
     std::cout << "Available policies: " << std::endl;
-    for (int i = kPolicyTypeUnknown + 1; i < kPolicyTypeMax; i++) {
+    for (int i = kPolicyTypeInternalMax + 1; i < kPolicyTypeMax; i++) {
         std::cout << "  " << GetPolicyTypeName((PolicyType)i) << std::endl;
     }
     return 0;

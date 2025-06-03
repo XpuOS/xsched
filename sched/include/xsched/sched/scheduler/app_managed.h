@@ -8,7 +8,7 @@ namespace xsched::sched
 class AppManagedScheduler : public Scheduler
 {
 public:
-    AppManagedScheduler(): Scheduler(kSchedulerTypeAppManaged) {}
+    AppManagedScheduler(): Scheduler(kSchedulerAppManaged) {}
     virtual ~AppManagedScheduler() = default;
 
     virtual void Run() override {}

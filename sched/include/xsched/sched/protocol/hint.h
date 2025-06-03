@@ -20,6 +20,7 @@ enum HintType
     kHintTypeTimeslice   = 3,
     kHintTypeDeadline    = 4,
     kHintTypeLaxity      = 5,
+    kHintTypeKDeadline   = 6,
     // NEW_POLICY: New HintTypes go here.
 
     kHintTypeMax,
@@ -164,6 +165,32 @@ private:
         HintMeta     meta;
         XQueueHandle handle;
         Deadline     ddl;
+    };
+    HintData data_;
+};
+
+class KDeadlineHint : public Hint   
+{
+public:
+    KDeadlineHint(const void *data): data_(*(const HintData *)data) {}
+    KDeadlineHint(int k)
+        : data_{
+            .meta { .type = kHintTypeKDeadline },
+            .k = k
+        } {}
+    virtual ~KDeadlineHint() = default;
+
+    virtual const void *Data() const override { return &data_; }
+    virtual size_t      Size() const override { return sizeof(data_); }
+    virtual HintType    Type() const override { return kHintTypeKDeadline; }
+
+    int K() const { return data_.k; }
+
+private:
+    struct HintData
+    {
+        HintMeta meta;
+        int      k;
     };
     HintData data_;
 };

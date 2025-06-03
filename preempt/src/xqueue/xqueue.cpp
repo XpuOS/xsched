@@ -187,6 +187,18 @@ XResult XQueueManager::AutoCreate(std::function<XResult(HwQueueHandle *)> create
         }
         XDEBG("auto-set timeslice %ld us", env_timeslice);
     }
+
+    // set laxity by env
+    int64_t env_laxity;
+    if (GetEnvInt64(XSCHED_AUTO_XQUEUE_LAXITY_ENV_NAME, env_laxity)) {
+        res = XHintLaxity(xq, env_laxity, PRIORITY_DEFAULT, env_priority);
+        if (res != kXSchedSuccess) {
+            XWARN("fail to auto-set laxity %ld for XQueue 0x%lx, err: %d",
+                  env_laxity, xq, res);
+        }
+        XDEBG("auto-set laxity %ld, laxity-prio %d, crit-prio %ld",
+              env_laxity, PRIORITY_DEFAULT, env_priority);
+    }
     return res;
 }
 

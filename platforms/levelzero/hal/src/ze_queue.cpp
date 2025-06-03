@@ -36,19 +36,21 @@ void ZeQueue::Synchronize()
     ZE_ASSERT(Driver::CommandQueueSynchronize(kCmdq, UINT64_MAX));
 }
 
-ZeIntelNpuQueue::ZeIntelNpuQueue(ze_device_handle_t dev, ze_command_queue_handle_t cmdq): ZeQueue(dev, cmdq)
+ZeIntelNpuQueue::ZeIntelNpuQueue(ze_device_handle_t dev, ze_command_queue_handle_t cmdq, ze_command_queue_priority_t prio)
+: ZeQueue(dev, cmdq), kPrio(prio)
 {
-    kmd_cmdq_id_ = get_kmd_cmdq_id(cmdq);
+    
 }
 
 void ZeIntelNpuQueue::Deactivate()
 {
-    npu_sched_suspend_cmdq(kmd_cmdq_id_);
+    // current driver uses one hardware command queue for ze_command_queue_handle_t(s) of one priority
+    npu_sched_suspend_cmdq(kPrio);
 }
 
 void ZeIntelNpuQueue::Reactivate(const preempt::CommandLog &)
 {
-    npu_sched_resume_cmdq(kmd_cmdq_id_);
+    npu_sched_resume_cmdq(kPrio);
 }
 
 EXPORT_C_FUNC XResult ZeQueueCreate(HwQueueHandle *hwq, ze_device_handle_t dev, ze_command_queue_handle_t cmdq)
@@ -70,7 +72,7 @@ EXPORT_C_FUNC XResult ZeQueueCreate(HwQueueHandle *hwq, ze_device_handle_t dev, 
     HwQueueHandle hwq_h = GetHwQueueHandle(cmdq);
     auto res = HwQueueManager::Add(hwq_h, [&]() -> std::shared_ptr<ZeQueue> {
         if (dev_props.type == ZE_DEVICE_TYPE_VPU) {
-            return std::make_shared<ZeIntelNpuQueue>(dev, cmdq);
+            return std::make_shared<ZeIntelNpuQueue>(dev, cmdq, ZE_COMMAND_QUEUE_PRIORITY_NORMAL);
         }
         return std::make_shared<ZeQueue>(dev, cmdq);
     });

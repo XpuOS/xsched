@@ -1,84 +1,65 @@
-# Platform Support for XSched
+# Platforms
 
-## Code Explanation
+## Introduction
 
-Platforms includes two parts of code in XSched: `XAL Lib` & `XShim Lib`, corresponding to `hal` & `shim` directory in each platform.
+Platforms includes two parts of code in XSched: `XShim Lib` & `XAL Lib`, corresponding to `shim` & `hal` directory in each directory.
 
-### XAL
+## XAL
 
-The `XAL Lib` implements the `HwCommand` and `HwQueue` abstraction for each platform.
+The `XAL Lib` implements the interfaces of multilevel hardware model, as listed in following table.
 
-#### HwCommand
+| Syntax | Description      | Test Text                                                                                         |
+| :----: | :--------------- | :------------------------------------------------------------------------------------------------ |
+|  Lv1   | launch(hwq, cmd) | Enqueue a given command (cmd) to a hwQueue (hwq) for executing it sequentially and asynchronously |
+|        | sync(hwq, cmd)   | Wait for a given cmd in a hwq to complete                                                         |
+|  Lv2   | deactivate(hwq)  | Deactivate a given hwq to prevent all its commands from being selected for execution              |
+|        | reactivate(hwq)  | Reactivate a given hwq to allow all its commands to be selected for execution                     |
+|  Lv3   | interrupt(hwq)   | Interrupt the running command of a given hwq                                                      |
+|        | restore(hwq)     | Restore the interrupted command of a given hwq                                                    |
 
-When hijacking a command to launch a kernel to XPU (such as `zeCommandListAppendLaunchKernel` in LevelZero, `cuLaunch` in CUDA), we need to encapsulate it as `HwCommand` and submit it to corresponding `XQueue`.
+In order to adapt to the new platform, developers must need to implement `HwQueue` and `HwCommand`.
 
-The main member functions implemented in `HwCommand` and their explanations are as follows:
+For `HwQueue`, we have implemented its parent class - `preempt::HwQueue`. What you need is to inherit this parent class, and finish interfaces in the table above. Note that only the Lv1 interfaces are mandatory for supporting a new XPU, while the Lv2 and Lv3 interfaces are optional since they necessitate additional hardware capabilities.
 
-| Interface               | Description                                                     |
-| ----------------------- | --------------------------------------------------------------- |
-| Enqueue()               | Call driver API to launch kernel                             |
-| Synchronize()           | Synchronize HwCommand                                           |
-| Synchronizable()        | Check if HwCommand can be synchronized                          |
-| EnableSynchronization() | Enable HwCommand to be synchronized by appending event or fence |
+For `HwCommand`, we have also implemented its parent class - `preempt::HwCommand`. The meaning of interfaces have been explain in detail in `hw_command.h`, you can implement these interfaces by your need.
 
-#### HwQueue
+## XShim
 
-`HwQueue` is an abstraction of real device queue (such as `zeCommandQueue` and `zeImmediateCommandList` in LevelZero, `CUstream` in CUDA). We need to implement different functions to support different preemption level.
+The main function of `XShim Lib` is to change the workflow that applications invoke XPU driver APIs by intercepting XPU driver API calls and redirecting the commands to the `XQueue`. The `XShim` library provides transparency, allowing applications to run on XSched without modifications. Each XPU should have its own XShim implementation, since it is specific to the XPU driver. However, the `XShim` library is optional for porting XSched on a new XPU, since applications can directly call XQueue interfaces instead.
 
-<table>
-  <tr>
-    <th align="center">Preemption Level</th>
-    <th align="center">Interface</th>
-    <th align="center">Description</th>
-  </tr>
-  <tr>
-    <td align="center" rowspan="2">Level-1</td>
-    <td align="center">Launch(HwCommand)</td>
-    <td align="left">Launch a HwCommand by calling HwCommand->Enqueue()</td>
-  </tr>
-  <tr>
-    <td align="center">Synchronize()</td>
-    <td align="left">Wait for all commands in the HwQueue to complete</td>
-  </tr>
-    <tr>
-    <td align="center" rowspan="2">Level-2</td>
-    <td align="center">Deactivate()</td>
-    <td align="left">Deactivate the HwQueue to prevent all its commands from being selected for execution </td>
-  </tr>
-  <tr>
-    <td align="center">Reactivate()</td>
-    <td align="left">Reactivate the HwQueue to allow all its commands to be selected for execution</td>
-  </tr>
-    <tr>
-    <td align="center" rowspan="2">Level-3</td>
-    <td align="center">Interrupt()</td>
-    <td align="left">Interrupt the running command of the HwQueue</td>
-  </tr>
-  <tr>
-    <td align="center">Restore()</td>
-    <td align="left">Restore the interrupted command of the HwQueue</td>
-  </tr>
-</table>
+For code, `XShim Lib` includes `intercept.cpp` and `shim.cpp`.
 
-### XShim
+`intercept.cpp` can be auto generated by tools we provide. For example, to generate interception code for `LevelZero`, firstly you need to make sure which interfaces need to be intercepted, and copy those official files to `XAL`. Then run command `python3 tools/autogen/gen.py ./platforms/levelzero/hal/include/xsched/levelzero/level_zero/ze_api.h ze ze` to generate `intercept.cpp` about `ze_api.h`. At the same time, this command will create `driver.h`, which is used to redirect the commands and should be put in `XAL`.
 
-The main function of `XShim Lib` is to change the applicaion workflow by intercepting XPU driver API calls. The `XShim` library provides transparency and allow applications to use XSched without modifications.
+In `shim.cpp`, we will write codes handling intercepted API. If you want to support some customized APIs which can be called in host code, just write those in `xctrl.h`.
 
-`XShim Lib` mainly consists of two files: `intercept.cpp` and `shim.cpp`.
+## Guide: Porting XSched to a new hardware (platform)
 
-- `intercept.cpp` can be auto generated by tools we provide. It provides transparent hijacking of Driver API through a unified macro definitio.
-- `shim.cpp` implements the handling of hijacked APIs.
+step 1: setup directory structure
 
-## Supported Platforms
+```shell
+python3 tools/autogen/setup_template.py ./platforms/example --platform opencl
+```
 
-| Name      | Usage                         |
-| --------- | ----------------------------- |
-| CUDA      | [README](cuda/README.md)      |
-| HIP       | [README](hip/README.md)       |
-| LevelZero | [README](levelzero/README.md) |
-| OpenCL    | [README](opencl/README.md)    |
-| AscendCL  | [README](ascend/README.md)    |
-| cuDLA     | [README](cudla/README.md)     |
-| VIP       | [README](vip/README.md)       |
+step 2: gather platform headers
+for single-header platform, just copy the header to `platforms/example/hal/include/xsched/opencl/hal`
+for platforms with multiple headers, you can use `tools/autogen/merge_headers.py` to merge them into a single header.
 
-If you are interested in supporting XSched on a new platform, please refer to our [example and guide](example/README.md).
+```shell
+python3 tools/autogen/merge_headers.py /usr/include/CL/ \
+    -o platforms/example/hal/include/xsched/opencl/hal/cl.h \
+    -e *.hpp -e cl_dx* -e cl_d3d* -e cl_icd.h -e cl_layer.h -e cl_va_api_media_sharing_intel.h
+```
+
+step 3: generate interception code (`driver.h` & `intercept.cpp`)
+
+```shell
+python3 tools/autogen/gen.py \
+    --source platforms/example/hal/include/xsched/opencl/hal/cl.h \
+    --lib /usr/lib/x86_64-linux-gnu/libOpenCL.so \
+    --platform opencl --prefix cl \
+    --driver platforms/example/hal/include/xsched/opencl/hal/driver.h \
+    --intercept platforms/example/shim/src/intercept.cpp
+```
+
+You need to change thes

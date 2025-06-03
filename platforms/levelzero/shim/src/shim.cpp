@@ -20,7 +20,11 @@ static ObjectMap<ze_command_list_handle_t, std::shared_ptr<ZeListExecuteCommand>
 
 ze_result_t XCommandQueueCreate(ze_context_handle_t hContext, ze_device_handle_t hDevice, const ze_command_queue_desc_t *desc, ze_command_queue_handle_t *phCommandQueue)
 {
-    ze_result_t res = Driver::CommandQueueCreate(hContext, hDevice, desc, phCommandQueue);
+    // current driver uses one hardware command queue for ze_command_queue_handle_t(s) of one priority
+    // this is a workaround for the current driver and will be fixed in the open source version of XSched
+    ze_command_queue_desc_t desc_copy = *desc;
+    desc_copy.priority = ZE_COMMAND_QUEUE_PRIORITY_NORMAL;
+    ze_result_t res = Driver::CommandQueueCreate(hContext, hDevice, &desc_copy, phCommandQueue);
     if (res != ZE_RESULT_SUCCESS) return res;
     XQueueManager::AutoCreate([&](HwQueueHandle *hwq) { return ZeQueueCreate(hwq, hDevice, *phCommandQueue); });
     XDEBG("XCommandQueueCreate(cmdq: %p, dev: %p)", *phCommandQueue, hDevice);

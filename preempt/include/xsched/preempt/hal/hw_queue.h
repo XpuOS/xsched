@@ -22,33 +22,35 @@ public:
     HwQueue() = default;
     virtual ~HwQueue() = default;
 
-    /// @brief Level-1 (kPreemptLevelBlock) interface. Launch a HwCommand on this HwQueue.
-    /// @param hw_cmd The pointer to the HwCommand.
-    /// NOTE: This function will be called while holding the launch worker lock, so it should
-    /// NOT do any blocking operations like synchronizing another HwQueue or HwCommand.
+    /// @brief Submit HwCommand to the hardware.
+    /// @param hal_command The pointer to the HwCommand.
+    /// NOTE: This function will be called while holding the submit
+    /// worker lock, so it should not do any blocking operations
+    /// like synchronizing another queue or command.
     virtual void Launch(std::shared_ptr<HwCommand> hw_cmd) = 0;
 
-    /// @brief Level-1 (kPreemptLevelBlock) interface. Synchronize with the hardware to wait until
-    /// ALL HwCommands launched on this HwQueue are finished. Can ALSO return after the HwCommands
-    /// are flushed when deactivating the HwQueue, or killed when interrupting the HwQueue.
+
+    /// @brief Synchronize with the hardware to make sure that all
+    ///        HwCommands submitted to HwQueue has been executed
+    ///        (or killed if called HwQueue->CancelAllCommands()).
+    ///        Do not necessarily mean that these HwCommand has been
+    ///        "Completed".
     virtual void Synchronize() = 0;
 
-    /// @brief Level-2 (kPreemptLevelDeactivate) interface. Deactivate the HwQueue to prevent new
-    /// in-flight HwCommands in this HwQueue from being fetched and executed by the hardware. Can
-    /// be implemented by stalling HwCommand dequeuing, or flushing away the in-flight HwCommands.
+
+    /// @brief Cancel all cancelable HwCommands submitted to HwQueue.
+    ///        The platform layer should guarantee that the cancel
+    ///        will not cause side effects and the re-execution
+    ///        of the canceled HwCommands will not cause errors.
     virtual void Deactivate() {}
 
-    /// @brief Level-2 (kPreemptLevelDeactivate) interface. Resume a deactivated HwQueue.
-    /// @param log In-flight but not completed HwCommands that have been launched on this HwQueue.
+
+    /// @brief Resume the execution of the hardware.
+    /// @return The idx of the first HwCommand that needs to be
+    ///         re-submitted.
     virtual void Reactivate(const CommandLog &log) { UNUSED(log); }
 
-    /// @brief Level-3 (kPreemptLevelInterrupt) interface. Interrupt a HwQueue to immediately stop
-    /// the currently running HwCommand. Can be implemented by sending interrupt signals to the
-    /// hardware to kill the running HwCommand or trigger context switch.
     virtual void Interrupt() {}
-
-    /// @brief Level-3 (kPreemptLevelInterrupt) interface. Restore an interrupted HwQueue.
-    /// @param log In-flight but not completed HwCommands that have been launched on this HwQueue.
     virtual void Restore(const CommandLog &log) { UNUSED(log); }
 
     virtual XDevice GetDevice() = 0;
@@ -56,17 +58,17 @@ public:
     virtual bool SupportDynamicLevel() = 0;
     virtual XPreemptLevel GetMaxSupportedLevel() = 0;
 
-    /// @brief A callback function that will be called when the preemption level changes.
-    /// @param level The new preemption level of the HwQueue.
+
     virtual void OnPreemptLevelChange(XPreemptLevel level) { UNUSED(level); }
 
-    /// @brief A callback function that will be called on the launching thread when the XQueue and
-    /// the thread are created. Can call platform specific APIs like cuCtxSetCurrent().
+    /// @brief XQueue create event. Will be called on the launching thread when the XQueue and the
+    /// thread are created. Should call platform specific APIs like cuCtxSetCurrent().
     virtual void OnXQueueCreate() {}
 
-    /// @brief A callback function that will be called when a HwCommand is submitted to XQueue.
-    /// Can do some pre-processing here, e.g., instrumenting a CUDA kernel function.
-    /// @param hw_cmd The HwCommand submitted to the XQueue.
+
+    /// @brief HwCommand submit event. Will be called when a HwCommand
+    ///        is submitted to XQueue. Can do some pre-processing here.
+    /// @param hal_command The HwCommand submitted to the XQueue.
     virtual void OnHwCommandSubmit(std::shared_ptr<HwCommand> hw_cmd) { UNUSED(hw_cmd); }
 
     std::shared_ptr<XQueue> GetXQueue() { return xq_; }

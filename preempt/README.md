@@ -1,28 +1,28 @@
 # XPreempt
 
-The XPreempt library mainly includes following parts:
+## xqueue
 
-- `HwCommand & HwQueue`: Base classes abstraction for hardware command and queue. They are specifically implemented in `platforms` for different hardware.
-- `XQueue`: The main abstraction for task controlling and scheduling.
-- `SchedAgent`: An agent that watches the status of XQueues and handles scheduling events.
+The XPreempt library implements the XQueue abstraction, the main functions are listed in following table, including submit and wait to support task execution, and suspend and resume to schedule XQueues. Commands submitted to the XQueue are buffered and launched to the XPU at a proper time to achieve task preemption.
 
-## HwCommand & HwQueue
+| XQueue Interface | Description                                   |
+| ---------------- | --------------------------------------------- |
+| submit(xq, cmd)  | Submit a command (cmd) to XQueue (xq)         |
+| wait(xq, cmd)    | Wait for a given cmd in xq to complete        |
+| wait_all(xq)     | Wait for all cmds in xq to complete           |
+| suspend(xq)      | Suspend xq to pause task execution resume(xq) |
+| Resume(xq)       | to continue task execution                    |
 
-`HwCommand` is an encapsulation of driver API calling. We use this kind of abstraction to buffer API calling in XQueue, and use scheduler to decide when to launch it to `HwQueue`.
+## hal
 
-`HwQueue` is an encapsulation of hardware queue, e.g., `cudaStream` in CUDA, `hipStream` in ROCm, `ze_command_queue` in LevelZero, etc. When a `HwCommand` is launched to `HwQueue`, it will be executed in the hardware queue by calling respective driver API.
+`hal` provide `HwCommand` and `HwQueue` abstraction, it only declared the meanings of each interface, specific implementation are finished in `platforms`. Besides, `hal` also maintained global variables `HwQueueManager` and `HwCommandManager`, they manage all `HwCommand` and `HwQueue` in the process.
 
-## XQueue
+## sched
 
-`XQueue` is a queue of XPU commands that are executed sequentially in the order of submission. `XQueue` is one-to-one mapped to a `HwQueue`.
-
-## SchedAgent
-
-When process starts, it will load `XPreempt` lib and initilize a `SchedAgent` with corresponding `Executor` and `Scheduler`.
+The XPreempt library also contains an agent that watches the status of XQueues (e.g., ready or idle). When process starts, it will load `XPreempt` lib and initilize a `SchedAgent` with corresponding `Executor` and `Scheduler`.
 
 - `Executor` implements `Execute` function to handle `Operation` that `SchedAgent` receives.
 - `Scheduler` is an instance of `sched::Scheduler`. It will bind its `executor_` with `Executor`.
 
-When `SchedAgent` receives `Event` from `XCtrl` or `XQueue`, it will call `RecvEvent` of `Scheduler` to handle.
+When `SchedAgent` receives `Hint` from `XCLI` or `Event` from `XQueue`, it will call `RecvEvent` of `Scheduler` to handle.
 
-By default, the type of `Scheduler` is `GlobalScheduler`(details in `sched::Scheduler`), it means `Scheduler` will notify the daemon scheduler via IPC whem `SchedAgent` receives events rather than handle them directly. After daemon scheduler finish handling events, it will generate operations and send back to `Scheduler`, then `Scheduler` call `executor_`(bound with `Executor`) to execute these operations, which includes resume/suspend `XQueue` or change configuation of `XQueue`.
+By default, the type of `Scheduler` is `GlobalScheduler`(details in `sched::Scheduler`), it means `Scheduler` will notify the daemon scheduler via IPC whem `SchedAgent` generates scheduling events rather than handle them directly. After daemon scheduler finish handling events, it will generate operations and send back to `Scheduler`, then `Scheduler` call `executor_`(bound with `Executor`) to execute these operations.

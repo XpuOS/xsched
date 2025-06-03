@@ -262,22 +262,47 @@ CUresult XCtxSynchronize()
     return Driver::CtxSynchronize();
 }
 
+static bool SingleStream()
+{
+    static char *env = std::getenv("SINGLE_STREAM");
+    if (env == nullptr || strlen(env) == 0 || strcmp(env, "0") == 0 ||
+        strcasecmp(env, "off") == 0) {
+        XDEBG("Single stream is disabled");
+        return false;
+    }
+    return true;
+}
+
+CUstream single_stream = nullptr;
+
 CUresult XStreamCreate(CUstream *stream, unsigned int flags)
 {
+    if (SingleStream() && single_stream != nullptr) {
+        *stream = single_stream;
+        return CUDA_SUCCESS;
+    }
+
     CUresult res = Driver::StreamCreate(stream, flags);
     if (res != CUDA_SUCCESS) return res;
     XQueueManager::AutoCreate([&](HwQueueHandle *hwq) { return CudaQueueCreate(hwq, *stream); });
     XDEBG("XStreamCreate(stream: %p, flags: 0x%x)", *stream, flags);
+    single_stream = *stream;
     return res;
 }
 
 CUresult XStreamCreateWithPriority(CUstream *stream, unsigned int flags, int priority)
 {
+    if (SingleStream() && single_stream != nullptr) {
+        *stream = single_stream;
+        return CUDA_SUCCESS;
+    }
+
     CUresult res = Driver::StreamCreateWithPriority(stream, flags, priority);
     if (res != CUDA_SUCCESS) return res;
     XQueueManager::AutoCreate([&](HwQueueHandle *hwq) { return CudaQueueCreate(hwq, *stream); });
     XDEBG("XStreamCreateWithPriority(stream: %p, flags: 0x%x, priority: %d)",
           *stream, flags, priority);
+    single_stream = *stream;
     return res;
 }
 

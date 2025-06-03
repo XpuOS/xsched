@@ -61,6 +61,7 @@ void HighestPriorityFirstPolicy::Sched(const Status &status)
     // and resume all xqueues with higher priority
     for (auto &status : status.xqueue_status) {
         XQueueHandle handle = status.second->handle;
+        if (!status.second->ready) continue;
         auto it = priorities_.find(handle);
         XASSERT(it != priorities_.end(), "priority of XQueue 0x%lx not found.", handle);
         Priority priority = it->second;

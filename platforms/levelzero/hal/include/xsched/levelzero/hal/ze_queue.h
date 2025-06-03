@@ -35,7 +35,7 @@ protected:
 class ZeIntelNpuQueue : public ZeQueue
 {
 public:
-    ZeIntelNpuQueue(ze_device_handle_t dev, ze_command_queue_handle_t cmdq);
+    ZeIntelNpuQueue(ze_device_handle_t dev, ze_command_queue_handle_t cmdq, ze_command_queue_priority_t prio);
     virtual ~ZeIntelNpuQueue() = default;
 
     virtual void Deactivate() override;
@@ -45,8 +45,7 @@ public:
     virtual XPreemptLevel GetMaxSupportedLevel() override { return kPreemptLevelDeactivate; }
 
 private:
-    uint32_t kmd_cmdq_id_;
-    
+    ze_command_queue_priority_t kPrio;
 };
 
 }  // namespace xsched::levelzero

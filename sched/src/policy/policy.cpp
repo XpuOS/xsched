@@ -9,6 +9,7 @@
 #include "xsched/sched/policy/pup.h"
 #include "xsched/sched/policy/edf.h"
 #include "xsched/sched/policy/lax.h"
+#include "xsched/sched/policy/kedf.h"
 // NEW_POLICY: New policy headers go here.
 
 using namespace xsched::sched;
@@ -46,6 +47,8 @@ std::unique_ptr<Policy> xsched::sched::CreatePolicy(PolicyType type)
             return std::make_unique<EarliestDeadlineFirstPolicy>();
         case kPolicyTypeLaxity:
             return std::make_unique<LaxityPolicy>();
+        case kPolicyTypeKEarlyDeadlineFirst:
+            return std::make_unique<KEarliestDeadlineFirstPolicy>();
         // NEW_POLICY: New PolicyTypes handling goes here.
         default:
             XASSERT(false, "invalid policy type: %d", type);

@@ -20,6 +20,8 @@ std::shared_ptr<const Hint> Hint::CopyConstructor(const void *data)
         return std::make_shared<TimesliceHint>(data);
     case kHintTypeDeadline:
         return std::make_shared<DeadlineHint>(data);
+    case kHintTypeKDeadline:
+        return std::make_shared<KDeadlineHint>(data);
     case kHintTypeLaxity:
         return std::make_shared<LaxityHint>(data);
     // NEW_POLICY: New HintTypes handling goes here.

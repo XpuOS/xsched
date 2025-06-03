@@ -8,7 +8,7 @@
 using namespace std::chrono;
 using namespace xsched::sched;
 
-LocalScheduler::LocalScheduler(PolicyType type): Scheduler(kSchedulerTypeLocal), policy_type_(type)
+LocalScheduler::LocalScheduler(PolicyType type): Scheduler(kSchedulerLocal), policy_type_(type)
 {
     event_queue_ = std::make_unique<std::list<std::shared_ptr<const Event>>>();
     policy_ = CreatePolicy(type);

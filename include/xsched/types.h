@@ -95,7 +95,7 @@ typedef int32_t Priority;
 #define PRIORITY_DEFAULT     000
 #define PRIORITY_MAX         255
 
-/// @brief Utilization is a percentage integer,
+/// @brief Utilization is a percentage,
 /// with 0 indicating no utilization and 100 indicating full utilization.
 typedef int32_t Utilization;
 #define UTILIZATION_MIN      0
