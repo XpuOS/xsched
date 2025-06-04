@@ -187,6 +187,41 @@ XResult XQueueManager::AutoCreate(std::function<XResult(HwQueueHandle *)> create
         }
         XDEBG("auto-set timeslice %ld us", env_timeslice);
     }
+
+    // set deadline by env
+    int64_t env_deadline;
+    if (GetEnvInt64(XSCHED_AUTO_XQUEUE_DEADLINE_ENV_NAME, env_deadline)) {
+        res = XHintDeadline(xq, env_deadline);
+        if (res != kXSchedSuccess) {
+            XWARN("fail to auto-set deadline %ld for XQueue 0x%lx, err: %d",
+                  env_deadline, xq, res);
+        }
+        XDEBG("auto-set deadline %ld us for XQueue 0x%lx", env_deadline, xq);
+    }
+
+    // set kdeadline by env
+    int64_t env_kdeadline;
+    if (GetEnvInt64(XSCHED_AUTO_XQUEUE_KDEADLINE_ENV_NAME, env_kdeadline)) {
+        res = XHintKDeadline(env_kdeadline);
+        if (res != kXSchedSuccess) {
+            XWARN("fail to auto-set kdeadline %ld for XQueue 0x%lx, err: %d",
+                  env_kdeadline, xq, res);
+        }
+        XDEBG("auto-set kdeadline %ld for XQueue 0x%lx", env_kdeadline, xq);
+    }
+
+    // set laxity by env
+    int64_t env_laxity;
+    if (GetEnvInt64(XSCHED_AUTO_XQUEUE_LAXITY_ENV_NAME, env_laxity)) {
+        res = XHintLaxity(xq, env_laxity, PRIORITY_DEFAULT, env_priority);
+        if (res != kXSchedSuccess) {
+            XWARN("fail to auto-set laxity %ld, laxity-prio %d, crit-prio %ld for XQueue 0x%lx",
+                  env_laxity, PRIORITY_DEFAULT, env_priority, xq);
+        }
+        XDEBG("auto-set laxity %ld, laxity-prio %d, crit-prio %ld for XQueue 0x%lx",
+              env_laxity, PRIORITY_DEFAULT, env_priority, xq);
+    }
+
     return res;
 }
 
@@ -217,13 +252,6 @@ XResult XQueueManager::AutoDestroy(HwQueueHandle hwq_h)
     }
     XDEBG("auto-destroyed HwQueue 0x%lx", hwq_h);
     return res;
-}
-
-namespace xsched::preempt
-{
-
-static std::mutex xq_create_mtx_;
-
 }
 
 EXPORT_C_FUNC XResult XQueueCreate(XQueueHandle *xq, HwQueueHandle hwq, int64_t level, int64_t flags)

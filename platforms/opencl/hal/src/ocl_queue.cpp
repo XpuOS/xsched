@@ -15,11 +15,14 @@ OclQueue::OclQueue(cl_command_queue cmdq): kCmdq(cmdq)
     cl_device_id id;
     cl_device_type type;
     cl_device_pci_bus_info_khr pci;
+    XDeviceId dev_id = 0; // TODO: find a fallback for devices without PCI bus info
     OCL_ASSERT(Driver::GetCommandQueueInfo(kCmdq, CL_QUEUE_DEVICE, sizeof(id), &id, nullptr));
     OCL_ASSERT(Driver::GetDeviceInfo(id, CL_DEVICE_TYPE, sizeof(type), &type, nullptr));
-    OCL_ASSERT(Driver::GetDeviceInfo(id, CL_DEVICE_PCI_BUS_INFO_KHR, sizeof(pci), &pci, nullptr));
-    device_ = MakeDevice(GetXDeviceType(type), XDeviceId(MakePciId(
-        pci.pci_domain, pci.pci_bus, pci.pci_device, pci.pci_function)));
+    cl_int ret = Driver::GetDeviceInfo(id, CL_DEVICE_PCI_BUS_INFO_KHR, sizeof(pci), &pci, nullptr);
+    if (ret == CL_SUCCESS) {
+        dev_id = MakePciId(pci.pci_domain, pci.pci_bus, pci.pci_device, pci.pci_function);
+    }
+    device_ = MakeDevice(GetXDeviceType(type), dev_id);
 
     // make sure no tasks are running on stream_
     XDEBG("OclQueue (%p) created for cmdq (%p)", this, kCmdq);

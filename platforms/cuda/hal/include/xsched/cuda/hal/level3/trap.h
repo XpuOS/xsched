@@ -1,39 +1,23 @@
 #pragma once
 
-#include <map>
-#include <mutex>
 #include <memory>
 
 #include "xsched/cuda/hal/common/cuda.h"
+#include "xsched/cuda/hal/level2/mm.h"
 
 namespace xsched::cuda
 {
 
-class TrapManager
+class TarpHandler
 {
 public:
-    TrapManager(CUcontext context);
-    ~TrapManager() = default;
+    TarpHandler() = default;
+    virtual ~TarpHandler() = default;
+    static std::shared_ptr<TarpHandler> Instance(CUdevice dev);
 
-    void SetTrapHandler();
-    void DumpTrapHandler();
-    void InterruptContext();
-
-    static std::shared_ptr<TrapManager> GetTrapManager(CUcontext context);
-
-private:
-    const CUcontext kContext;
-    const CUstream kOpStream;
-
-    size_t trap_handler_size_ = 0;
-    CUdeviceptr trap_handler_dev_ = 0;
-
-    static void InstrumentTrapHandler(void *trap_handler_host,
-                                      CUdeviceptr trap_handler_dev,
-                                      size_t trap_handler_size,
-                                      void *extra_instrs_host,
-                                      CUdeviceptr extra_instrs_device,
-                                      size_t extra_instrs_size);
+    virtual size_t GetInjectSize() = 0;
+    virtual void Instrument(void *handler_host, CUdeviceptr handler_dev, size_t size,
+                            void *inject_host , CUdeviceptr inject_dev) = 0;
 };
 
 } // namespace xsched::cuda

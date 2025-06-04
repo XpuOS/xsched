@@ -1,12 +1,13 @@
 #include <map>
+#include "xsched/protocol/def.h"
 #include "xsched/protocol/names.h"
 
 namespace xsched::protocol
 {
 
-const std::map<XPlatform, const std::string> &PlatformNames() {
+static const std::map<XPlatform, const std::string> &PlatformNames() {
     static const std::map<XPlatform, const std::string> kPlatformNames {
-        { kPlatformUnknown  , "Unknown"   },
+        { kPlatformUnknown  , XSCHED_UNKNOWN_NAME },
         { kPlatformVPI      , "VPI"       },
         { kPlatformCUDA     , "CUDA"      },
         { kPlatformCUDLA    , "cuDLA"     },
@@ -19,21 +20,21 @@ const std::map<XPlatform, const std::string> &PlatformNames() {
     return kPlatformNames;
 }
 
-const std::map<XDeviceType, std::string> &DeviceTypeNames() {
+static const std::map<XDeviceType, std::string> &DeviceTypeNames() {
     static const std::map<XDeviceType, std::string> kDeviceTypeNames {
-        { kDeviceTypeUnknown, "Unknown"   },
-        { kDeviceTypeCPU    , "CPU"       },
-        { kDeviceTypeGPU    , "GPU"       },
-        { kDeviceTypeNPU    , "NPU"       },
-        { kDeviceTypeFPGA   , "FPGA"      },
-        { kDeviceTypeASIC   , "ASIC"      },
+        { kDeviceTypeUnknown, XSCHED_UNKNOWN_NAME },
+        { kDeviceTypeCPU    , "CPU"  },
+        { kDeviceTypeGPU    , "GPU"  },
+        { kDeviceTypeNPU    , "NPU"  },
+        { kDeviceTypeFPGA   , "FPGA" },
+        { kDeviceTypeASIC   , "ASIC" },
     };
     return kDeviceTypeNames;
 }
 
-const std::map<XPreemptLevel, std::string> &PreemptLevelNames() {
+static const std::map<XPreemptLevel, std::string> &PreemptLevelNames() {
     static const std::map<XPreemptLevel, std::string> kPreemptLevelNames {
-        { kPreemptLevelUnknown   , "Unknown"    },
+        { kPreemptLevelUnknown   , XSCHED_UNKNOWN_NAME },
         { kPreemptLevelBlock     , "Block"      },
         { kPreemptLevelDeactivate, "Deactivate" },
         { kPreemptLevelInterrupt , "Interrupt"  },
@@ -42,7 +43,7 @@ const std::map<XPreemptLevel, std::string> &PreemptLevelNames() {
 }
 
 #define SEARCH_NAME(map, key) \
-    static const std::string unk = "Unknown"; \
+    static const std::string unk = XSCHED_UNKNOWN_NAME; \
     auto it = map.find(key);                  \
     if (it != map.end()) return it->second;   \
     return unk;

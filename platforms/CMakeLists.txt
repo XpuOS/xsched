@@ -19,7 +19,7 @@ endfunction()
 
 # adds a shared hal library named hal${platform_name}
 function(add_hal_lib platform_name)
-    cmake_parse_arguments(HAL "" "" "COMPILE_OPTIONS" ${ARGN})
+    cmake_parse_arguments(HAL "" "" "COMPILE_OPTIONS;LINK_LIBRARIES" ${ARGN})
     string(TOUPPER "${platform_name}" PLATFORM_NAME)
     set(SOURCE_NAME HAL_${PLATFORM_NAME}_SRCS)
     set(TARGET_NAME hal${platform_name})
@@ -46,6 +46,7 @@ function(add_hal_lib platform_name)
         PRIVATE utils
         PRIVATE protocol
         PUBLIC  preempt
+        PRIVATE ${HAL_LINK_LIBRARIES}
     )
     set_target_properties(${TARGET_NAME} PROPERTIES
         INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/lib
@@ -62,7 +63,7 @@ endfunction()
 
 # adds a shared shim library named shim${platform_name}
 function(add_shim_lib platform_name)
-    cmake_parse_arguments(SHIM "" "" "COMPILE_OPTIONS;SOFTLINKS" ${ARGN})
+    cmake_parse_arguments(SHIM "" "" "COMPILE_OPTIONS;LINK_LIBRARIES;SOFTLINKS" ${ARGN})
     string(TOUPPER "${platform_name}" PLATFORM_NAME)
     set(SOURCE_NAME SHIM_${PLATFORM_NAME}_SRCS)
     set(TARGET_NAME shim${platform_name})
@@ -91,6 +92,7 @@ function(add_shim_lib platform_name)
         PRIVATE protocol
         PRIVATE ${HAL_TARGET_NAME}
         PUBLIC  preempt
+        PRIVATE ${SHIM_LINK_LIBRARIES}
     )
     target_link_options(${TARGET_NAME} PRIVATE
         -Wl,--exclude-libs,ALL

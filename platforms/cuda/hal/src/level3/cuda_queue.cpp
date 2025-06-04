@@ -1,39 +1,51 @@
 #include "xsched/utils/xassert.h"
-#include "xsched/cuda/hal/level2/op_stream.h"
 #include "xsched/cuda/hal/level3/cuda_queue.h"
 #include "xsched/cuda/hal/common/cuda_assert.h"
 
 using namespace xsched::cuda;
 using namespace xsched::preempt;
 
-CudaQueueL3::CudaQueueL3(CUstream stream): CudaQueueL2(stream)
-    , kOpStream(OpStreamManager::GetOpStream(context_))
+CudaLv3Implementation xsched::cuda::GetCudaLv3Implementation()
 {
-    trap_manager_ = TrapManager::GetTrapManager(context_);
+    static CudaLv3Implementation impl = []()->CudaLv3Implementation {
+        char *str = std::getenv(XSCHED_CUDA_LV3_IMPL_ENV_NAME);
+        if (str == nullptr) return kCudaLv3ImplementationTrap;
+        if (strcmp(str, "TSG") == 0) return kCudaLv3ImplementationTsg;
+        return kCudaLv3ImplementationTrap;
+    }();
+    return impl;
 }
 
-void CudaQueueL3::Interrupt()
+CudaQueueLv3Trap::CudaQueueLv3Trap(CUstream stream): CudaQueueLv2(stream)
+{
+    interrupt_context_ = InterruptContext::Instance(context_);
+}
+
+void CudaQueueLv3Trap::Interrupt()
 {
     XASSERT(level_ >= kPreemptLevelInterrupt, "Interrupt() not supported on level-%d", level_);
-    
+    // wait until the preempt flag is set
+    CUDA_ASSERT(Driver::StreamSynchronize(instrument_manager_->OpStream()));
     // FIXME: what if multiple threads call Interrupt()?
-    CUDA_ASSERT(Driver::StreamSynchronize(kOpStream));
-    trap_manager_->InterruptContext();
+    interrupt_context_->Interrupt();
 }
 
-void CudaQueueL3::Restore(const CommandLog &)
+void CudaQueueLv3Trap::Restore(const CommandLog &)
 {
     XASSERT(level_ >= kPreemptLevelInterrupt, "Restore() not supported on level-%d", level_);
 }
 
-void CudaQueueL3::OnPreemptLevelChange(XPreemptLevel level)
+void CudaQueueLv3Trap::OnPreemptLevelChange(XPreemptLevel level)
 {
     XASSERT(level <= kPreemptLevelInterrupt, "unsupported level: %d", level);
-    if (level == kPreemptLevelInterrupt) trap_manager_->SetTrapHandler();
+    if (level == kPreemptLevelInterrupt) {
+        instrument_manager_->NotifyTrapInstrumented();
+        interrupt_context_->InstrumentTrapHandler();
+    }
     level_ = level;
 }
 
-void CudaQueueL3::OnHwCommandSubmit(std::shared_ptr<preempt::HwCommand> cmd)
+void CudaQueueLv3Trap::OnHwCommandSubmit(std::shared_ptr<preempt::HwCommand> cmd)
 {
     if (level_ < kPreemptLevelDeactivate) return;
     auto kernel = std::dynamic_pointer_cast<CudaKernelCommand>(cmd);
@@ -43,10 +55,24 @@ void CudaQueueL3::OnHwCommandSubmit(std::shared_ptr<preempt::HwCommand> cmd)
     kernel->killable = true;
 }
 
-CUresult CudaQueueL3::DirectLaunch(std::shared_ptr<CudaKernelCommand> kernel, CUstream stream)
+CudaQueueLv3Tsg::CudaQueueLv3Tsg(CUstream stream): CudaQueueLv1(stream)
 {
-    CUcontext context;
-    CUDA_ASSERT(Driver::StreamGetCtx(stream, &context));
-    auto ctx = InstrumentContext::GetInstrumentContext(context);
-    return ctx->Launch(kernel, stream, kKernelLaunchDefault);
+    tsg_context_ = TsgContext::Instance(context_);
+}
+
+void CudaQueueLv3Tsg::Interrupt()
+{
+    XASSERT(level_ >= kPreemptLevelInterrupt, "Interrupt() not supported on level-%d", level_);
+    tsg_context_->Interrupt();
+}
+
+void CudaQueueLv3Tsg::Restore(const CommandLog &)
+{
+    XASSERT(level_ >= kPreemptLevelInterrupt, "Restore() not supported on level-%d", level_);
+}
+
+void CudaQueueLv3Tsg::OnPreemptLevelChange(XPreemptLevel level)
+{
+    XASSERT(level <= kPreemptLevelInterrupt, "unsupported level: %d", level);
+    level_ = level;
 }

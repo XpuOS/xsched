@@ -49,7 +49,7 @@ public:
     bool killable = false;
     CUdeviceptr preempt_buffer = 0;
     CUdeviceptr entry_point_original = 0;
-    CUdeviceptr entry_point_instrumented = 0;
+    CUdeviceptr entry_point_guardian = 0;
 
 protected:
     bool deep_copy_ = false;

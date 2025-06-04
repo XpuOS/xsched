@@ -7,18 +7,19 @@
 namespace xsched::cuda
 {
 
-class CudaQueueL2 : public CudaQueueL1
+class CudaQueueLv2 : public CudaQueueLv1
 {
 public:
-    CudaQueueL2(CUstream stream);
-    virtual ~CudaQueueL2() = default;
+    CudaQueueLv2(CUstream stream);
+    virtual ~CudaQueueLv2() = default;
 
     virtual void Launch(std::shared_ptr<preempt::HwCommand> hw_cmd) override;
     virtual void Deactivate() override;
     virtual void Reactivate(const preempt::CommandLog &log) override;
     virtual void OnPreemptLevelChange(XPreemptLevel level) override;
     virtual void OnHwCommandSubmit(std::shared_ptr<preempt::HwCommand> hw_cmd) override;
-    static CUresult DirectLaunch(std::shared_ptr<CudaKernelCommand> kernel, CUstream stream);
+    static CUresult DirectLaunch(std::shared_ptr<CudaKernelCommand> kernel,
+                                 CUcontext ctx, CUstream stream);
 
     virtual bool          SupportDynamicLevel()  override { return true; }
     virtual XPreemptLevel GetMaxSupportedLevel() override { return kPreemptLevelDeactivate; }

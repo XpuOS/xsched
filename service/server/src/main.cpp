@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
     int ret = system("rm -rf /dev/shm/__IPC_SHM*xsched*");
     if (ret != 0) XWARN("failed to remove shared memory garbage");
 
-    std::string policy_name = GetPolicyTypeName(kPolicyTypeHighestPriorityFirst);
+    std::string policy_name = GetPolicyTypeName(kPolicyHighestPriorityFirst);
     std::string port = std::to_string(XSCHED_SERVER_DEFAULT_PORT);
 
     if (argc == 1) {

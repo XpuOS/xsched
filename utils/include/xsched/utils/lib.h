@@ -18,6 +18,7 @@ inline std::string FindLibrary(const std::string &env_name,
         "/usr/local/lib" ARCH_STR "-linux-gnu",
         "/lib/",
         "/usr/lib/",
+        "/usr/lib64/",
         "/usr/local/lib",
     };
 

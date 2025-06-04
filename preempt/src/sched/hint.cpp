@@ -58,3 +58,9 @@ EXPORT_C_FUNC XResult XHintDeadline(XQueueHandle xq, Deadline ddl_us)
     SchedAgent::SendHint(std::make_shared<DeadlineHint>(xq, ddl_us));
     return kXSchedSuccess;
 }
+
+EXPORT_C_FUNC XResult XHintKDeadline(size_t k)
+{
+    SchedAgent::SendHint(std::make_shared<KDeadlineHint>(k));
+    return kXSchedSuccess;
+}

@@ -7,12 +7,11 @@ void *ContextEventPool::Create()
     CUcontext current_ctx;
     CUDA_ASSERT(Driver::CtxGetCurrent(&current_ctx));
     XASSERT(current_ctx == ctx_,
-            "CUDA context mismatch: using CUDA event pool of context (%p), "
-            "but current context is (%p)", ctx_, current_ctx);
+            "create cuda event failed: current context (%p) mismatch event pool context (%p)",
+            current_ctx, ctx_);
 
     CUevent event;
-    CUDA_ASSERT(Driver::EventCreate(&event,
-        CU_EVENT_BLOCKING_SYNC | CU_EVENT_DISABLE_TIMING));
+    CUDA_ASSERT(Driver::EventCreate(&event, CU_EVENT_BLOCKING_SYNC | CU_EVENT_DISABLE_TIMING));
     return event;
 }
 
@@ -38,8 +37,7 @@ void CudaEventPool::Push(CUcontext ctx, CUevent event)
 {
     mutex_.lock();
     auto it = pools_.find(ctx);
-    XASSERT(it != pools_.end(),
-            "CUDA event pool not found for context (%p)", ctx);
+    XASSERT(it != pools_.end(), "cuda event pool not found for context (%p)", ctx);
     it->second->Push(event);
     mutex_.unlock();
 }

@@ -15,23 +15,18 @@ namespace xsched::cuda
 class ResizableBuffer
 {
 public:
-    ResizableBuffer();
+    ResizableBuffer(CUdevice dev);
     virtual ~ResizableBuffer();
-
-    size_t      Size()   const { return size_; }
-    CUdeviceptr DevPtr() const { return dev_ptr_; }
-
-    void ExpandTo(size_t new_size);
+    void ExpandTo(size_t new_size, CUstream stream);
+    size_t     Size() const { return size_; }
+    CUdeviceptr Ptr() const { return ptr_; }
 
 private:
     size_t size_;
-    CUdeviceptr dev_ptr_;
-    CUstream op_stream_;
-
+    CUdeviceptr ptr_;
     size_t granularity_;
     CUmemAccessDesc rw_desc_;
     CUmemAllocationProp prop_;
-
     struct AllocationHandle
     {
         size_t size;
@@ -43,7 +38,7 @@ private:
 class InstrMemAllocator
 {
 public:
-    InstrMemAllocator();
+    InstrMemAllocator(CUcontext ctx, CUdevice dev);
     virtual ~InstrMemAllocator();
 
     /// @brief Allocate an instruction device memory block of input size.
@@ -52,15 +47,13 @@ public:
     CUdeviceptr Alloc(size_t size);
 
 private:
-    std::mutex mtx_;
     size_t used_size_ = 0;
-    size_t total_size_;
-    size_t granularity_;
+    std::list<CUdeviceptr> blocks_;
 
-    CUdevice device_;
-    CUcontext context_;
-    CUstream op_stream_;
-    CUdeviceptr block_base_;
+    std::mutex mtx_;
+    CUcontext ctx_;
+    size_t granularity_;
+    size_t block_size_;
 };
 
 } // namespace xsched::cuda

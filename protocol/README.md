@@ -24,7 +24,7 @@ Change default scheduler type of processes by setting `XSCHED_SCHEDULER` to type
 | ----- | ------------------- | ------------ | ---------------------------------------------------------------------------------------- |
 | LCL   | Local Scheduler     | ✅            | Process has its own scheduler, it only schedules xqueues created by itself.              |
 | GLB   | Global Scheduler    | ✅            | Process use global scheduler in XServer.                                                 |
-| AMG   | Application Managed | ❌            | There is no scheduler in process, application needs to use XQueue API to manage xqueues. |
+| APP   | Application Managed | ❌            | There is no scheduler in process, application needs to use XQueue API to manage xqueues. |
 
 ## Policy configuration
 
@@ -35,7 +35,7 @@ Change default scheduling policy in XServer by setting `XSCHED_POLICY` to policy
 | HPF   | Highest Priority First        |
 | UP    | Utilization Partition         |
 | PUP   | Process Utilization Partition |
-| EDF   | Earliest Deadline First       |
+| KEDF  | K-Earliest Deadline First     |
 | LAX   | Laxity-based                  |
 
 *(refering to [policies](../sched/README.md))*

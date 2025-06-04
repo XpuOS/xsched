@@ -1,60 +1,13 @@
-#include "xsched/utils/xassert.h"
-#include "xsched/cuda/hal/common/levels.h"
-#include "xsched/cuda/hal/level2/cuda_queue.h"
-#include "xsched/cuda/hal/level2/instrument.h"
-#include "xsched/cuda/hal/level3/trap.h"
+#include <cstring>
 
-SET_CUDA_QUEUE_LEVEL(2);
+#include "xsched/utils/xassert.h"
+#include "xsched/cuda/hal/arch/sm35.h"
+
 using namespace xsched::cuda;
 
-void TrapManager::InstrumentTrapHandler(void *,
-                                        CUdeviceptr ,
-                                        size_t ,
-                                        void *,
-                                        CUdeviceptr ,
-                                        size_t)
+void GuardianSM35::GetGuardianInstructions(const void **guardian_instr, size_t *size)
 {
-    XERRO("Level-3 not implemented for sm35");
-}
-
-void InstrumentContext::GetResumeInstructions(const void **instructions,
-                                              size_t *size)
-{
-    static const uint64_t resume_instructions[] =
-    {
-        0x08a0a0908c8cbcbc,
-        0x7ca0000c401ffc12,
-        0x7ca0000c421ffc16,
-        0x86400000129c0002,
-        0x86400000131c000e,
-        0x86400000139c001a,
-        0x51080c00071c0002,
-        0x51081800079c0002,
-        0x08b8bcb0fca0b0a0,
-        0xc0c00400029c0001,
-        0xa0041000021c0011,
-        0xa2101400021c0015,
-        0xc4800000001c1000,
-        0xdb581c007f9c001e,
-        0x180000000020003c,
-        0x8540dc00001c0002,
-        0x08000000bcbcbc10,
-        0xe4800000001c13fc,
-        0x7ca0000c441ffc02,
-        0x7ca0000c461ffc06,
-        0x10000000001c003c,
-        0x12007ffffc1c003c,
-        0x85800000001c3c02,
-        0x85800000001c3c02,
-    };
-    *instructions = resume_instructions;
-    *size = sizeof(resume_instructions);
-}
-
-void InstrumentContext::GetCheckInstructions(const void **instructions,
-                                             size_t *size)
-{
-    static const uint64_t check_preempt_instrunctions[] = 
+    static const uint64_t guardian_instructions[] = 
     {
         0x77000000001c0002,
         0x7ca0000c401ffc12,
@@ -113,6 +66,121 @@ void InstrumentContext::GetCheckInstructions(const void **instructions,
         0xe4c03c007f9c03fe,
         0x18000000001c003c,
     };
-    *instructions = check_preempt_instrunctions;
-    *size = sizeof(check_preempt_instrunctions);
+    *guardian_instr = guardian_instructions;
+    *size = sizeof(guardian_instructions);
 }
+
+void GuardianSM35::GetResumeInstructions(const void **resume_instr, size_t *size)
+{
+    static const uint64_t resume_instructions[] =
+    {
+        0x08a0a0908c8cbcbc,
+        0x7ca0000c401ffc12,
+        0x7ca0000c421ffc16,
+        0x86400000129c0002,
+        0x86400000131c000e,
+        0x86400000139c001a,
+        0x51080c00071c0002,
+        0x51081800079c0002,
+        0x08b8bcb0fca0b0a0,
+        0xc0c00400029c0001,
+        0xa0041000021c0011,
+        0xa2101400021c0015,
+        0xc4800000001c1000,
+        0xdb581c007f9c001e,
+        0x180000000020003c,
+        0x8540dc00001c0002,
+        0x08000000bcbcbc10,
+        0xe4800000001c13fc,
+        0x7ca0000c441ffc02,
+        0x7ca0000c461ffc06,
+        0x10000000001c003c,
+        0x12007ffffc1c003c,
+        0x85800000001c3c02,
+        0x85800000001c3c02,
+    };
+    *resume_instr = resume_instructions;
+    *size = sizeof(resume_instructions);
+}
+
+static const uint64_t trap_inject_instrs[] =
+{
+    0x000000fffffff389,
+    0x000fe200000e00ff,
+    0x0000000000ff7355,
+    0x000fe20000100000,
+    0x0000024000007945,
+    0x000fe40003800000,
+    0x00062000ff047b82,
+    0x000fc00000000800,
+    0x00062100ff057b82,
+    0x000fc00000000800,
+    0x00062400ff067b82,
+    0x000fc00000000800,
+    0x00062500ff077b82,
+    0x000fc00000000800,
+    0x00062600ff087b82,
+    0x000fc00000000800,
+    0x0000000000007919,
+    0x000e220000002500,
+    0x000000ff0800720c,
+    0x000fc60003f05235,
+    0x0000000000037919,
+    0x000e680000002600,
+    0x00000000000b7919,
+    0x000ea20000002350,
+    0x0000000000007992,
+    0x000fea0000002000,
+    0x00000000000079ab,
+    0x000fc00000000000,
+    0x00000000ff00798f,
+    0x000fca0002000000,
+    0x0000016000008947,
+    0x000fea0003800000,
+    0x0000000004087980,
+    0x000ee4000010e900,
+    0x000000ff0800720c,
+    0x008fd80003f05235,
+    0x0000013000008947,
+    0x000fea0003800000,
+    0x0000000804087980,
+    0x000ee2000010eb00,
+    0x0000040000007a24,
+    0x003fe200078e0203,
+    0x0000000000ff7355,
+    0x000fe20000100000,
+    0x000000c000007945,
+    0x000fe40003800000,
+    0x0000050000007a24,
+    0x004fca00078e020b,
+    0x00000004000b7811,
+    0x000fca00078e08ff,
+    0x000000040b0a7825,
+    0x000fe200078e0004,
+    0x000000ff0800720c,
+    0x008fc80003f05035,
+    0x000000ff0900720c,
+    0x000fd80003f05300,
+    0x0000004000008947,
+    0x000fea0003800000,
+    0x000000060800720c,
+    0x000fc80003f05035,
+    0x000000035900720c,
+    0x000fd80003f05300,
+    0x0000002000008947,
+    0x000fea0003800000,
+    0x000000000000794d,
+    0x000fea0003800000,
+    0x0000000804007385,
+    0x0001e4000010eb06,
+    0x0000000000007941,
+    0x000fea0003800000,
+    0x00000001ff037424,
+    0x000fd000078e00ff,
+    0x000000040a007385,
+    0x000fe2000010e903,
+    0x000000000000794d,
+    0x000fea0003800000,
+    0x0000000000007941,
+    0x000fea0003800000,
+};

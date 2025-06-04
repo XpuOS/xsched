@@ -5,28 +5,28 @@
 using namespace xsched::cuda;
 using namespace xsched::preempt;
 
-CudaQueueL2::CudaQueueL2(CUstream stream): CudaQueueL1(stream)
+CudaQueueLv2::CudaQueueLv2(CUstream stream): CudaQueueLv1(stream)
 {
-    instrument_manager_ = std::make_unique<InstrumentManager>(context_, stream);
+    instrument_manager_ = std::make_unique<InstrumentManager>(context_, cudevice_);
 }
 
-void CudaQueueL2::Launch(std::shared_ptr<HwCommand> hw_cmd)
+void CudaQueueLv2::Launch(std::shared_ptr<HwCommand> hw_cmd)
 {
     auto kernel = std::dynamic_pointer_cast<CudaKernelCommand>(hw_cmd);
-    if (kernel != nullptr) return instrument_manager_->Launch(kernel, level_);
+    if (kernel != nullptr) return instrument_manager_->Launch(kernel, kStream, level_);
     
     auto cuda_cmd = std::dynamic_pointer_cast<CudaCommand>(hw_cmd);
     XASSERT(cuda_cmd != nullptr, "hw_cmd is not a CudaCommand");
     CUDA_ASSERT(cuda_cmd->LaunchWrapper(kStream));
 }
 
-void CudaQueueL2::Deactivate()
+void CudaQueueLv2::Deactivate()
 {
     XASSERT(level_ >= kPreemptLevelDeactivate, "Deactivate() not supported on level-%d", level_);
     instrument_manager_->Deactivate();
 }
 
-void CudaQueueL2::Reactivate(const preempt::CommandLog &log)
+void CudaQueueLv2::Reactivate(const preempt::CommandLog &log)
 {
     XASSERT(level_ >= kPreemptLevelDeactivate, "Reactivate() not supported on level-%d", level_);
     this->Synchronize();
@@ -40,24 +40,22 @@ void CudaQueueL2::Reactivate(const preempt::CommandLog &log)
     }
 }
 
-void CudaQueueL2::OnPreemptLevelChange(XPreemptLevel level)
+void CudaQueueLv2::OnPreemptLevelChange(XPreemptLevel level)
 {
     XASSERT(level <= kPreemptLevelDeactivate, "unsupported level: %d", level);
     level_ = level;
 }
 
-void CudaQueueL2::OnHwCommandSubmit(std::shared_ptr<preempt::HwCommand> hw_cmd)
+void CudaQueueLv2::OnHwCommandSubmit(std::shared_ptr<preempt::HwCommand> hw_cmd)
 {
     if (level_ < kPreemptLevelDeactivate) return;
     auto kernel = std::dynamic_pointer_cast<CudaKernelCommand>(hw_cmd);
     if (kernel != nullptr) instrument_manager_->Instrument(kernel);
 }
 
-CUresult CudaQueueL2::DirectLaunch(std::shared_ptr<CudaKernelCommand> kernel,
-                                   CUstream stream)
+CUresult CudaQueueLv2::DirectLaunch(std::shared_ptr<CudaKernelCommand> kernel,
+                                    CUcontext ctx, CUstream stream)
 {
-    CUcontext context;
-    CUDA_ASSERT(Driver::StreamGetCtx(stream, &context));
-    auto ctx = InstrumentContext::GetInstrumentContext(context);
-    return ctx->Launch(kernel, stream, kKernelLaunchDefault);
+    auto instrument_ctx = InstrumentContext::Instance(ctx);
+    return instrument_ctx->Launch(kernel, stream, kKernelLaunchOriginal);
 }

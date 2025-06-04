@@ -23,7 +23,7 @@ void WaitBlockingXQueues()
     std::list<std::shared_ptr<XQueueWaitAllCommand>> wait_cmds;
     XResult res = XQueueManager::ForEach([&](std::shared_ptr<XQueue> xq)->XResult {
         auto hwq = xq->GetHwQueue();
-        auto cuda_q = std::dynamic_pointer_cast<CudaQueueL1>(hwq);
+        auto cuda_q = std::dynamic_pointer_cast<CudaQueueLv1>(hwq);
         if (cuda_q == nullptr) return kXSchedErrorUnknown;
         // does not need to wait a non-blocking stream
         if (cuda_q->GetStreamFlags() & CU_STREAM_NON_BLOCKING) return kXSchedSuccess;

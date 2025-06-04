@@ -1,7 +1,5 @@
 #pragma once
 
-#include <string>
-
 #include "xsched/types.h"
 
 namespace xsched::protocol

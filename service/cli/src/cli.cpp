@@ -159,10 +159,10 @@ int Cli::QueryPolicy()
     GetResponse(client_->Get("/policy"), response);
 
     PolicyType type = response.isMember("policy")
-                    ? (PolicyType)response["policy"].asInt() : kPolicyTypeUnknown;
+                    ? (PolicyType)response["policy"].asInt() : kPolicyUnknown;
     std::cout << "Current policy: \n  " << GetPolicyTypeName(type) << std::endl;
     std::cout << "Available policies: " << std::endl;
-    for (int i = kPolicyTypeUnknown + 1; i < kPolicyTypeMax; i++) {
+    for (int i = kPolicyUnknown + 1; i < kPolicyMax; i++) {
         std::cout << "  " << GetPolicyTypeName((PolicyType)i) << std::endl;
     }
     return 0;
@@ -171,7 +171,7 @@ int Cli::QueryPolicy()
 int Cli::SetPolicy(const std::string &policy_name)
 {
     PolicyType type = GetPolicyType(policy_name);
-    if (type == kPolicyTypeUnknown) {
+    if (type == kPolicyUnknown) {
         XERRO("invalid policy name: %s", policy_name.c_str());
     }
     

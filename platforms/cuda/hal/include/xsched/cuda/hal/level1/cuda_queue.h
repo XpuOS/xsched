@@ -9,11 +9,11 @@
 namespace xsched::cuda
 {
 
-class CudaQueueL1 : public preempt::HwQueue
+class CudaQueueLv1 : public preempt::HwQueue
 {
 public:
-    CudaQueueL1(CUstream stream);
-    virtual ~CudaQueueL1() = default;
+    CudaQueueLv1(CUstream stream);
+    virtual ~CudaQueueLv1() = default;
 
     virtual void Launch(std::shared_ptr<preempt::HwCommand> hw_cmd) override;
     virtual void Synchronize() override;
@@ -21,7 +21,7 @@ public:
     static CUresult DirectLaunch(std::shared_ptr<CudaKernelCommand> kernel, CUstream stream);
 
     unsigned int          GetStreamFlags()       const    { return stream_flags_; }
-    virtual XDevice       GetDevice()            override { return device_; }
+    virtual XDevice       GetDevice()            override { return xdevice_; }
     virtual HwQueueHandle GetHandle()            override { return GetHwQueueHandle(kStream); }
     virtual bool          SupportDynamicLevel()  override { return false; }
     virtual XPreemptLevel GetMaxSupportedLevel() override { return kPreemptLevelBlock; }
@@ -29,7 +29,8 @@ public:
 protected:
     const CUstream kStream;
     unsigned int   stream_flags_ = 0;
-    XDevice        device_;
+    CUdevice       cudevice_ = 0;
+    XDevice        xdevice_;
     CUcontext      context_ = nullptr;
     XPreemptLevel  level_ = kPreemptLevelUnknown;
 };

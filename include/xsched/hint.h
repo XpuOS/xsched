@@ -43,6 +43,12 @@ XResult XHintLaxity(XQueueHandle xq, Laxity lax_us, Priority lax_prio, Priority 
 /// @return kXSchedSuccess if successful, otherwise an error code.
 XResult XHintDeadline(XQueueHandle xq, Deadline ddl_us);
 
+/// @brief Set the concurrency (k) of the K-Earliest Deadline First (K-EDF) policy.
+/// k XQueues with the earliest deadline will be executed concurrently.
+/// @param k [in] Concurrency (k) to set.
+/// @return kXSchedSuccess if successful, otherwise an error code.
+XResult XHintKDeadline(size_t k);
+
 #ifdef __cplusplus
 }
 #endif
