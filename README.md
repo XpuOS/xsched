@@ -172,13 +172,13 @@ make vpi
 
 XSched is designed to be transparent to applications. By setting a few [environment variables](protocol/README.md), you can schedule your application with XSched.
 
-See our [example](examples/1_transparency/README.md) for transparent scheduling.
+See our [example](examples/1_transparent_sched/README.md) for transparent scheduling.
 
 ### Linking with XSched for Customized Scheduling
 
 You can also explicitly link with XSched and use XQueue APIs & Hint APIs in your application for more flexibility.
 
-See our [example](examples/2_link_xsched/README.md) for linking with XSched.
+See our examples: [give hints](examples/2_give_hints/README.md), [intra-process scheduling](examples/3_intra_process_sched/README.md), and [manual scheduling](examples/4_manual_sched/README.md) for more details.
 
 ## Architecture and Workflow
 
