@@ -12,8 +12,10 @@ This example shows how XSched can transparently schedule tasks.
 Make sure you have already built XSched with CUDA support.
 
 ```bash
-cd xsched # go to the root directory of XSched
-make cuda # by default, XSched will be installed to xsched/output
+# go to the root directory of XSched
+cd xsched
+# by default, XSched will be installed to xsched/output
+make cuda OUTPUT_PATH=<install_path>
 ```
 
 ## Build the Example
@@ -33,7 +35,7 @@ This example is a simple vector addition program, but running many times.
 
 You will see the output like this:
 
-```txt
+```
 Task 0 completed in 66 ms
 Task 1 completed in 66 ms
 Task 2 completed in 66 ms
@@ -53,7 +55,7 @@ Now, you can open a new terminal and run two apps simultaneously.
 
 You will see the output like this:
 
-```txt
+```
 # In the first terminal
 Task 0 completed in 114 ms
 Task 1 completed in 134 ms
@@ -62,7 +64,7 @@ Task 3 completed in 145 ms
 Task 4 completed in 132 ms
 ```
 
-```txt
+```
 # In the second terminal
 Task 13 completed in 78 ms
 Task 14 completed in 115 ms
@@ -79,10 +81,9 @@ The two apps have the same performance (double the time as the single app) as th
 Now, let's use XSched to prioritize one of the apps.
 
 First, we should start the XSched server (xserver). It is a daemon process for scheduling the GPU processes.
-
 ```bash
 # Open a new terminal
-cd xsched/output/bin/xserver HPF 50000
+<install_path>/bin/xserver HPF 50000
 # HPF: Highest Priority First
 # 50000: server listening port, which is used to connect with XCli, our command line tool for XSched
 ```
@@ -115,12 +116,12 @@ export XSCHED_AUTO_XQUEUE_THRESHOLD=16
 # >= 1 && <= threshold, recommended to be half of the threshold
 export XSCHED_AUTO_XQUEUE_BATCH_SIZE=8
 
-# intercept the CUDA calls using the shim library (libcuda.so -> libshimcuda.so)
-# for cuda, libshimcuda.so implements all the symbols in libcuda.so, and we set
-# LD_LIBRARY_PATH to the path of the XSched library to intercept the CUDA calls
-# for other platforms like opencl, we may use LD_PRELOAD to intercept the calls
-# replace <XSCHED_ROOT> with the path of the XSched root directory
-export LD_LIBRARY_PATH=<XSCHED_ROOT>/output/lib:$LD_LIBRARY_PATH
+# Intercept the CUDA calls using the shim library (libcuda.so -> libshimcuda.so).
+# For cuda, libshimcuda.so implements all the symbols in libcuda.so, and we set
+# LD_LIBRARY_PATH to the path of the XSched library to intercept the CUDA calls.
+# For other platforms like opencl, we may use LD_PRELOAD to intercept the calls.
+# Replace <install_path> with the path of the XSched installation directory.
+export LD_LIBRARY_PATH=<install_path>/lib:$LD_LIBRARY_PATH
 
 # run the app
 ./app
@@ -135,14 +136,14 @@ export XSCHED_AUTO_XQUEUE_PRIORITY=0
 export XSCHED_AUTO_XQUEUE_LEVEL=1
 export XSCHED_AUTO_XQUEUE_THRESHOLD=4
 export XSCHED_AUTO_XQUEUE_BATCH_SIZE=2
-# replace <XSCHED_ROOT> with the path of the XSched root directory
-export LD_LIBRARY_PATH=<XSCHED_ROOT>/output/lib:$LD_LIBRARY_PATH
+# replace <install_path> with the path of the XSched installation directory.
+export LD_LIBRARY_PATH=<install_path>/lib:$LD_LIBRARY_PATH
 ./app
 ```
 
 You will see the output like this:
 
-```txt
+```
 # In the first terminal
 Task 25 completed in 67 ms
 Task 26 completed in 67 ms
@@ -152,7 +153,7 @@ Task 29 completed in 69 ms
 Task 30 completed in 67 ms
 ```
 
-```txt
+```
 # In the second terminal
 Task 1 completed in 207 ms
 Task 2 completed in 195 ms
@@ -171,7 +172,7 @@ You can also use `xcli` to check the status of the XQueues and manage them.
 
 ```bash
 # Open a new terminal
-cd xsched/output/bin
+cd <install_path>/bin
 
 # show help
 ./xcli -h
