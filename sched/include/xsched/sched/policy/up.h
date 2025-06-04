@@ -14,7 +14,7 @@ namespace xsched::sched
 class UtilizationPartitionPolicy : public Policy
 {
 public:
-    UtilizationPartitionPolicy() : Policy(kPolicyTypeUtilizationPartition) {}
+    UtilizationPartitionPolicy() : Policy(kPolicyUtilizationPartition) {}
     virtual ~UtilizationPartitionPolicy() = default;
 
     virtual void Sched(const Status &status) override;

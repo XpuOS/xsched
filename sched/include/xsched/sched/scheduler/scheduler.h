@@ -14,10 +14,10 @@ typedef std::function<void(std::shared_ptr<const Operation>)> Executor;
 
 enum SchedulerType
 {
-    kSchedulerTypeUnknown       = 0,
-    kSchedulerTypeLocal         = 1,
-    kSchedulerTypeGlobal        = 2,
-    kSchedulerTypeAppManaged    = 3,
+    kSchedulerUnknown    = 0,
+    kSchedulerAppManaged = 1,
+    kSchedulerLocal      = 2,
+    kSchedulerGlobal     = 3,
 };
 
 class Scheduler

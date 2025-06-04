@@ -10,10 +10,10 @@
 namespace xsched::sched
 {
 
-PolicyType GetPolicyType(const std::string &name);
-const std::string &GetPolicyTypeName(PolicyType type);
-
 SchedulerType GetSchedulerType(const std::string &name);
 const std::string &GetSchedulerTypeName(SchedulerType type);
+
+PolicyType GetPolicyType(const std::string &name);
+const std::string &GetPolicyTypeName(PolicyType type);
 
 } // namespace xsched::sched

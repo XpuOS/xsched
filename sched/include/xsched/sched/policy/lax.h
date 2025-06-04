@@ -12,7 +12,7 @@ namespace xsched::sched
 class LaxityPolicy : public Policy
 {
 public:
-    LaxityPolicy(): Policy(kPolicyTypeLaxity) {}
+    LaxityPolicy(): Policy(kPolicyLaxity) {}
     virtual ~LaxityPolicy() = default;
 
     virtual void Sched(const Status &status) override;

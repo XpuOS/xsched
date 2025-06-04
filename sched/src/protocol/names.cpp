@@ -5,58 +5,59 @@
 namespace xsched::sched
 {
 
-const std::map<PolicyType, std::string> &PolicyTypeNames() {
-    static const std::map<PolicyType, std::string> kPolicyTypeNames {
-        { kPolicyTypeUnknown                    , "Unknown"              },
-        { kPolicyTypeHighestPriorityFirst       , XSCHED_POLICY_NAME_HPF },
-        { kPolicyTypeUtilizationPartition       , XSCHED_POLICY_NAME_UP  },
-        { kPolicyTypeProcessUtilizationPartition, XSCHED_POLICY_NAME_PUP },
-        { kPolicyTypeEarlyDeadlineFirst         , XSCHED_POLICY_NAME_EDF },
-        { kPolicyTypeLaxity                     , XSCHED_POLICY_NAME_LAX },
+static const std::map<SchedulerType, std::string> &SchedulerNames() {
+    static const std::map<SchedulerType, std::string> kSchedulerNames {
+        { kSchedulerUnknown   , XSCHED_UNKNOWN_NAME       },
+        { kSchedulerAppManaged, XSCHED_SCHEDULER_NAME_APP },
+        { kSchedulerLocal     , XSCHED_SCHEDULER_NAME_LCL },
+        { kSchedulerGlobal    , XSCHED_SCHEDULER_NAME_GLB },
+    };
+    return kSchedulerNames;
+}
+
+static const std::map<PolicyType, std::string> &PolicyNames() {
+    static const std::map<PolicyType, std::string> kPolicyNames {
+        { kPolicyUnknown                          , XSCHED_UNKNOWN_NAME     },
+        { kPolicyHighestPriorityFirst             , XSCHED_POLICY_NAME_HPF  },
+        { kPolicyHeterogeneousHighestPriorityFirst, XSCHED_POLICY_NAME_HHPF },
+        { kPolicyUtilizationPartition             , XSCHED_POLICY_NAME_UP   },
+        { kPolicyProcessUtilizationPartition      , XSCHED_POLICY_NAME_PUP  },
+        { kPolicyKEarliestDeadlineFirst           , XSCHED_POLICY_NAME_KEDF },
+        { kPolicyLaxity                           , XSCHED_POLICY_NAME_LAX  },
         // NEW_POLICY: New policy type names go here.
     };
-    return kPolicyTypeNames;
-}
-
-PolicyType GetPolicyType(const std::string &name)
-{
-    for (auto it = PolicyTypeNames().begin(); it != PolicyTypeNames().end(); ++it) {
-        if (it->second == name) return it->first;
-    }
-    return kPolicyTypeUnknown;
-}
-
-const std::string &GetPolicyTypeName(PolicyType type)
-{
-    static const std::string unk = "Unknown";
-    auto it = PolicyTypeNames().find(type);
-    if (it != PolicyTypeNames().end()) return it->second;
-    return unk;
-}
-
-const std::map<SchedulerType, std::string> &SchedulerTypeNames() {
-    static const std::map<SchedulerType, std::string> kSchedulerTypeNames {
-        { kSchedulerTypeUnknown     , "Unknown"                 },
-        { kSchedulerTypeLocal       , XSCHED_SCHEDULER_NAME_LCL },
-        { kSchedulerTypeGlobal      , XSCHED_SCHEDULER_NAME_GLB },
-        { kSchedulerTypeAppManaged  , XSCHED_SCHEDULER_NAME_AMG },
-    };
-    return kSchedulerTypeNames;
+    return kPolicyNames;
 }
 
 SchedulerType GetSchedulerType(const std::string &name)
 {
-    for (auto it = SchedulerTypeNames().begin(); it != SchedulerTypeNames().end(); ++it) {
-        if (it->second == name) return it->first;
+    for (auto type : SchedulerNames()) {
+        if (type.second == name) return type.first;
     }
-    return kSchedulerTypeUnknown;
+    return kSchedulerUnknown;
 }
 
 const std::string &GetSchedulerTypeName(SchedulerType type)
 {
-    static const std::string unk = "Unknown";
-    auto it = SchedulerTypeNames().find(type);
-    if (it != SchedulerTypeNames().end()) return it->second;
+    static const std::string unk = XSCHED_UNKNOWN_NAME;
+    auto it = SchedulerNames().find(type);
+    if (it != SchedulerNames().end()) return it->second;
+    return unk;
+}
+
+PolicyType GetPolicyType(const std::string &name)
+{
+    for (auto type : PolicyNames()) {
+        if (type.second == name) return type.first;
+    }
+    return kPolicyUnknown;
+}
+
+const std::string &GetPolicyTypeName(PolicyType type)
+{
+    static const std::string unk = XSCHED_UNKNOWN_NAME;
+    auto it = PolicyNames().find(type);
+    if (it != PolicyNames().end()) return it->second;
     return unk;
 }
 

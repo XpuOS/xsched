@@ -19,23 +19,23 @@ void Scheduler::Execute(std::shared_ptr<const Operation> operation)
 
 std::shared_ptr<Scheduler> xsched::sched::CreateScheduler()
 {
-    char *scheduler_name = std::getenv(XSCHED_SCHEDULER_ENV_NAME);
-    if (scheduler_name == nullptr) return std::make_shared<AppManagedScheduler>();
+    SchedulerType scheduler_type = kSchedulerUnknown;
+    PolicyType policy_type = kPolicyUnknown;
+    char *scheduler_str = std::getenv(XSCHED_SCHEDULER_ENV_NAME);
+    char *policy_str = std::getenv(XSCHED_POLICY_ENV_NAME);
+    if (scheduler_str) scheduler_type = GetSchedulerType(scheduler_str);
+    if (policy_str) policy_type = GetPolicyType(policy_str);
 
-    SchedulerType scheduler_type = GetSchedulerType(scheduler_name);
-    if (scheduler_type == kSchedulerTypeUnknown || scheduler_type == kSchedulerTypeAppManaged) {
-        return std::make_shared<AppManagedScheduler>();
-    }
-    if (scheduler_type == kSchedulerTypeGlobal) return std::make_shared<GlobalScheduler>();
-
-    char *policy_name = std::getenv(XSCHED_POLICY_ENV_NAME);
-    if (policy_name == nullptr) return std::make_shared<AppManagedScheduler>();
-
-    PolicyType policy_type = GetPolicyType(policy_name);
-    if (policy_type == kPolicyTypeUnknown) {
-        return std::make_shared<AppManagedScheduler>();
+    if (policy_type > kPolicyUnknown && policy_type < kPolicyMax) {
+        XINFO("using local scheduler with policy %s", policy_str);
+        return std::make_shared<LocalScheduler>(policy_type);
     }
 
-    XASSERT(policy_type > kPolicyTypeUnknown && policy_type < kPolicyTypeMax, "must be a customized policy");
-    return std::make_shared<LocalScheduler>(policy_type);
+    if (scheduler_type == kSchedulerGlobal) {
+        XINFO("using global scheduler");
+        return std::make_shared<GlobalScheduler>();
+    }
+
+    XINFO("using app-managed scheduler");
+    return std::make_shared<AppManagedScheduler>();
 }

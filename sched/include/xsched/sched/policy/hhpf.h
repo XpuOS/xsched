@@ -9,17 +9,18 @@
 namespace xsched::sched
 {
 
-class EarliestDeadlineFirstPolicy : public Policy
+class HeterogeneousHighestPriorityFirstPolicy : public Policy
 {
 public:
-    EarliestDeadlineFirstPolicy(): Policy(kPolicyTypeEarlyDeadlineFirst) {}
-    virtual ~EarliestDeadlineFirstPolicy() = default;
+    HeterogeneousHighestPriorityFirstPolicy(): Policy(kPolicyHeterogeneousHighestPriorityFirst) {}
+    virtual ~HeterogeneousHighestPriorityFirstPolicy() = default;
 
     virtual void Sched(const Status &status) override;
     virtual void RecvHint(std::shared_ptr<const Hint> hint) override;
 
 private:
-    std::unordered_map<XQueueHandle, Deadline> deadlines_;
+    Priority GetPriority(XQueueHandle handle);
+    std::unordered_map<XQueueHandle, Priority> priorities_;
 };
 
 } // namespace xsched::sched

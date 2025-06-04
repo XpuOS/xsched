@@ -19,7 +19,8 @@ enum HintType
     kHintTypeUtilization = 2,
     kHintTypeTimeslice   = 3,
     kHintTypeDeadline    = 4,
-    kHintTypeLaxity      = 5,
+    kHintTypeKDeadline   = 5,
+    kHintTypeLaxity      = 6,
     // NEW_POLICY: New HintTypes go here.
 
     kHintTypeMax,
@@ -167,6 +168,33 @@ private:
     };
     HintData data_;
 };
+
+class KDeadlineHint : public Hint
+{
+public:
+    KDeadlineHint(const void *data): data_(*(const HintData *)data) {}
+    KDeadlineHint(size_t k)
+        : data_{
+            .meta { .type = kHintTypeKDeadline },
+            .k = k
+        } {}
+    virtual ~KDeadlineHint() = default;
+
+    virtual const void *Data() const override { return &data_; }
+    virtual size_t      Size() const override { return sizeof(data_); }
+    virtual HintType    Type() const override { return kHintTypeKDeadline; }
+
+    size_t K() const { return data_.k; }
+
+private:
+    struct HintData
+    {
+        HintMeta meta;
+        size_t   k;
+    };
+    HintData data_;
+};
+
 
 class LaxityHint : public Hint
 {

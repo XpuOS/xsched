@@ -20,7 +20,7 @@
 
 ### Global Scheduler
 
-<img src="/docs/img/global-scheduler.png" alt="Global Scheduler Framework" width="600" />
+<img src="/docs/img/global-scheduler-comm.png" alt="XSched framework" width="600" />
 
 Actually, global scheduler only achieves two IPC channel. Its `Worker` thread just receive `Operation` by `rece_chan_` and call `Execute` bound when created (refering to `SetExecutor()` of `sched::Scheduler` in file [scheduler.h](../sched/include/xsched/sched/scheduler/scheduler.h)).
 
@@ -52,7 +52,7 @@ When policy in `sched::Scheduler` (LocalScheduler) generate scheduling operation
 | kHintTypePriority    | `HPF`       | Change priority of the xqueue               |
 | kHintTypeUtilization | `UP`, `PUP` | Change utilization of the xqueue or process |
 | kHintTypeTimeslice   | `UP`, `PUP` | Change time slice                           |
-| kHintTypeDeadline    | `EDF`       | Change deadline of the xqueue               |
+| kHintTypeDeadline    | `KEDF`      | Change deadline of the xqueue               |
 | kHintTypeLaxity      | `LAX`       | Change laxity of the xqueue.                |
 
 ## Policies
@@ -61,13 +61,13 @@ When policy in `sched::Scheduler` (LocalScheduler) generate scheduling operation
 
 Now we have implemented several policies, including:
 
-| Value | Full Name                     | Description                                     |
-| ----- | ----------------------------- | ----------------------------------------------- |
-| HPF   | Highest Priority First        | Firstly run the xqueue with highest priority    |
-| UP    | Utilization Partition         | Assign time slices with weights to each xqueue  |
-| PUP   | Process Utilization Partition | Assign time slices with weights to each process |
-| EDF   | Earliest Deadline First       | Firstly run the xqueue with earliest deadline   |
-| LAX   | Laxity-based                  | Firstly run the xqueue with highest laxity      |
+| Value | Full Name                     | Description                                      |
+| ----- | ----------------------------- | ------------------------------------------------ |
+| HPF   | Highest Priority First        | Firstly run the xqueue with highest priority     |
+| UP    | Utilization Partition         | Assign time slices with weights to each xqueue   |
+| PUP   | Process Utilization Partition | Assign time slices with weights to each process  |
+| KEDF  | K-Earliest Deadline First     | Firstly run the k xqueues with earliest deadline |
+| LAX   | Laxity-based                  | Firstly run the xqueue with highest laxity       |
 
 ## How to Implement Your Own Policy
 

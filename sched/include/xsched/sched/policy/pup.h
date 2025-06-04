@@ -24,7 +24,7 @@ struct RunEntry
 class ProcessUtilizationPartitionPolicy : public Policy
 {
 public:
-    ProcessUtilizationPartitionPolicy(): Policy(kPolicyTypeProcessUtilizationPartition)
+    ProcessUtilizationPartitionPolicy(): Policy(kPolicyProcessUtilizationPartition)
     { timeslice_end_ = std::chrono::system_clock::time_point::min(); }
     virtual ~ProcessUtilizationPartitionPolicy() = default;
 

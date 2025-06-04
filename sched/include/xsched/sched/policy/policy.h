@@ -18,15 +18,16 @@ typedef std::function<void (const XQueueHandle)> OperateFunc;
 // NEW_POLICY: A new PolicyType should be added here when creating a new policy.
 enum PolicyType
 {
-    kPolicyTypeUnknown                     = 0,
-    kPolicyTypeHighestPriorityFirst        = 1,
-    kPolicyTypeUtilizationPartition        = 2,
-    kPolicyTypeProcessUtilizationPartition = 3,
-    kPolicyTypeEarlyDeadlineFirst          = 4,
-    kPolicyTypeLaxity                      = 5,
+    kPolicyUnknown                           = 0,
+    kPolicyHighestPriorityFirst              = 1,
+    kPolicyHeterogeneousHighestPriorityFirst = 2,
+    kPolicyUtilizationPartition              = 3,
+    kPolicyProcessUtilizationPartition       = 4,
+    kPolicyKEarliestDeadlineFirst            = 5,
+    kPolicyLaxity                            = 6,
     // NEW_POLICY: New PolicyTypes go here.
 
-    kPolicyTypeMax,
+    kPolicyMax,
 };
 
 class Policy

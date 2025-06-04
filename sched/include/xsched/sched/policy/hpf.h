@@ -12,20 +12,14 @@ namespace xsched::sched
 class HighestPriorityFirstPolicy : public Policy
 {
 public:
-    HighestPriorityFirstPolicy();
+    HighestPriorityFirstPolicy(): Policy(kPolicyHighestPriorityFirst) {}
     virtual ~HighestPriorityFirstPolicy() = default;
 
     virtual void Sched(const Status &status) override;
     virtual void RecvHint(std::shared_ptr<const Hint> hint) override;
 
 private:
-    enum Mode
-    {
-        kModeDefault, // each device schedules independently
-        kModeCosched, // high priority task of XPU-a can preempt low priority task of XPU-b
-    };
-
-    Mode mode_;
+    Priority GetPriority(XQueueHandle handle);
     std::unordered_map<XQueueHandle, Priority> priorities_;
 };
 

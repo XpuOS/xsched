@@ -5,9 +5,10 @@
 #include "xsched/sched/protocol/names.h"
 #include "xsched/sched/policy/policy.h"
 #include "xsched/sched/policy/hpf.h"
+#include "xsched/sched/policy/hhpf.h"
 #include "xsched/sched/policy/up.h"
 #include "xsched/sched/policy/pup.h"
-#include "xsched/sched/policy/edf.h"
+#include "xsched/sched/policy/kedf.h"
 #include "xsched/sched/policy/lax.h"
 // NEW_POLICY: New policy headers go here.
 
@@ -36,15 +37,17 @@ std::unique_ptr<Policy> xsched::sched::CreatePolicy(PolicyType type)
     // NEW_POLICY: A new case handling new PolicyType should be added here
     // when creating a new policy.
     switch (type) {
-        case kPolicyTypeHighestPriorityFirst:
+        case kPolicyHighestPriorityFirst:
             return std::make_unique<HighestPriorityFirstPolicy>();
-        case kPolicyTypeUtilizationPartition:
+        case kPolicyHeterogeneousHighestPriorityFirst:
+            return std::make_unique<HeterogeneousHighestPriorityFirstPolicy>();
+        case kPolicyUtilizationPartition:
             return std::make_unique<UtilizationPartitionPolicy>();
-        case kPolicyTypeProcessUtilizationPartition:
+        case kPolicyProcessUtilizationPartition:
             return std::make_unique<ProcessUtilizationPartitionPolicy>();
-        case kPolicyTypeEarlyDeadlineFirst:
-            return std::make_unique<EarliestDeadlineFirstPolicy>();
-        case kPolicyTypeLaxity:
+        case kPolicyKEarliestDeadlineFirst:
+            return std::make_unique<KEarliestDeadlineFirstPolicy>();
+        case kPolicyLaxity:
             return std::make_unique<LaxityPolicy>();
         // NEW_POLICY: New PolicyTypes handling goes here.
         default:
