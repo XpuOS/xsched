@@ -1,3 +1,4 @@
+.cache
 .vscode
 .DS_Store
 
@@ -18,3 +19,4 @@ __pycache__
 *.blob
 *.engine
 *.cdf
+*.png
