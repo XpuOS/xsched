@@ -15,25 +15,10 @@ typedef std::chrono::system_clock::time_point TimePoint;
 typedef std::function<void (const TimePoint)> AddTimerFunc;
 typedef std::function<void (const XQueueHandle)> OperateFunc;
 
-// NEW_POLICY: A new PolicyType should be added here when creating a new policy.
-enum PolicyType
-{
-    kPolicyUnknown                           = 0,
-    kPolicyHighestPriorityFirst              = 1,
-    kPolicyHeterogeneousHighestPriorityFirst = 2,
-    kPolicyUtilizationPartition              = 3,
-    kPolicyProcessUtilizationPartition       = 4,
-    kPolicyKEarliestDeadlineFirst            = 5,
-    kPolicyLaxity                            = 6,
-    // NEW_POLICY: New PolicyTypes go here.
-
-    kPolicyMax,
-};
-
 class Policy
 {
 public:
-    Policy(PolicyType type): kType(type) {}
+    Policy(XPolicyType type): kType(type) {}
     virtual ~Policy() = default;
 
     void SetSuspendFunc(OperateFunc suspend) { suspend_func_ = suspend; }
@@ -43,7 +28,7 @@ public:
     virtual void Sched(const Status &status) = 0;
     virtual void RecvHint(std::shared_ptr<const Hint> hint) = 0;
 
-    const PolicyType kType;
+    const XPolicyType kType;
 
 protected:
     void Suspend(XQueueHandle xqueue);
@@ -56,6 +41,6 @@ private:
     AddTimerFunc add_timer_func_ = nullptr;
 };
 
-std::unique_ptr<Policy> CreatePolicy(PolicyType type);
+std::unique_ptr<Policy> CreatePolicy(XPolicyType type);
 
 } // namespace xsched::sched

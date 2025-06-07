@@ -16,4 +16,10 @@ const std::string &GetDeviceTypeName(XDeviceType type);
 XPreemptLevel GetPreemptLevel(const std::string &name);
 const std::string &GetPreemptLevelName(XPreemptLevel level);
 
+XSchedulerType GetSchedulerType(const std::string &name);
+const std::string &GetSchedulerTypeName(XSchedulerType type);
+
+XPolicyType GetPolicyType(const std::string &name);
+const std::string &GetPolicyTypeName(XPolicyType type);
+
 } // namespace xsched::protocol

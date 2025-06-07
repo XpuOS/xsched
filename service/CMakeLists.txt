@@ -1,3 +1,28 @@
+# common
+file(GLOB_RECURSE SERVICE_COMMON_SRCS
+    ${CMAKE_CURRENT_LIST_DIR}/common/src/*.cpp
+)
+add_library(service_common STATIC ${SERVICE_COMMON_SRCS})
+
+target_include_directories(service_common PUBLIC
+    ${XSCHED_INCLUDE_DIR}
+    ${CMAKE_CURRENT_LIST_DIR}/common/include
+)
+
+target_compile_options(service_common PRIVATE
+    -fPIC
+    -Wall
+    -Wextra
+    -Werror
+)
+
+target_link_libraries(service_common PUBLIC
+    jsoncpp_static
+    httplib
+    utils
+    sched
+)
+
 # xcli
 file(GLOB_RECURSE XCLI_SRCS
     ${CMAKE_CURRENT_LIST_DIR}/cli/src/*.c
@@ -18,14 +43,12 @@ target_compile_options(xcli PRIVATE
 )
 
 target_link_libraries(xcli PRIVATE
-    ipc
     CLI11
-    httplib
     tabulate
-    jsoncpp_static
     utils
     sched
     protocol
+    service_common
 )
 
 set_target_properties(xcli PROPERTIES
@@ -61,6 +84,7 @@ target_link_libraries(xserver PRIVATE
     utils
     sched
     protocol
+    service_common
 )
 
 set_target_properties(xserver PROPERTIES
@@ -69,3 +93,5 @@ set_target_properties(xserver PROPERTIES
     INSTALL_RPATH_USE_LINK_PATH TRUE
 )
 install(TARGETS xserver RUNTIME DESTINATION bin)
+
+add_subdirectory(tools)

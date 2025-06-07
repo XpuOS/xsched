@@ -1,6 +1,6 @@
 # Schedule by Manually Giving Hints to XSched
 
-## Get Started
+## Usage
 
 ```c
 #include "xsched/xsched.h"
@@ -47,7 +47,7 @@ XQueueDestroy(xq);
 HwQueueDestroy(hwq);
 ```
 
-## Link XSched
+## Build the App with XSched
 
 Make sure you have already built XSched with CUDA support.
 
@@ -57,6 +57,14 @@ cd xsched
 # by default, XSched will be installed to xsched/output
 make cuda OUTPUT_PATH=<install_path>
 ```
+
+For this example, just use the Makefile to build the app.
+
+```bash
+make
+```
+
+### Link XSched with Your Own App
 
 - Use CMake
 
@@ -81,7 +89,7 @@ target_link_libraries(<your_target> XSched::preempt XSched::halcuda)
 nvcc -o app_with_hints app_with_hints.cu -I<install_path>/include -L<install_path>/lib -lpreempt -lhalcuda
 ```
 
-## Run Apps with XSched
+## Run the App with XSched
 
 Step 1: Start the XSched server (xserver)
 
@@ -134,4 +142,4 @@ Task 25 completed in 185 ms
 
 The results are similar to example 1_transparent_sched.
 You can also use `xcli` to give hints to the xserver to adjust the priority of the XQueue.
-See [1_transparent_sched](../1_transparent_sched/README.md) for more details.
+See [1_transparent_sched](../1_transparent_sched/README.md#xcli) for more details.

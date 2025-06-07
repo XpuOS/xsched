@@ -42,6 +42,31 @@ static const std::map<XPreemptLevel, std::string> &PreemptLevelNames() {
     return kPreemptLevelNames;
 }
 
+static const std::map<XSchedulerType, std::string> &SchedulerNames() {
+    static const std::map<XSchedulerType, std::string> kSchedulerNames {
+        { kSchedulerUnknown   , XSCHED_UNKNOWN_NAME       },
+        { kSchedulerAppManaged, XSCHED_SCHEDULER_NAME_APP },
+        { kSchedulerLocal     , XSCHED_SCHEDULER_NAME_LCL },
+        { kSchedulerGlobal    , XSCHED_SCHEDULER_NAME_GLB },
+    };
+    return kSchedulerNames;
+}
+
+static const std::map<XPolicyType, std::string> &PolicyNames() {
+    static const std::map<XPolicyType, std::string> kPolicyNames {
+        { kPolicyUnknown                          , XSCHED_UNKNOWN_NAME     },
+        { kPolicyHighestPriorityFirst             , XSCHED_POLICY_NAME_HPF  },
+        { kPolicyHeterogeneousHighestPriorityFirst, XSCHED_POLICY_NAME_HHPF },
+        { kPolicyUtilizationPartition             , XSCHED_POLICY_NAME_UP   },
+        { kPolicyProcessUtilizationPartition      , XSCHED_POLICY_NAME_PUP  },
+        { kPolicyKEarliestDeadlineFirst           , XSCHED_POLICY_NAME_KEDF },
+        { kPolicyLaxity                           , XSCHED_POLICY_NAME_LAX  },
+        { kPolicyActiveWindowFirst                , XSCHED_POLICY_NAME_AWF  },
+        // NEW_POLICY: New policy type names go here.
+    };
+    return kPolicyNames;
+}
+
 #define SEARCH_NAME(map, key) \
     static const std::string unk = XSCHED_UNKNOWN_NAME; \
     auto it = map.find(key);                  \
@@ -82,6 +107,26 @@ XPreemptLevel GetPreemptLevel(const std::string &name)
 const std::string &GetPreemptLevelName(XPreemptLevel level)
 {
     SEARCH_NAME(PreemptLevelNames(), level);
+}
+
+XSchedulerType GetSchedulerType(const std::string &name)
+{
+    SEARCH_KEY(SchedulerNames(), name, kSchedulerUnknown);
+}
+
+const std::string &GetSchedulerTypeName(XSchedulerType type)
+{
+    SEARCH_NAME(SchedulerNames(), type);
+}
+
+XPolicyType GetPolicyType(const std::string &name)
+{
+    SEARCH_KEY(PolicyNames(), name, kPolicyUnknown);
+}
+
+const std::string &GetPolicyTypeName(XPolicyType type)
+{
+    SEARCH_NAME(PolicyNames(), type);
 }
 
 } // namespace xsched::protocol

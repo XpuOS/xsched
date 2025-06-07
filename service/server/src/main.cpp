@@ -5,10 +5,10 @@
 #include "xsched/utils/log.h"
 #include "xsched/utils/xassert.h"
 #include "xsched/protocol/def.h"
-#include "xsched/sched/protocol/names.h"
+#include "xsched/protocol/names.h"
 
-using namespace xsched::sched;
 using namespace xsched::service;
+using namespace xsched::protocol;
 
 static std::unique_ptr<Server> server = nullptr;
 

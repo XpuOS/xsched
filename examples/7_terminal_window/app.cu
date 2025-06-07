@@ -5,9 +5,6 @@
 #include <cstdlib>
 #include <cuda_runtime.h>
 
-#include "xsched/xsched.h"
-#include "xsched/cuda/hal.h"
-
 #define VECTOR_SIZE (1 << 25) // 32MB
 #define N 100    // Number of vector additions per task
 #define M 10000  // Number of tasks, (almost) never stops
@@ -17,8 +14,6 @@ float *h_A, *h_B, *h_C;
 float *d_A, *d_B, *d_C;
 
 cudaStream_t stream;
-HwQueueHandle hwq;
-XQueueHandle xq;
 
 __global__ void vector_add(const float* A, const float* B, float* C, int n)
 {
@@ -27,7 +22,7 @@ __global__ void vector_add(const float* A, const float* B, float* C, int n)
     C[i] = A[i] + B[i];
 }
 
-void prepare(int priority)
+void prepare()
 {
     size_t size = VECTOR_SIZE * sizeof(float);
 
@@ -52,13 +47,6 @@ void prepare(int priority)
     cudaMemcpy(d_B, h_B, size, cudaMemcpyHostToDevice);
 
     cudaStreamCreate(&stream);
-
-    // create XQueue through XSched API
-    CudaQueueCreate(&hwq, stream);
-    XQueueCreate(&xq, hwq, kPreemptLevelBlock, kQueueCreateFlagNone);
-    XQueueSetLaunchConfig(xq, 8, 4);
-    // give hints to set priority through XHint API, rather than environment variables
-    XHintPriority(xq, priority);
 }
 
 void run_task()
@@ -84,19 +72,13 @@ void cleanup()
     free(h_C);
 }
 
-int main(int argc, char *argv[])
+int main()
 {
-    if (argc != 2) {
-        printf("Usage: %s <priority>\n", argv[0]);
-        return 1;
-    }
-    int priority = atoi(argv[1]);
-
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_int_distribution<> dis(30, 50);
 
-    prepare(priority);
+    prepare();
 
     // Run tasks
     for (int i = 0; i < M; ++i) {

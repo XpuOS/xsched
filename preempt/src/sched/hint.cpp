@@ -9,6 +9,11 @@
 using namespace xsched::sched;
 using namespace xsched::preempt;
 
+EXPORT_C_FUNC XResult XHintSetScheduler(XSchedulerType scheduler, XPolicyType policy)
+{
+    return SchedAgent::SetScheduler(scheduler, policy);
+}
+
 EXPORT_C_FUNC XResult XHintPriority(XQueueHandle xq, Priority prio)
 {
     XResult res = XQueueManager::Exists(xq);

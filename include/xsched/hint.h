@@ -6,6 +6,12 @@
 extern "C" {
 #endif
 
+/// @brief Set the scheduler and policy.
+/// @param scheduler [in] Scheduler type to set.
+/// @param policy    [in] Policy type to set. Used only when scheduler is kSchedulerLocal.
+/// @return kXSchedSuccess if successful, otherwise an error code.
+XResult XHintSetScheduler(XSchedulerType scheduler, XPolicyType policy);
+
 /// @brief Set the priority of an XQueue.
 /// @param xq    [in] Handle to the XQueue.
 /// @param prio  [in] Priority to set, bigger value means higher priority.

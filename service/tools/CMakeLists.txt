@@ -1,0 +1,2 @@
+add_subdirectory(x11_monitor)
+add_subdirectory(x11_launcher)

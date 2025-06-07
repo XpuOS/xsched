@@ -1,7 +1,7 @@
 #pragma once
 
 #include <list>
-#include <queue>
+#include <deque>
 #include <mutex>
 #include <thread>
 #include <chrono>
@@ -19,15 +19,15 @@ namespace xsched::sched
 class LocalScheduler : public Scheduler
 {
 public:
-    LocalScheduler(PolicyType type);
+    LocalScheduler(XPolicyType type);
     virtual ~LocalScheduler();
 
     virtual void Run() override;
     virtual void Stop() override;
     virtual void RecvEvent(std::shared_ptr<const Event> event) override;
 
-    void SetPolicy(PolicyType type);
-    PolicyType GetPolicy() const { return policy_type_; }
+    void SetPolicy(XPolicyType type);
+    XPolicyType GetPolicy() const { return policy_type_; }
 
 private:
     void Worker();
@@ -40,7 +40,7 @@ private:
     void Resume(XQueueHandle handle);
     void AddTimer(const std::chrono::system_clock::time_point time_point);
 
-    PolicyType policy_type_;
+    XPolicyType policy_type_;
     std::unique_ptr<Policy> policy_ = nullptr;
     std::unique_ptr<std::thread> thread_ = nullptr;
 

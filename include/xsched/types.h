@@ -20,6 +20,7 @@ typedef enum {
     kXSchedErrorNotFound     = 3,
     kXSchedErrorNotAllowed   = 4,
     kXSchedErrorNotSupported = 5,
+    kXSchedErrorBadResponse  = 6,
     kXSchedErrorUnknown      = 999,
 } XResult;
 
@@ -86,6 +87,29 @@ typedef enum {
     kQueueResumeFlagDropCommands = 0x0001,
     kQueueResumeFlagMaskAll      = -1,
 } XQueueResumeFlag;
+
+typedef enum {
+    kSchedulerUnknown    = 0,
+    kSchedulerAppManaged = 1,
+    kSchedulerLocal      = 2,
+    kSchedulerGlobal     = 3,
+    kSchedulerMax,
+} XSchedulerType;
+
+// NEW_POLICY: A new XPolicyType should be added here when creating a new policy.
+typedef enum {
+    kPolicyUnknown                           = 0,
+    kPolicyHighestPriorityFirst              = 1,
+    kPolicyHeterogeneousHighestPriorityFirst = 2,
+    kPolicyUtilizationPartition              = 3,
+    kPolicyProcessUtilizationPartition       = 4,
+    kPolicyKEarliestDeadlineFirst            = 5,
+    kPolicyLaxity                            = 6,
+    kPolicyActiveWindowFirst                 = 7,
+    // NEW_POLICY: New XPolicyTypes go here.
+
+    kPolicyMax,
+} XPolicyType;
 
 typedef XResult (*LaunchCallback)(HwQueueHandle, void *);
 

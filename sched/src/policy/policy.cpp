@@ -1,8 +1,8 @@
 #include <cstdlib>
 
+#include "xsched/types.h"
 #include "xsched/utils/log.h"
 #include "xsched/utils/xassert.h"
-#include "xsched/sched/protocol/names.h"
 #include "xsched/sched/policy/policy.h"
 #include "xsched/sched/policy/hpf.h"
 #include "xsched/sched/policy/hhpf.h"
@@ -10,6 +10,7 @@
 #include "xsched/sched/policy/pup.h"
 #include "xsched/sched/policy/kedf.h"
 #include "xsched/sched/policy/lax.h"
+#include "xsched/sched/policy/awf.h"
 // NEW_POLICY: New policy headers go here.
 
 using namespace xsched::sched;
@@ -32,7 +33,7 @@ void Policy::AddTimer(const TimePoint time_point)
     XDEBG("add timer function not set");
 }
 
-std::unique_ptr<Policy> xsched::sched::CreatePolicy(PolicyType type)
+std::unique_ptr<Policy> xsched::sched::CreatePolicy(XPolicyType type)
 {
     // NEW_POLICY: A new case handling new PolicyType should be added here
     // when creating a new policy.
@@ -49,6 +50,8 @@ std::unique_ptr<Policy> xsched::sched::CreatePolicy(PolicyType type)
             return std::make_unique<KEarliestDeadlineFirstPolicy>();
         case kPolicyLaxity:
             return std::make_unique<LaxityPolicy>();
+        case kPolicyActiveWindowFirst:
+            return std::make_unique<ActiveWindowFirstPolicy>();
         // NEW_POLICY: New PolicyTypes handling goes here.
         default:
             XASSERT(false, "invalid policy type: %d", type);

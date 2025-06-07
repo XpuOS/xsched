@@ -1,12 +1,17 @@
-#pragma once
+#include <sstream>
 
-#include <json/json.h>
-#include "xsched/sched/protocol/status.h"
+#include "convert.h"
 
-namespace xsched::service
+using namespace xsched::sched;
+
+std::string xsched::service::ToHex(uint64_t x)
 {
+    std::stringstream ss;
+    ss << "0x" << std::hex << x;
+    return ss.str();
+}
 
-inline void XQueueStatusToJson(Json::Value &json, const sched::XQueueStatus &status)
+void xsched::service::XQueueStatusToJson(Json::Value &json, const XQueueStatus &status)
 {
     json["handle"]     = (Json::UInt64)status.handle;
     json["device"]     = (Json::UInt64)status.device;
@@ -18,7 +23,7 @@ inline void XQueueStatusToJson(Json::Value &json, const sched::XQueueStatus &sta
     json["suspended"]  = status.suspended;
 }
 
-inline void JsonToXQueueStatus(sched::XQueueStatus &status, const Json::Value &json)
+void xsched::service::JsonToXQueueStatus(XQueueStatus &status, const Json::Value &json)
 {
     status.handle     = json.isMember("handle")     ? (XQueueHandle) json["handle"]    .asUInt64() : 0;
     status.device     = json.isMember("device")     ? (XDevice)      json["device"]    .asUInt64() : 0;
@@ -29,6 +34,3 @@ inline void JsonToXQueueStatus(sched::XQueueStatus &status, const Json::Value &j
     status.ready      = json.isMember("ready")      ? json["ready"]    .asBool() : false;
     status.suspended  = json.isMember("suspended")  ? json["suspended"].asBool() : false;
 }
-
-} // namespace xsched::service
-

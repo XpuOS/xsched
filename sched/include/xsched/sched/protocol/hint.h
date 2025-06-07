@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <cstddef>
+#include <cstdint>
 
 #include "xsched/types.h"
 #include "xsched/utils/common.h"
@@ -14,13 +15,14 @@ namespace xsched::sched
 
 enum HintType
 {
-    kHintTypeUnknown     = 0,
-    kHintTypePriority    = 1,
-    kHintTypeUtilization = 2,
-    kHintTypeTimeslice   = 3,
-    kHintTypeDeadline    = 4,
-    kHintTypeKDeadline   = 5,
-    kHintTypeLaxity      = 6,
+    kHintTypeUnknown      = 0,
+    kHintTypePriority     = 1,
+    kHintTypeUtilization  = 2,
+    kHintTypeTimeslice    = 3,
+    kHintTypeDeadline     = 4,
+    kHintTypeKDeadline    = 5,
+    kHintTypeLaxity       = 6,
+    kHintTypeWindowActive = 7,
     // NEW_POLICY: New HintTypes go here.
 
     kHintTypeMax,
@@ -195,7 +197,6 @@ private:
     HintData data_;
 };
 
-
 class LaxityHint : public Hint
 {
 public:
@@ -227,6 +228,35 @@ private:
         Laxity       lax;
         Priority     lax_prio;
         Priority     crit_prio;
+    };
+    HintData data_;
+};
+
+class WindowActiveHint : public Hint
+{
+public:
+    WindowActiveHint(const void *data): data_(*(const HintData *)data) {}
+    WindowActiveHint(PID pid, uint64_t display)
+        : data_{
+            .meta { .type = kHintTypeWindowActive },
+            .pid = pid,
+            .display = display
+        } {}
+    virtual ~WindowActiveHint() = default;
+
+    virtual const void *Data() const override { return &data_; }
+    virtual size_t      Size() const override { return sizeof(data_); }
+    virtual HintType    Type() const override { return kHintTypeWindowActive; }
+
+    PID      Pid()     const { return data_.pid; }
+    uint64_t Display() const { return data_.display; }
+
+private:
+    struct HintData
+    {
+        HintMeta meta;
+        PID      pid;
+        uint64_t display;
     };
     HintData data_;
 };

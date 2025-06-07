@@ -32,6 +32,9 @@
 #define XSCHED_SERVER_CHANNEL_NAME   "xsched-server"
 #define XSCHED_CLIENT_CHANNEL_PREFIX "xsched-client-"
 
+#define XSCHED_X11_MONITOR_DEFAULT_PORT     50001
+#define XSCHED_WAYLAND_MONITOR_DEFAULT_PORT 50002
+
 #define XSCHED_UNKNOWN_NAME        "Unknown"
 
 // Set XSched scheduler type, default scheduler is APP.
@@ -50,4 +53,5 @@
 #define XSCHED_POLICY_NAME_PUP  "PUP"  // Process Utilization Partition
 #define XSCHED_POLICY_NAME_KEDF "KEDF" // K-Earliest Deadline First
 #define XSCHED_POLICY_NAME_LAX  "LAX"  // Laxity-based
+#define XSCHED_POLICY_NAME_AWF  "AWF"  // Active Window First
 // NEW_POLICY: New policy type names go here.

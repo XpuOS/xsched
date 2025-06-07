@@ -5,18 +5,19 @@
 #include "xsched/utils/log.h"
 #include "xsched/utils/xassert.h"
 #include "xsched/protocol/def.h"
-#include "xsched/sched/protocol/names.h"
+#include "xsched/protocol/names.h"
 #include "xsched/sched/protocol/operation.h"
 
 using namespace xsched::utils;
 using namespace xsched::sched;
 using namespace xsched::service;
+using namespace xsched::protocol;
 
 Server::Server(const std::string &policy_name, const std::string &port)
 {
     port_ = std::stoi(port);
 
-    PolicyType type = GetPolicyType(policy_name);
+    XPolicyType type = GetPolicyType(policy_name);
     if (type == kPolicyUnknown) XERRO("invalid policy name %s", policy_name.c_str());
     XASSERT(type > kPolicyUnknown && type < kPolicyMax, "server policy must be a customized policy");
 
@@ -359,7 +360,7 @@ void Server::PostXQueueConfig(const httplib::Request &req, httplib::Response &re
 
 void Server::GetSchedulerPolicy(const httplib::Request &, httplib::Response &res)
 {
-    PolicyType type = scheduler_->GetPolicy();
+    XPolicyType type = scheduler_->GetPolicy();
     Json::Value response(Json::objectValue);
     response["policy"] = (Json::Int)type;
     res.set_content(Json::writeString(json_writer_, response).c_str(), "application/json");
@@ -379,7 +380,7 @@ void Server::PostSchedulerPolicy(const httplib::Request &req, httplib::Response 
         return;
     }
 
-    PolicyType type = (PolicyType)std::stoi(type_str, &pos, 10);
+    XPolicyType type = (XPolicyType)std::stoi(type_str, &pos, 10);
     if (pos != type_str.length() || type <= kPolicyUnknown || type >= kPolicyMax) {
         res.status = httplib::StatusCode::BadRequest_400;
         return;
@@ -487,6 +488,26 @@ void Server::PostHint(const httplib::Request &, httplib::Response &res, const ht
         }
 
         SendHint(std::make_shared<TimesliceHint>(timeslice));
+        res.set_content("{\"info\": \"success\"}", "application/json");
+        return;
+    }
+    case kHintTypeWindowActive:
+    {
+        if (!request.isMember("pid")) {
+            res.status = httplib::StatusCode::BadRequest_400;
+            res.set_content("{\"error\": \"missing pid\"}", "application/json");
+            return;
+        }
+
+        if (!request.isMember("display")) {
+            res.status = httplib::StatusCode::BadRequest_400;
+            res.set_content("{\"error\": \"missing display\"}", "application/json");
+            return;
+        }
+
+        PID pid = (PID)request["pid"].asInt();
+        uint64_t display = request["display"].asUInt64();
+        SendHint(std::make_shared<WindowActiveHint>(pid, display));
         res.set_content("{\"info\": \"success\"}", "application/json");
         return;
     }

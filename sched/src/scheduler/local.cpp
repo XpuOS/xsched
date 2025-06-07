@@ -2,13 +2,14 @@
 #include <algorithm>
 
 #include "xsched/utils/xassert.h"
-#include "xsched/sched/protocol/names.h"
+#include "xsched/protocol/names.h"
 #include "xsched/sched/scheduler/local.h"
 
 using namespace std::chrono;
 using namespace xsched::sched;
+using namespace xsched::protocol;
 
-LocalScheduler::LocalScheduler(PolicyType type): Scheduler(kSchedulerLocal), policy_type_(type)
+LocalScheduler::LocalScheduler(XPolicyType type): Scheduler(kSchedulerLocal), policy_type_(type)
 {
     event_queue_ = std::make_unique<std::list<std::shared_ptr<const Event>>>();
     policy_ = CreatePolicy(type);
@@ -46,8 +47,9 @@ void LocalScheduler::RecvEvent(std::shared_ptr<const Event> event)
     event_cv_.notify_all();
 }
 
-void LocalScheduler::SetPolicy(PolicyType type)
+void LocalScheduler::SetPolicy(XPolicyType type)
 {
+    if (type == policy_type_) return;
     std::string old = GetPolicyTypeName(policy_type_);
     this->Stop();
     policy_type_ = type;
