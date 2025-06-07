@@ -1,4 +1,4 @@
-# Scheduling with Window Activity for GUI Applications
+# Scheduling with Window Activity for Terminal Applications
 
 This example shows how XSched can transparently schedule tasks based on the X11 window activity for terminal applications.
 We use the [X11 Monitor](../../service/tools/x11_monitor) and the "[Active Window First](../../sched/src/policy/awf.cpp)" policy mentioned in the [GUI window](../6_gui_window) example.
