@@ -1,0 +1,5 @@
+name: "bert-high"
+platform: "tensorrt_plan"
+optimization {
+  priority: PRIORITY_MAX
+}

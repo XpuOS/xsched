@@ -9,7 +9,7 @@ CONTAINER_SUPPORT	= OFF
 BUILD_TEST			= OFF
 
 PLATFORM			= NONE
-WORK_PATH			= $(shell pwd)
+WORK_PATH			= $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 TEST_PATH			= ${WORK_PATH}/test
 BUILD_PATH			= ${WORK_PATH}/build
 OUTPUT_PATH			= ${WORK_PATH}/output

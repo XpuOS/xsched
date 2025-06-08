@@ -53,7 +53,7 @@ function(add_hal_lib platform_name)
         BUILD_WITH_INSTALL_RPATH TRUE
         INSTALL_RPATH_USE_LINK_PATH TRUE
     )
-    install(TARGETS ${TARGET_NAME} LIBRARY DESTINATION lib)
+    install(TARGETS ${TARGET_NAME} EXPORT XSchedTargets LIBRARY DESTINATION lib)
     # find hal.h
     file(GLOB_RECURSE HAL_HEADERS ${CMAKE_CURRENT_LIST_DIR}/hal/include/xsched/*/hal.h)
     foreach(HAL_HEADER ${HAL_HEADERS})
@@ -76,8 +76,9 @@ function(add_shim_lib platform_name)
     add_library(${TARGET_NAME} SHARED ${${SOURCE_NAME}})
     add_library(XSched::${TARGET_NAME} ALIAS ${TARGET_NAME})
     target_include_directories(${TARGET_NAME} PUBLIC
-        ${XSCHED_INCLUDE_DIR}
-        ${CMAKE_CURRENT_LIST_DIR}/shim/include
+        $<BUILD_INTERFACE:${XSCHED_INCLUDE_DIR}>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/shim/include>
+        $<INSTALL_INTERFACE:include>
     )
     target_compile_options(${TARGET_NAME} PRIVATE
         -fPIC
@@ -102,7 +103,7 @@ function(add_shim_lib platform_name)
         BUILD_WITH_INSTALL_RPATH TRUE
         INSTALL_RPATH_USE_LINK_PATH TRUE
     )
-    install(TARGETS ${TARGET_NAME} LIBRARY DESTINATION lib)
+    install(TARGETS ${TARGET_NAME} EXPORT XSchedTargets LIBRARY DESTINATION lib)
 
     # check create softlink option and the softlink list is not empty
     if(SHIM_SOFTLINK AND SHIM_SOFTLINKS)

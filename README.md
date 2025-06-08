@@ -225,3 +225,5 @@ If you use XSched for your research, please cite our [paper](docs/xsched-osdi25.
   month = jul
 }
 ```
+
+The artifacts of XSched is published on [Github](https://github.com/XpuOS/xsched-artifacts) and [Zenodo](https://doi.org/10.5281/zenodo.15327992).

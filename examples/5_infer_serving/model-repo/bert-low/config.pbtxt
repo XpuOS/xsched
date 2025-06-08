@@ -1,0 +1,5 @@
+name: "bert-low"
+platform: "tensorrt_plan"
+optimization {
+  priority: PRIORITY_MIN
+}
