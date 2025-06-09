@@ -1,15 +1,19 @@
-# XSched
+# XSched: Preemptive Scheduling for Diverse XPUs
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue)](https://github.com/XpuOS/xsched/blob/main/LICENSE)
 
-XSched is a preemptive scheduling framework for XPUs. It provides unified interfaces for scheduling XPU tasks through a preemptible command queue abstraction (XQueue), and proposes a multi-level hardware model that enables mature, advanced XPUs to achieve optimal scheduling performance.
+XSched is a preemptive scheduling framework for XPUs. It provides unified interfaces for scheduling XPU tasks through a preemptible command queue abstraction (XQueue), and proposes a multi-level hardware model that enables advanced XPUs to achieve optimal scheduling performance while maintaining compatibility with emerging XPUs.
 
 ## Features
 
-- **Transparency:** Don't require any code changes to existing applications.
-- **Flexibility:** Support multiple scheduling policies and XPUs.
-- **Extensibility:** Easy to adapt new scheduling policies and XPUs.
-- **Performance:** Achieve high performance with low overhead.
+- **Transparency:** Supports existing applications without code change.
+- **Flexibility:** Supports multiple scheduling policies and XPUs.
+- **Extensibility:** Accommodates new scheduling policies and XPUs easily.
+- **Performance:** Delivers high performance (microsecond-scale preemption) with low overhead (< 3%).
+
+## Demos
+
+*comming soon...*
 
 ## XPU Support Matrix
 
@@ -128,77 +132,71 @@ XSched is a preemptive scheduling framework for XPUs. It provides unified interf
   </tr>
 </table>
 
-## Demo
-
-*comming soon...*
-
 ## Get Started
 
 ### Build and Install XSched
 
-#### 1. Clone the repository
+#### Clone
 
 ```bash
 git clone https://github.com/XpuOS/xsched.git
 cd xsched
-```
-
-#### 2. Install dependencies
-
-```bash
 git submodule update --init --recursive
 ```
 
-#### 3. Build XSched by need
+#### Build and Install
 
 ```bash
-# Build for CUDA
-make cuda
-# Build for HIP
-make hip
-# Build for LevelZero
-make levelzero
-# Build for OpenCL
-make opencl
-# Build for AscendCL
-make ascend
-# Build for cuDLA
-make cudla
-# Build for VPI
-make vpi
+# build XSched only
+# XSched will be installed to xsched/output by default
+make
+# install XSched to a custom path
+make INSTALL_PATH=/path/to/install
+
+# build XSched along with platform-specific components (HAL, Shim, etc.)
+make cuda # or hip, levelzero, opencl, ascend, cudla, vpi
 ```
 
-### Transparently Schedule Applications
+### Core Interfaces
+
+Description coming soon...
+
+### Use cases
+
+#### Transparently Schedule Applications
 
 XSched is designed to be transparent to applications. By setting a few [environment variables](protocol/README.md), you can schedule your application with XSched.
-
 See our [example](examples/1_transparent_sched/README.md) for transparent scheduling.
 
-### Linking with XSched for Customized Scheduling
+#### Linking with XSched for Customized Scheduling
 
 You can also explicitly link with XSched and use XQueue APIs & Hint APIs in your application for more flexibility.
-
 See our examples: [give hints](examples/2_give_hints/README.md), [intra-process scheduling](examples/3_intra_process_sched/README.md), and [manual scheduling](examples/4_manual_sched/README.md) for more details.
+
+#### More Examples
+
+Check out our [example list](examples/README.md) for more advanced use cases.
 
 ## Architecture and Workflow
 
 <img src="/docs/img/xsched-framework.png" alt="XSched framework" width="600" />
 
-1. The XShim library changes the workflow by intercepting XPU driver API calls and redirecting commands to the XQueue.
-2. Commands submitted to the XQueue are buffered and launched to the XPU at a proper time.
-3. The XPreempt library contains an agent that watches the state of XQueue (e.g., ready or idle) and generates scheduling events to notify the scheduler via IPC.
-4. The XSched daemon enforces the decisions of the policy by sending scheduling operations.
-5. The agent applies the scheduling operations (e.g., suspend or resume an XQueue) received from the scheduler.
-6. XCLI is provided to users to change the policy and give scheduling hints like priorities.
+XSched consists of four key components: XPU shim (XShim), XPU task preemption module (XPreempt, named as [`preempt`](preempt) in the code), XPU hardware adapter layer (XAL, named as `hal` in the code), and an [XScheduler](service/server). XShim, XPreempt, and XAL are three dynamically linked libraries that are preloaded into the application process, while XScheduler runs as a centric system service daemon.
 
-## TODOs
+- **XShim:** named as `shim` in the code, intercepts XPU driver API calls and redirects commands to the XQueue ①, allowing applications to run on XSched without modifications (transparency).
+- **[XPreempt](preempt):** named as `preempt` in the code, implements XQueue interfaces based on the multi-level hardware model ②. Contains an [agent](preempt/src/sched/agent.cpp) that watches the state of XQueue (e.g., ready or idle) and generates scheduling events to notify the XScheduler via IPC ③. Also responsible for applying the scheduling operations (e.g., suspend or resume an XQueue) received from the XScheduler ⑤.
+- **XAL:** named as `hal` in the code, implements the multi-level hardware model interfaces by calling XPU driver APIs.
+- **[XScheduler](service/server):** named as `xserver` in the code, coordinates all XQueues from different processes, monitors global XQueue status through agent-reported events ③, and invokes the scheduling policy to make decisions when status changes. Decisions are enforced by sending scheduling operations to agents ④. The policy is modular and customizable to suit various workloads.
+- **[XCLI](service/cli):** a command-line tool that can monitor XQueue status, change the policy, or give scheduling hints (e.g., priority) ⑥.
+
+## Development Plan
 
 We will continue to support XSched on more OSes and platforms, and improve the performance of XSched. Please stay tuned!
 
 - [ ] Replace cpp-ipc to fix stability issue
-- [ ] Install as system daemon
-- [ ] Support MacOS
 - [ ] Support Windows
+- [ ] Support MacOS
+- [ ] Install as system daemon
 
 ## Contributing
 
