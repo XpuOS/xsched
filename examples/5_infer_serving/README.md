@@ -15,6 +15,13 @@ Steps:
   - [Build Triton Server with XSched \& Run Triton Client (XSched)](#build-triton-server-with-xsched--run-triton-client-xsched)
   - [Plot the results](#plot-the-results)
 
+## Basic Idea
+
+Triton Server allows users to set the priority of each serving model, see [config.pbtxt](model-repo/bert-high/config.pbtxt) for example.
+With only 10 lines of code change, we modify the TensorRT-Backend to create an XQueue for each CUDA stream and inherit the priority of the model using the stream.
+Then, we use local scheduler and highest priority first policy to schedule these XQueues, similar to the [Intra-Process Scheduling Example](../3_intra_process_sched/README.md).
+With XSched, the inference tasks of the model using the higher-priority XQueues can preempt the lower-priority ones (Triton does not support task preemption currently), so that their latencies can be significantly reduced.
+
 ## Download the BERT model from NGC
 
 ```bash
