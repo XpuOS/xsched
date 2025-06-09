@@ -16,7 +16,7 @@ sudo apt install libx11-dev
 cd xsched
 # by default, XSched will be installed to xsched/output
 # if X11 development package is installed, XSched will automatically build the X11 Monitor and X11 Launcher
-make cuda OUTPUT_PATH=<install_path>
+make cuda INSTALL_PATH=<install_path>
 ```
 
 ## Build the Example

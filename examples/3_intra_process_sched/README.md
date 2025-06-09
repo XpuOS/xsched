@@ -42,7 +42,7 @@ kernel<<<grid, block, 0, stream_2>>>(...);
 # go to the root directory of XSched and build XSched with CUDA support
 cd xsched
 # by default, XSched will be installed to xsched/output
-make cuda OUTPUT_PATH=<install_path>
+make cuda INSTALL_PATH=<install_path>
 
 # build the app
 cd examples/3_intra_process_sched

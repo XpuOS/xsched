@@ -12,12 +12,12 @@ PLATFORM			= NONE
 WORK_PATH			= $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 TEST_PATH			= ${WORK_PATH}/test
 BUILD_PATH			= ${WORK_PATH}/build
-OUTPUT_PATH			= ${WORK_PATH}/output
-LIB_PATH			= ${OUTPUT_PATH}/lib
+INSTALL_PATH		= ${WORK_PATH}/output
+LIB_PATH			= ${INSTALL_PATH}/lib
 
 .PHONY: build
 build: ${BUILD_PATH}/CMakeCache.txt
-	rm -rf ${OUTPUT_PATH}; \
+	rm -rf ${INSTALL_PATH}; \
 	cmake --build ${BUILD_PATH} --target install -- -j$(shell nproc)
 
 ${BUILD_PATH}/CMakeCache.txt:
@@ -26,9 +26,9 @@ ${BUILD_PATH}/CMakeCache.txt:
 .PHONY: configure
 configure:
 	cmake -B${BUILD_PATH}	\
-		  -DCMAKE_INSTALL_PREFIX=${OUTPUT_PATH}		\
 		  -DCMAKE_BUILD_TYPE=${BUILD_TYPE}			\
 		  -DCMAKE_VERBOSE_MAKEFILE=${VERBOSE}		\
+		  -DCMAKE_INSTALL_PREFIX=$(abspath $(INSTALL_PATH))	\
 		  -DPLATFORM_$(shell echo ${PLATFORM} | tr '[:lower:]' '[:upper:]')=ON \
 		  -DSHIM_SOFTLINK=${SHIM_SOFTLINK}			\
 		  -DCONTAINER_SUPPORT=${CONTAINER_SUPPORT}	\
@@ -36,7 +36,7 @@ configure:
 
 .PHONY: clean
 clean:
-	@rm -rf ${BUILD_PATH} ${OUTPUT_PATH}
+	@rm -rf ${BUILD_PATH} ${INSTALL_PATH}
 
 .PHONY: ascend
 ascend:

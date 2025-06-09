@@ -45,7 +45,7 @@ XQueueResume(xq);
 # go to the root directory of XSched and build XSched with CUDA support
 cd xsched
 # by default, XSched will be installed to xsched/output
-make cuda OUTPUT_PATH=<install_path>
+make cuda INSTALL_PATH=<install_path>
 
 # build the app
 cd examples/4_manual_sched

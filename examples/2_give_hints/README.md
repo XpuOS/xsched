@@ -55,7 +55,7 @@ Make sure you have already built XSched with CUDA support.
 # go to the root directory of XSched
 cd xsched
 # by default, XSched will be installed to xsched/output
-make cuda OUTPUT_PATH=<install_path>
+make cuda INSTALL_PATH=<install_path>
 ```
 
 For this example, just use the Makefile to build the app.
