@@ -181,7 +181,7 @@ Check out our [example list](examples/README.md) for more advanced use cases.
 
 <img src="/docs/img/xsched-framework.png" alt="XSched framework" width="600" />
 
-XSched consists of four key components: XPU shim (XShim), XPU task preemption module (XPreempt, named as [`preempt`](preempt) in the code), XPU hardware adapter layer (XAL, named as `hal` in the code), and an [XScheduler](service/server). XShim, XPreempt, and XAL are three dynamically linked libraries that are preloaded into the application process, while XScheduler runs as a centric system service daemon.
+XSched consists of four key components: XPU shim (XShim), XPU task preemption module (XPreempt), XPU hardware adapter layer (XAL), and an XScheduler. XShim, XPreempt, and XAL are three dynamically linked libraries that are preloaded into each XPU application process, while XScheduler runs as a centric system service daemon.
 
 - **XShim:** named as `shim` in the code, intercepts XPU driver API calls and redirects commands to the XQueue ①, allowing applications to run on XSched without modifications (transparency).
 - **[XPreempt](preempt):** named as `preempt` in the code, implements XQueue interfaces based on the multi-level hardware model ②. Contains an [agent](preempt/src/sched/agent.cpp) that watches the state of XQueue (e.g., ready or idle) and generates scheduling events to notify the XScheduler via IPC ③. Also responsible for applying the scheduling operations (e.g., suspend or resume an XQueue) received from the XScheduler ⑤.
