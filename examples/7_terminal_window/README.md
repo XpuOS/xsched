@@ -76,8 +76,8 @@ export LD_LIBRARY_PATH=<install_path>/lib:$LD_LIBRARY_PATH
 <install_path>/bin/x11_launcher ./app
 ```
 
-# Demo
+## Demo
 
-https://github.com/user-attachments/assets/a0a23e9d-435e-40ad-a86b-5662f21d563b
+[Demo](https://github.com/user-attachments/assets/a0a23e9d-435e-40ad-a86b-5662f21d563b)
 
 By clicking the terminal windows of the two apps, the window focus will be changed, and you will see that the latencies of the tasks in the active (or focused) window will be lower than the other (background) window.
