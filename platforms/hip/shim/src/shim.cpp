@@ -112,7 +112,7 @@ void XRegisterFunction(void** modules, const void* hostFunction, char* deviceFun
 
 hipError_t XMalloc(void **ptr, size_t size)
 {
-    XCtxSynchronize(); // sync before malloc
+    HIP_ASSERT(XCtxSynchronize()); // sync before malloc
     auto res = Driver::Malloc(ptr, size);
     XDEBG("XMalloc %zu bytes at %p, ret: %d", size, ptr ? *ptr : nullptr, res);
     return res;
@@ -120,7 +120,7 @@ hipError_t XMalloc(void **ptr, size_t size)
 
 hipError_t XFree(void *ptr)
 {
-    XCtxSynchronize(); // sync before free
+    HIP_ASSERT(XCtxSynchronize()); // sync before free
     auto res = Driver::Free(ptr);
     XDEBG("XFree %p, ret: %d", ptr, res);
     return res;
@@ -129,7 +129,7 @@ hipError_t XFree(void *ptr)
 hipError_t XMemcpyAsync(void *dst, const void *src, size_t sizeBytes, hipMemcpyKind kind, hipStream_t stream)
 {
     XDEBG("XMemcpyAsync %p -> %p, size: %zu, kind: %d, stream: %p", dst, src, sizeBytes, kind, stream);
-    XStreamSynchronize(stream); // See also hipMemcpyWithStream
+    HIP_ASSERT(XStreamSynchronize(stream)); // See also hipMemcpyWithStream
     return Driver::MemcpyAsync(dst, src, sizeBytes, kind, stream);
 }
 
@@ -145,7 +145,7 @@ hipError_t XMemcpyWithStream(void *dst, const void *src, size_t sizeBytes, hipMe
     // So we manually synchronize the stream here.
     //
     // TODO: we can also check if the memory is pinned, and if so, bypass this synchronization.
-    XStreamSynchronize(stream);
+    HIP_ASSERT(XStreamSynchronize(stream));
     return Driver::MemcpyWithStream(dst, src, sizeBytes, kind, stream);
 }
 

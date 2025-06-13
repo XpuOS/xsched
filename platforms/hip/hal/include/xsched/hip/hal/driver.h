@@ -55,7 +55,7 @@ public:
     DEFINE_STATIC_ADDRESS_CALL(GetSymbol("hipDeviceSetMemPool"), hipError_t, DeviceSetMemPool, int, device, hipMemPool_t, mem_pool);
     DEFINE_STATIC_ADDRESS_CALL(GetSymbol("hipDeviceGetMemPool"), hipError_t, DeviceGetMemPool, hipMemPool_t *, mem_pool, int, device);
     // DEFINE_STATIC_ADDRESS_CALL(GetSymbol("hipGetDevicePropertiesR0600"), hipError_t, GetDevicePropertiesR0600, hipDeviceProp_tR0600 *, prop, int, deviceId);
-    DEFINE_STATIC_ADDRESS_CALL(GetSymbol("hipGetDeviceProperties"), hipError_t, GetDeviceProperties, hipDeviceProp_tR0600 *, prop, int, deviceId);
+    DEFINE_STATIC_ADDRESS_CALL(GetSymbol("hipGetDevicePropertiesR0600"), hipError_t, GetDeviceProperties, hipDeviceProp_tR0600 *, prop, int, deviceId);
     DEFINE_STATIC_ADDRESS_CALL(GetSymbol("hipDeviceSetCacheConfig"), hipError_t, DeviceSetCacheConfig, hipFuncCache_t, cacheConfig);
     DEFINE_STATIC_ADDRESS_CALL(GetSymbol("hipDeviceGetCacheConfig"), hipError_t, DeviceGetCacheConfig, hipFuncCache_t *, cacheConfig);
     DEFINE_STATIC_ADDRESS_CALL(GetSymbol("hipDeviceGetLimit"), hipError_t, DeviceGetLimit, size_t *, pValue, enum hipLimit_t, limit);
