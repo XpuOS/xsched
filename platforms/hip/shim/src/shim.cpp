@@ -112,7 +112,7 @@ void XRegisterFunction(void** modules, const void* hostFunction, char* deviceFun
 
 hipError_t XMalloc(void **ptr, size_t size)
 {
-    HIP_ASSERT(XCtxSynchronize()); // sync before malloc
+    (void)XCtxSynchronize(); // sync before malloc
     auto res = Driver::Malloc(ptr, size);
     XDEBG("XMalloc %zu bytes at %p, ret: %d", size, ptr ? *ptr : nullptr, res);
     return res;
@@ -120,7 +120,7 @@ hipError_t XMalloc(void **ptr, size_t size)
 
 hipError_t XFree(void *ptr)
 {
-    HIP_ASSERT(XCtxSynchronize()); // sync before free
+    (void)XCtxSynchronize(); // sync before free
     auto res = Driver::Free(ptr);
     XDEBG("XFree %p, ret: %d", ptr, res);
     return res;
