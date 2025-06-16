@@ -36,17 +36,25 @@ kernel<<<grid, block, 0, stream_1>>>(...);
 kernel<<<grid, block, 0, stream_2>>>(...);
 ```
 
+The usage on HIP platform is similar.
+
 ## Build the App with XSched
 
 ```bash
 # go to the root directory of XSched and build XSched with CUDA support
 cd xsched
 # by default, XSched will be installed to xsched/output
+# on CUDA platform
 make cuda INSTALL_PATH=<install_path>
+# on HIP platform
+make hip INSTALL_PATH=<install_path>
 
 # build the app
 cd examples/3_intra_process_sched
-make
+# on CUDA platform
+make cuda
+# on HIP platform
+make hip
 ```
 
 Please refer to [2_give_hints](../2_give_hints/README.md#link-xsched-with-your-own-app) for guidance to link XSched with your own app.
@@ -54,7 +62,7 @@ Please refer to [2_give_hints](../2_give_hints/README.md#link-xsched-with-your-o
 ## Run the App with XSched
 
 ```bash
-# Intercept the CUDA calls using the shim library
+# Intercept the CUDA(HIP) calls using the shim library
 export LD_LIBRARY_PATH=<install_path>/lib:$LD_LIBRARY_PATH
 
 ./app_concurrent

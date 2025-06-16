@@ -47,21 +47,29 @@ XQueueDestroy(xq);
 HwQueueDestroy(hwq);
 ```
 
+The usage on HIP platform is similar.
+
 ## Build the App with XSched
 
-Make sure you have already built XSched with CUDA support.
+Make sure you have already built XSched with CUDA (or HIP) support.
 
 ```bash
 # go to the root directory of XSched
 cd xsched
 # by default, XSched will be installed to xsched/output
+# on CUDA platform
 make cuda INSTALL_PATH=<install_path>
+# on HIP platform
+make hip INSTALL_PATH=<install_path>
 ```
 
 For this example, just use the Makefile to build the app.
 
 ```bash
-make
+# cuda runtime and NVCC are required
+make cuda 
+# hip runtime and HIPCC are required
+make hip
 ```
 
 ### Link XSched with Your Own App
@@ -79,14 +87,20 @@ add_subdirectory(<xsched_path> xsched)
 ... # add your target
 
 # link XSched libraries
+# on CUDA platform
 target_link_libraries(<your_target> XSched::preempt XSched::halcuda)
+# on HIP platform
+target_link_libraries(<your_target> XSched::preempt XSched::halhip)
 ```
 
 - Link manually
 
 ```bash
 # build XSched first and link XSched libraries
+# on CUDA platform
 nvcc -o app_with_hints app_with_hints.cu -I<install_path>/include -L<install_path>/lib -lpreempt -lhalcuda
+# on HIP platform
+hipcc -o app_with_hints app_with_hints.hip -I<install_path>/include -L/opt/rocm/lib -lamdhip64 -L<install_path>/lib -lpreempt -lhalcuda
 ```
 
 ## Run the App with XSched
@@ -103,7 +117,7 @@ Step 2: Set environment variables
 # use the global (GLB) scheduler, i.e., the xserver
 export XSCHED_SCHEDULER=GLB
 
-# Intercept the CUDA calls using the shim library
+# Intercept the CUDA(HIP) calls using the shim library
 export LD_LIBRARY_PATH=<install_path>/lib:$LD_LIBRARY_PATH
 ```
 

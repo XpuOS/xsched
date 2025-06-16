@@ -6,7 +6,7 @@ Further, to support terminal applications, we build an [X11 Launcher](../../serv
 
 ## Build XSched
 
-Make sure you have already installed X11 development package and built XSched with CUDA support.
+Make sure you have already installed X11 development package and built XSched with CUDA(HIP) support.
 
 ```bash
 sudo apt update
@@ -16,14 +16,20 @@ sudo apt install libx11-dev
 cd xsched
 # by default, XSched will be installed to xsched/output
 # if X11 development package is installed, XSched will automatically build the X11 Monitor and X11 Launcher
+# on CUDA platform
 make cuda INSTALL_PATH=<install_path>
+# on HIP platform
+make hip INSTALL_PATH=<install_path>
 ```
 
 ## Build the Example
 
 ```bash
 cd xsched/examples/7_terminal_window
-make # cuda runtime and NVCC are required
+# cuda runtime and NVCC are required
+make cuda 
+# or hip runtime and HIPCC are required
+make hip
 ```
 
 ## Run the Example
