@@ -154,7 +154,8 @@ hipError_t HipExtModuleKernelLaunchCommand::Launch(hipStream_t stream)
 
 hipError_t HipMemcpyWithStreamCommand::Launch(hipStream_t stream) {
     XDEBG("HipMemcpyWithStreamCommand(%p): dst = %p, src = %p, sizeBytes = %zu, kind = %d", this, dst_, src_, sizeBytes_, (int)kind_);
-    Driver::MemcpyWithStream(dst_, src_, sizeBytes_, kind_, stream);
+    
+    HIP_ASSERT(Driver::MemcpyWithStream(dst_, src_, sizeBytes_, kind_, stream));
     return Driver::StreamSynchronize(stream);
 }
 

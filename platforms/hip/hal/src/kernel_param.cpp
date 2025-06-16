@@ -7,6 +7,7 @@
 #include <sys/mman.h>
 #include <unordered_map>
 
+#include "xsched/hip/hal/hip_assert.h"
 #include "xsched/utils/log.h"
 #include "xsched/hip/hal/kernel_param.h"
 #include "xsched/hip/hal/amd_comgr.h"
@@ -135,7 +136,7 @@ static amd_comgr_status_t kernelParamCallback(amd_comgr_metadata_node_t key,
 }
 
 
-static void registerForOneISA(amd_comgr_data_t code_object, kernel_names_params_map& kernel_names_params)
+void registerForOneISA(amd_comgr_data_t code_object, kernel_names_params_map& kernel_names_params)
 {
     // Get the metadata node for kernels
     amd_comgr_metadata_node_t metadata;
@@ -204,8 +205,28 @@ static void registerForOneISA(amd_comgr_data_t code_object, kernel_names_params_
     ASSERT_COMGR_STATUS(CodeObjectManager::destroy_metadata(metadata));
 }
 
+static std::pair<size_t,size_t> GetComgrVersion() {
+    size_t major, minor;
+    CodeObjectManager::get_version(&major, &minor);
+    return std::make_pair(major, minor);
+}
+
+void registerForDataObjectV3_0(amd_comgr_data_t data_object, const void* image, kernel_names_params_map& kernel_names_params);
+void registerForDataObjectV2_8(amd_comgr_data_t data_object, const void* image, kernel_names_params_map& kernel_names_params);
+
 static void registerForDataObject(amd_comgr_data_t data_object, const void* image, kernel_names_params_map& kernel_names_params)
 {
+    static size_t major = GetComgrVersion().first, minor = GetComgrVersion().second;
+    // XINFO("comgr version %lu.%lu",major,minor);
+    if(major >= 3 || (major == 2 && minor >= 8)) {
+        // need handle CCOB
+        if(major >= 3) {
+            registerForDataObjectV3_0(data_object, image, kernel_names_params);
+        } else {
+            registerForDataObjectV2_8(data_object, image, kernel_names_params);
+        }
+        return;
+    }
     // Get a list of ISAs
     size_t isa_count;
     ASSERT_COMGR_STATUS(CodeObjectManager::get_isa_count(&isa_count));
@@ -250,6 +271,7 @@ void KernelParamManager::RegisterStaticCodeObject(const void* data)
 
     // Create the data object and set the file slice
     amd_comgr_data_t data_object;
+    // XINFO("create data from %s offset %lu len %lu",fname.c_str(),foffset,fsize);
     ASSERT_COMGR_STATUS(CodeObjectManager::create_data(AMD_COMGR_DATA_KIND_FATBIN, &data_object));
     ASSERT_COMGR_STATUS(CodeObjectManager::set_data_from_file_slice(data_object, fd, foffset, fsize));
     registerForDataObject(data_object, image, this->static_kernel_names_params_);
@@ -326,7 +348,7 @@ constexpr size_t func_kernel_offset = 136;
 constexpr size_t kernel_parameters_offset = 72;
 constexpr size_t parameters_signature_offset = 0;
 constexpr size_t signature_numParameters_offset = 56;
-constexpr size_t signature_allParamsSize_offset = 60;
+// constexpr size_t signature_allParamsSize_offset = 60;
 constexpr size_t signature_params_offset = 0;
 
 constexpr size_t signatureParam_size_offset = 16;

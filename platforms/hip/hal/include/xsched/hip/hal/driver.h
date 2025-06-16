@@ -11,13 +11,37 @@
 namespace xsched::hip
 {
 
+static const char *Name_hipGetDeviceProperties = "hipGetDeviceProperties";
+static const char *Name_hipGetDevicePropertiesR0600 = "hipGetDevicePropertiesR0600";
+static const char *Name_hipChooseDevice= "hipChooseDevice";
+static const char *Name_hipChooseDeviceR0600 = "hipChooseDeviceR0600";
 class Driver
 {
 private:
     DEFINE_GET_SYMBOL_FUNC(GetSymbol, XSCHED_HIP_LIB_ENV_NAME,
                            std::vector<std::string>({"libamdhip64.so"}), // search name
                            std::vector<std::string>({"/opt/rocm/lib"})); // search path
-
+    
+    static const char *GetCurrentName(const char *symbol) {
+        int version;
+        (void)Driver::RuntimeGetVersion(&version);
+        if(version > 100000) version /= 100000;
+        // XINFO("HIP Version %d Symbol %s",version,symbol);
+        if(symbol == Name_hipGetDeviceProperties) {
+            if(version > 600) {
+                return Name_hipGetDevicePropertiesR0600;
+            }
+            return Name_hipGetDeviceProperties;
+        } 
+        if(symbol == Name_hipChooseDevice) {
+            if(version > 600) {
+                return Name_hipChooseDeviceR0600;
+            }
+            return Name_hipChooseDevice;
+        }
+        XASSERT(false, "unreachable");
+        return nullptr;
+    }
 public:
     STATIC_CLASS(Driver);
 
@@ -55,7 +79,7 @@ public:
     DEFINE_STATIC_ADDRESS_CALL(GetSymbol("hipDeviceSetMemPool"), hipError_t, DeviceSetMemPool, int, device, hipMemPool_t, mem_pool);
     DEFINE_STATIC_ADDRESS_CALL(GetSymbol("hipDeviceGetMemPool"), hipError_t, DeviceGetMemPool, hipMemPool_t *, mem_pool, int, device);
     // DEFINE_STATIC_ADDRESS_CALL(GetSymbol("hipGetDevicePropertiesR0600"), hipError_t, GetDevicePropertiesR0600, hipDeviceProp_tR0600 *, prop, int, deviceId);
-    DEFINE_STATIC_ADDRESS_CALL(GetSymbol("hipGetDeviceProperties"), hipError_t, GetDeviceProperties, hipDeviceProp_tR0600 *, prop, int, deviceId);
+    DEFINE_STATIC_ADDRESS_CALL(GetSymbol(GetCurrentName(Name_hipGetDeviceProperties)), hipError_t, GetDeviceProperties, hipDeviceProp_tR0600 *, prop, int, deviceId);
     DEFINE_STATIC_ADDRESS_CALL(GetSymbol("hipDeviceSetCacheConfig"), hipError_t, DeviceSetCacheConfig, hipFuncCache_t, cacheConfig);
     DEFINE_STATIC_ADDRESS_CALL(GetSymbol("hipDeviceGetCacheConfig"), hipError_t, DeviceGetCacheConfig, hipFuncCache_t *, cacheConfig);
     DEFINE_STATIC_ADDRESS_CALL(GetSymbol("hipDeviceGetLimit"), hipError_t, DeviceGetLimit, size_t *, pValue, enum hipLimit_t, limit);
@@ -64,7 +88,7 @@ public:
     DEFINE_STATIC_ADDRESS_CALL(GetSymbol("hipGetDeviceFlags"), hipError_t, GetDeviceFlags, unsigned int *, flags);
     DEFINE_STATIC_ADDRESS_CALL(GetSymbol("hipDeviceSetSharedMemConfig"), hipError_t, DeviceSetSharedMemConfig, hipSharedMemConfig, config);
     DEFINE_STATIC_ADDRESS_CALL(GetSymbol("hipSetDeviceFlags"), hipError_t, SetDeviceFlags, unsigned int, flags);
-    DEFINE_STATIC_ADDRESS_CALL(GetSymbol("hipChooseDeviceR0600"), hipError_t, ChooseDeviceR0600, int *, device, const hipDeviceProp_tR0600 *, prop);
+    DEFINE_STATIC_ADDRESS_CALL(GetSymbol(GetCurrentName(Name_hipChooseDevice)), hipError_t, ChooseDeviceR0600, int *, device, const hipDeviceProp_tR0600 *, prop);
     DEFINE_STATIC_ADDRESS_CALL(GetSymbol("hipExtGetLinkTypeAndHopCount"), hipError_t, ExtGetLinkTypeAndHopCount, int, device1, int, device2, uint32_t *, linktype, uint32_t *, hopcount);
     DEFINE_STATIC_ADDRESS_CALL(GetSymbol("hipIpcGetMemHandle"), hipError_t, IpcGetMemHandle, hipIpcMemHandle_t *, handle, void *, devPtr);
     DEFINE_STATIC_ADDRESS_CALL(GetSymbol("hipIpcOpenMemHandle"), hipError_t, IpcOpenMemHandle, void **, devPtr, hipIpcMemHandle_t, handle, unsigned int, flags);
