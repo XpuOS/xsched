@@ -9,18 +9,25 @@ NVCC_FLAGS = -O3 -std=c++11 -I$(XSCHED_INCLUDE_PATH)
 # link XSched libraries and set rpath so that the app can find the libraries
 NVCC_LDFLAGS = -Xlinker -rpath -Xlinker $(XSCHED_LIB_PATH) -L$(XSCHED_LIB_PATH) -lpreempt -lhalcuda
 
+HIPCC = hipcc
+HIPCC_FLAGS = -O3 -std=c++11 -I$(XSCHED_INCLUDE_PATH)
+# link XSched libraries and set rpath so that the app can find the libraries
+HIPCC_LDFLAGS = -Xlinker -rpath -Xlinker $(XSCHED_LIB_PATH) -L/opt/rocm/lib -lamdhip64 -L$(XSCHED_LIB_PATH) -lpreempt -lhalhip 
+
 # Target executable
 TARGET = app_sched
 
 # Source files
-SRC = app_sched.cu
+SRC_CUDA = app_sched.cu
+SRC_HIP = app_sched.hip
 
-all: $(TARGET)
+cuda: $(SRC_CUDA)
+	$(NVCC) $(NVCC_FLAGS) $(NVCC_LDFLAGS) -o $(TARGET) $<
 
-$(TARGET): $(SRC)
-	$(NVCC) $(NVCC_FLAGS) $(NVCC_LDFLAGS) -o $@ $<
+hip: $(SRC_HIP)
+	$(HIPCC) $(HIPCC_FLAGS) $(HIPCC_LDFLAGS) -o $(TARGET) $<
 
 clean:
 	rm -f $(TARGET)
 
-.PHONY: all clean
+.PHONY: cuda hip clean
