@@ -16,7 +16,7 @@ cuda: $(SRC_CUDA)
 	$(NVCC) $(NVCC_FLAGS) -o $(TARGET) $<
 
 hip: $(SRC_HIP)
-	$(HIPCC) $(HIPCC_FLAGS) -o $(TARGET) $<
+	$(HIPCC) $(HIPCC_FLAGS) -L/opt/rocm/lib -lamdhip64 -o $(TARGET) $<
 
 clean:
 	rm -f $(TARGET)

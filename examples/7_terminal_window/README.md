@@ -63,7 +63,7 @@ export XSCHED_AUTO_XQUEUE_BATCH_SIZE=4
 export LD_LIBRARY_PATH=<install_path>/lib:$LD_LIBRARY_PATH
 
 # launch the app with X11 Launcher
-<install_path>/bin/x11_launcher ./app
+<install_path>/bin/x11_launcher -- ./app
 ```
 
 In another terminal, we run the app again.
@@ -79,7 +79,7 @@ export XSCHED_AUTO_XQUEUE_BATCH_SIZE=4
 export LD_LIBRARY_PATH=<install_path>/lib:$LD_LIBRARY_PATH
 
 # launch the app with X11 Launcher
-<install_path>/bin/x11_launcher ./app
+<install_path>/bin/x11_launcher -- ./app
 ```
 
 ## Demo
