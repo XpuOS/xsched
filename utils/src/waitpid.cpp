@@ -1,4 +1,3 @@
-#include <mutex>
 #include <string>
 #include <unistd.h>
 #include <signal.h>
@@ -99,7 +98,6 @@ void PidFdWaiter::AddWait(PID pid)
     mtx_.lock();
     pid_fds_[pid] = pid_fd;
     mtx_.unlock();
-    XINFO("add pidfd %d",pid_fd);
     // According to the notes of linux man page of epoll_wait at
     // https://www.man7.org/linux/man-pages/man2/epoll_wait.2.html
     // "While one thread is blocked in a call to epoll_wait(), it is
@@ -140,7 +138,6 @@ void PidFdWaiter::WaitWorker()
         int pid_fd = it->second;
         pid_fds_.erase(it);
         mtx_.unlock();
-        XINFO("remove %d form epoll",pid_fd);
         XASSERT(!epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, pid_fd, nullptr),
                 "fail to remove pid fd from epoll");
         XASSERT(!close(pid_fd), "fail to close pid fd");
