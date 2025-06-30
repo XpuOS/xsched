@@ -11,9 +11,10 @@ XSched is a preemptive scheduling framework for XPUs. It provides unified interf
 - **Extensibility:** Accommodates new scheduling policies and XPUs easily.
 - **Performance:** Delivers high performance (microsecond-scale preemption) with low overhead (< 3%).
 
-## Demos
+## Application Scenarios
 
-*comming soon...*
+*coming soon...*
+
 
 ## XPU Support Matrix
 
@@ -193,7 +194,7 @@ XSched consists of four key components: XPU shim (XShim), XPU task preemption mo
 
 We will continue to support XSched on more OSes and platforms, and improve the performance of XSched. Please stay tuned!
 
-- [ ] Replace cpp-ipc to fix stability issue
+- [ ] Integrated into LLM serving systems (e.g., llama.cpp, vLLM)
 - [ ] Support Windows
 - [ ] Support MacOS
 - [ ] Install as system daemon
@@ -206,6 +207,7 @@ We welcome contributions:
 
 - Support more platforms, or a higher preemption level on existing platforms. See [guide](platforms/example/README.md)
 - Implement a new scheduling policy. See [guide](sched/README.md)
+- Integrate XSched into AI-powered applications. 
 - Report or fix issues.
 
 ## Citation
