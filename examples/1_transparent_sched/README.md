@@ -3,26 +3,33 @@
 This example shows how XSched can transparently schedule tasks.
 
 ## Requirements
-
+For CUDA:
 - An NVIDIA GPU.
 - CUDA runtime with NVCC.
-
+For HIP:
+- An AMD GPU.
+- HIP runtime with HIPCC
 ## Build XSched
 
-Make sure you have already built XSched with CUDA support.
+Make sure you have already built XSched with CUDA (or HIP) support.
 
 ```bash
 # go to the root directory of XSched
 cd xsched
 # by default, XSched will be installed to xsched/output
 make cuda INSTALL_PATH=<install_path>
+# for HIP platform
+make hip INSTALL_PATH=<install_path>
 ```
 
 ## Build the Example
 
 ```bash
 cd xsched/examples/1_transparency
-make # cuda runtime and NVCC are required
+# cuda runtime and NVCC are required
+make cuda 
+# hip runtime and HIPCC are required
+make hip
 ```
 
 ## Run the Example
