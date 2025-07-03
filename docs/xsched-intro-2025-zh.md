@@ -9,14 +9,14 @@
 
 为了驯服这些有着巨大差异、快速演进、不断创新的算力硬件，我们没有尝试为每一款新硬件重复造最适合当下的轮子，而是从操作系统的视角探索管理硬件的两大核心问题：系统抽象与硬件模型
 
-1️⃣ 系统抽象：可抢占的命令队列 💡
+### 1️⃣ 系统抽象：可抢占的命令队列 💡
 
 我们借鉴操作系统中CPU调度抽象“线程”（Thread），提出了一个统一的XPU调度抽象：可抢占命令队列（XQueue）。它提供了一套统一、简洁的接口（如，提交、等待、挂起、恢复等），将上层的调度**策略**与底层的硬件**机制**彻底解耦。这意味着，应用程序员将面向统一的算力硬件抽象，聚焦模型算法和业务逻辑的开发，无需考虑任务在硬件上如何调度和使用资源。同时，系统程序员可以编写一次调度策略，就能让它在不同厂商、不同代际的XPU上通用，甚至实现跨XPU的调度，从而大大降低了开发和维护成本。基于XQueue抽象，XSched实现了多种[调度策略](https://github.com/XpuOS/xsched/blob/main/sched/README.md)，能够使用在各类异构算力平台上。
 
 <img src="/docs/img/xqueue-abstraction.png" alt="XQueue Abstraction" width="600" />
 
 
-2️⃣ 硬件模型：调度能力分级建模 🛠️
+### 2️⃣ 硬件模型：调度能力分级建模 🛠️
 
 我们深知XPU的硬件能力千差万别且处于快速演进中。为此，我们没有像管理CPU和内存那样采用单一的硬件模型来描述硬件功能，提出了多级硬件建模的思想，并针对XPU任务调度的特征，设计了一个三级任务抢占能力模型，像一块“罗塞塔石碑”，让XSched能与任何XPU高效“对话”。
 
@@ -30,10 +30,10 @@
 
 
 
-XSched不仅是一个学术原型，它在多个真实场景中都展示了潜在的应用价值：
+### XSched不仅是一个学术原型，它在多个真实场景中都展示了潜在的应用价值：
 
-- **☁️ 为云服务商降本增效**：在GPU多容器混合部署场景下，XSched能在**不修改应用代码**（对客户透明）且**几乎不影响**高优先级客户性能（<1% 开销）的同时，相比SOTA系统[TGS](https://github.com/pkusys/TGS)[1]，多压榨出了2.74倍的GPU利用率，实现昂贵硬件的效率最大化。
-- **🤖 为智能服务削减延迟**：只需**约10行代码**，XSched就能集成到工业级推理服务框架[NVIDIA Triton](https://github.com/triton-inference-server/server)中，并为其提供低延迟的**多任务抢占式调度能力**，将高优先级请求的尾延迟降低1.41倍。同时，相比NVIDIA GPU定制的SOTA调度系统[Paella](https://github.com/eniac/paella)[2]，能在高负载下取得1.3倍的尾延迟降低。
+- **☁️ 为云服务商降本增效**：在GPU多容器混合部署场景下，XSched能在**不修改应用代码**（对客户透明）且**几乎不影响**高优先级客户性能（<1% 开销）的同时，相比SOTA系统[TGS](https://github.com/pkusys/TGS)[^1]，多压榨出了2.74倍的GPU利用率，实现昂贵硬件的效率最大化。
+- **🤖 为智能服务削减延迟**：只需**约10行代码**，XSched就能集成到工业级推理服务框架[NVIDIA Triton](https://github.com/triton-inference-server/server)中，并为其提供低延迟的**多任务抢占式调度能力**，将高优先级请求的尾延迟降低1.41倍。相比NVIDIA GPU定制的SOTA调度系统[Paella](https://github.com/eniac/paella)[^2]，能在高负载下取得1.3倍的尾延迟降低。
 - **💻 为终端带来流畅体验**：对于运行在 [Intel Core Ultra NPU](https://www.intel.cn/content/www/cn/zh/products/details/processors/core-ultra.html) 上的智能视频会议应用，XSched实现了一种基于Deadline的先进调度策略，保障语音转文字等**前台任务的实时响应**，同时让视频背景虚化等后台特效的帧处理**延迟显著降低**9.26 倍，消除卡顿并提升用户体验。
 
 我们在不同硬件平台上准备了系统演示视频，直观展示XSched在多任务场景下的强大调度效果！
@@ -41,12 +41,12 @@ XSched不仅是一个学术原型，它在多个真实场景中都展示了潜�
 
 ------
 
-我们相信，XSched是在抽象和管理异构算力方向上，解决XPU多任务调度挑战，并从“专用”走向“通用”的重要一步。我们非常期待与学术界和工业界的同行们交流、合作，共同构建下一代计算系统的基石。
+XSched是我们在抽象和管理异构算力硬件方向上，解决XPU多任务调度挑战，并从“专用”走向“通用”的重要一步。我们非常期待与学术界和工业界的同行们交流、合作，共同构建下一代计算系统的基石。
 
 **欢迎大家 Star、Fork、试用和共建！** 🙏
 
 🔗 [Github](https://github.com/XpuOS/xsched) 📄 [论文直达](https://ipads.se.sjtu.edu.cn/_media/publications/xsched-osdi25.pdf)
 
 
-[1] Transparent GPU Sharing in Container Clouds for Deep Learning Workloads. Bingyang Wu, Zili Zhang, Zhihao Bai, Xuanzhe Liu, and Xin Jin. Symposium on Networked Systems Design and Implementation (NSDI), 2023.  
-[2] Paella: Low-latency Model Serving with Software defined GPU Scheduling. Kelvin K. W. Ng, Henri Maxime Demoulin, and Vincent Liu. Symposium on Operating Systems Principles (SOSP), 2023.  
+[^1]: Transparent GPU Sharing in Container Clouds for Deep Learning Workloads. Bingyang Wu, Zili Zhang, Zhihao Bai, Xuanzhe Liu, and Xin Jin. Symposium on Networked Systems Design and Implementation (NSDI), 2023.  
+[^2]: Paella: Low-latency Model Serving with Software defined GPU Scheduling. Kelvin K. W. Ng, Henri Maxime Demoulin, and Vincent Liu. Symposium on Operating Systems Principles (SOSP), 2023.  
