@@ -1,43 +1,52 @@
-## XSched: 为异构计算打造通用、灵活的操作系统级抢占式调度器
+## XSched: 为异构计算打造通用、高效、灵活的多任务调度器
 
-[English](intro-en.md) | [中文](intro-zh.md)
+[English](xsched-intro-2025-en.md) | [中文](xsched-intro-2025-zh.md)
 
-我们发表在 OSDI '25 上的工作 **XSched**，目前已在 GitHub 开源！🚀
+我们发表在 OSDI'25 上的工作 **XSched**，目前已在 GitHub 开源！🚀
 
-我们正处在一个“计算单元大爆炸”的时代：从云端到边缘，NVIDIA、AMD、Intel、昇腾等厂商的 GPU、NPU、ASIC 等各类异构加速器（XPU）被广泛部署。然而，对于这些宝贵算力的管理和调度机制还普遍停留在“史前时代”。传统的 XPU 硬件调度器策略固化、不可抢占，难以满足实时性、优先级、公平性等灵活的场景需求。而现有的软件调度方案是为单一 XPU 特化的，难以泛用到不同类型、不同品牌、甚至是不同世代的 XPU 上。我们的愿景很简单：**让 XPU 调度像今天的 CPU 调度一样，拥有极致的灵活性、通用性和可编程性。**
-
-
-
-为了驯服这些异构算力，我们没有为每一种硬件重复造轮子，而是从根源上提出了两个核心创新：
-
-1️⃣ 统一的可抢占命令队列抽象 XQueue 💡
-
-XQueue 是一个类似于操作系统“线程”的 XPU 任务抽象。它提供了一套统一、简洁的接口（如提交命令、等待、挂起、恢复），将上层的调度**策略**与底层的硬件**机制**彻底解耦。这意味着，开发者可以编写一次调度策略，就能让它在不同厂商、不同代际的 XPU 上通用，大大降低了开发和维护成本。
-
-2️⃣ 多级硬件能力模型 🛠️
-
-我们深知 XPU 的硬件能力千差万别。为此，我们设计了一个三级抢占能力模型，像一块“罗塞塔石碑”，让 XSched 能与任何 XPU 高效“对话” 。
-
-- **Lv1 (抢占排队命令)**：适配所有 XPU，移植成本极低（通常仅需几百行 C++ 代码），保证了最广泛的通用性。
-- **Lv2 (抢占飞行中命令)**：利用更强的硬件能力，主动抢占已发射但未执行的命令，大幅降低抢占延迟。我们在 Intel NPU 上实现了硬件原生的 Lv2 抢占支持，同时还为 NVIDIA GPU 实现了基于二进制插桩的抢占技术，兼容闭源驱动和应用框架。
-- **Lv3 (抢占执行中命令)**：最为先进的硬件设计，可中断正在执行的命令，实现微秒级的超低延迟抢占。XSched 也是首次在 NVIDIA GPU 上利用中断和 Trap 机制实现任务抢占和调度。
-
-目前，XSched 已经通过该模型支持了来自 NVIDIA、AMD、Intel、昇腾、Xilinx 的十余款 XPU 设备，并且兼容 CUDA、HIP、oneAPI、OpenCL 等主流异构计算平台。这个多级模型不仅解决了当下的兼容性难题，更通过定义清晰的能力层级，为未来硬件的演进指明了方向。更多技术细节，欢迎大家深入阅读我们的论文。
+我们正处在一个“计算单元大爆炸”的时代：从云端到边缘，NVIDIA、AMD、Intel、[昇腾](https://www.hiascend.com/)、[寒武纪](https://www.cambricon.com/)、[沐曦](https://www.metax-tech.com/)等厂商的GPU、NPU、ASIC、FPGA等各类异构加速器（XPU）被广泛部署。应用的智能化趋势意味着XPU将会如同CPU一样成为所有应用的必须品。然而，对于这些宝贵算力的管理和调度机制还普遍停留在个别应用独占资源的“史前时代”。当前XPU内置的硬件调度器策略单一且固化，通常仅支持FCFS（先来先服务）等最基本的非抢占式调度，难以满足实时性、优先性、公平性等多样化场景需求。尤其是处于快速发展中的国产GPU和AI芯片，算力竞争是当务之急，而丰富功能则难以兼顾。另一方面，软件调度技术的研究大多聚焦在拥有丰富生态和先进功能的GPU上，提供强大却也是高度定制的优化设计，难以应用到不同类型、不同品牌、甚至是不同世代的XPU上。我们项目的出发点很简单：**希望让XPU调度像今天的CPU调度一样，在支持丰富功能的同时拥有通用性、灵活性、可编程性。**
 
 
+为了驯服这些有着巨大差异、快速演进、不断创新的算力硬件，我们没有尝试为每一款新硬件重复造最适合当下的轮子，而是从操作系统的视角探索管理硬件的两大核心问题：系统抽象与硬件模型
 
-XSched 不仅是一个学术原型，它在多个真实场景中都展示了巨大的应用价值：
+1️⃣ 系统抽象：可抢占的命令队列 💡
 
-- **☁️ 为云服务商降本增效**：在 GPU 多容器混合部署场景下，XSched 能在**不修改应用代码**（对客户透明）且**几乎不影响**（<1% 开销）高优客户性能的同时相比 SOTA 系统 TGS [NSDI'23]，多压榨出了 **2.74 倍**的 GPU 利用率，实现昂贵硬件的效率最大化。
-- **🤖 为 AI 服务削减延迟**：只需**约 10 行代码**，XSched 就能集成到工业级的推理服务框架 NVIDIA Triton 中，并为其提供低延迟的 GPU 任务抢占能力，将高优先级请求的**尾延迟降低 1.41 倍**。同时，相比 SOTA 学术界推理系统 Paella [SOSP'23]，也能在高负载下取得 **1.3 倍的尾延迟降低**。
-- **💻 为 AI PC 带来流畅体验**：对于运行在 [Intel Core Ultra NPU](https://www.intel.cn/content/www/cn/zh/products/details/processors/core-ultra.html) 上的智能视频会议应用，XSched 实现了一种基于 Deadline 的调度策略，保障语音转文字等前台任务的实时响应，同时让视频背景虚化等后台特效的帧处理延迟**显著降低 9.26 倍**，消除卡顿并提升用户体验。
+我们借鉴操作系统中CPU调度抽象“线程”（Thread），提出了一个统一的XPU调度抽象：可抢占命令队列（XQueue）。它提供了一套统一、简洁的接口（如，提交、等待、挂起、恢复等），将上层的调度**策略**与底层的硬件**机制**彻底解耦。这意味着，应用程序员将面向统一的算力硬件抽象，聚焦模型算法和业务逻辑的开发，无需考虑任务在硬件上如何调度和使用资源。同时，系统程序员可以编写一次调度策略，就能让它在不同厂商、不同代际的XPU上通用，甚至实现跨XPU的调度，从而大大降低了开发和维护成本。基于XQueue抽象，XSched实现了多种[调度策略](https://github.com/XpuOS/xsched/blob/main/sched/README.md)，能够使用在各类异构算力平台上。
 
-我们还准备了 Demo 视频，直观展示 XSched 在多任务场景下的强大调度效果！
+<img src="/docs/img/xqueue-abstraction.png" alt="XQueue Abstraction" width="600" />
+
+
+2️⃣ 硬件模型：调度能力分级建模 🛠️
+
+我们深知XPU的硬件能力千差万别且处于快速演进中。为此，我们没有像管理CPU和内存那样采用单一的硬件模型来描述硬件功能，提出了多级硬件建模的思想，并针对XPU任务调度的特征，设计了一个三级任务抢占能力模型，像一块“罗塞塔石碑”，让XSched能与任何XPU高效“对话”。
+
+- **Level 1（待提交命令抢占级）**：适用于不同架构的几乎所有算力硬件（包括：GPU、NPU、ASIC和FPGA），方法通用开发简单，移植成本极低（同架构下能够直接复用），保证了最广泛的通用性。
+- **Level 2（已提交未执行命令抢占级）**：利用更强的硬件任务管控能力，抢占已提交但未执行的命令，能够大幅降低任务抢占延迟，提升系统交互性和公平性。当前大部分GPU和NPU都可以支持该级别，且能够支持闭源的驱动和应用框架。
+- **Level 3（执行中命令抢占级）**：利用最强的硬件任务管理能力，中断正在执行中的命令，能够实现微秒级的超低延迟抢占，满足应用的实时和安全需求。提供了任务切换或者中断能力的硬件能够支持该级别。
+
+<img src="/docs/img/preemption-levels.png" alt="Three preemption levels for XPU scheduling" width="600" />
+
+目前，XSched已经通过该模型支持了来自NVIDIA、AMD、Intel、昇腾、Xilinx的十余款量产XPU设备，开源实现兼容CUDA、HIP、oneAPI、AscendCL、OpenCL等主流异构计算平台（详见[当前硬件支持列表](https://github.com/XpuOS/xsched/blob/main/README.md)）。首次在NPU和ASIC算力平台上实现了多任务抢占式调度，也是第一次在闭源GPU平台上实现最高级别的抢占式调度。多级硬件建模思想不仅解决了当下的兼容性难题，更通过定义清晰的能力层级，为算力硬件的功能演进和生态建设指明了方向。更多技术细节，欢迎大家阅读我们的[论文](https://ipads.se.sjtu.edu.cn/_media/publications/xsched-osdi25.pdf)。
+
+
+
+XSched不仅是一个学术原型，它在多个真实场景中都展示了潜在的应用价值：
+
+- **☁️ 为云服务商降本增效**：在GPU多容器混合部署场景下，XSched能在**不修改应用代码**（对客户透明）且**几乎不影响**高优先级客户性能（<1% 开销）的同时，相比SOTA系统[TGS](https://github.com/pkusys/TGS)[1]，多压榨出了2.74倍的GPU利用率，实现昂贵硬件的效率最大化。
+- **🤖 为智能服务削减延迟**：只需**约10行代码**，XSched就能集成到工业级推理服务框架[NVIDIA Triton](https://github.com/triton-inference-server/server)中，并为其提供低延迟的**多任务抢占式调度能力**，将高优先级请求的尾延迟降低1.41倍。同时，相比NVIDIA GPU定制的SOTA调度系统[Paella](https://github.com/eniac/paella)[2]，能在高负载下取得1.3倍的尾延迟降低。
+- **💻 为终端带来流畅体验**：对于运行在 [Intel Core Ultra NPU](https://www.intel.cn/content/www/cn/zh/products/details/processors/core-ultra.html) 上的智能视频会议应用，XSched实现了一种基于Deadline的先进调度策略，保障语音转文字等**前台任务的实时响应**，同时让视频背景虚化等后台特效的帧处理**延迟显著降低**9.26 倍，消除卡顿并提升用户体验。
+
+我们在不同硬件平台上准备了系统演示视频，直观展示XSched在多任务场景下的强大调度效果！
+
 
 ------
 
-我们相信，XSched 是在抽象和管理异构算力方向上，解决 XPU 多任务调度挑战，并从“专用”走向“通用”的重要一步。我们非常期待与学术界和工业界的同行们交流、合作，共同构建下一代计算系统的基石。
+我们相信，XSched是在抽象和管理异构算力方向上，解决XPU多任务调度挑战，并从“专用”走向“通用”的重要一步。我们非常期待与学术界和工业界的同行们交流、合作，共同构建下一代计算系统的基石。
 
 **欢迎大家 Star、Fork、试用和共建！** 🙏
 
 🔗 [Github](https://github.com/XpuOS/xsched) 📄 [论文直达](https://ipads.se.sjtu.edu.cn/_media/publications/xsched-osdi25.pdf)
+
+
+[1] Transparent GPU Sharing in Container Clouds for Deep Learning Workloads. Bingyang Wu, Zili Zhang, Zhihao Bai, Xuanzhe Liu, and Xin Jin. Symposium on Networked Systems Design and Implementation (NSDI), 2023.  
+[2] Paella: Low-latency Model Serving with Software defined GPU Scheduling. Kelvin K. W. Ng, Henri Maxime Demoulin, and Vincent Liu. Symposium on Operating Systems Principles (SOSP), 2023.  
