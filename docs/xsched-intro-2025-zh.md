@@ -45,6 +45,9 @@
 我们在不同硬件平台上准备了系统演示视频，展示XSched在多任务场景下的强大调度效果！
 
 
+https://github.com/user-attachments/assets/7dff61f3-4c2b-4518-be02-16caa64f2a1b
+
+
 ------
 
 **统一系统抽象**和**多级硬件建模**不仅解决了当下的兼容性难题，更通过定义清晰的能力层级，为算力硬件的功能演进和生态建设指明了方向。更多技术细节，欢迎大家阅读我们的[论文](https://ipads.se.sjtu.edu.cn/_media/publications/xsched-osdi25.pdf)。
