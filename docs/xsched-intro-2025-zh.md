@@ -29,6 +29,8 @@
 </div>
 
 
+**统一系统抽象**和**多级硬件建模**不仅解决了当下的兼容性难题，更通过定义清晰的能力层级，为算力硬件的功能演进和生态建设指明了方向。更多技术细节，欢迎大家阅读我们的[论文](https://ipads.se.sjtu.edu.cn/_media/publications/xsched-osdi25.pdf)。
+
 
 ## XSched最新进展
 
@@ -39,7 +41,7 @@
 
 - **☁️ 为云服务商降本增效**：在GPU多容器混合部署场景下，XSched能在**不修改应用代码**（对客户透明）且**几乎不影响**高优先级客户性能（<1% 开销）的同时，相比SOTA系统[TGS](https://github.com/pkusys/TGS)[^1]，多压榨出了2.74倍的GPU利用率，实现昂贵硬件的效率最大化。
 - **🤖 为智能服务削减延迟**：只需**约10行代码**，XSched就能集成到工业级推理服务框架[NVIDIA Triton](https://github.com/triton-inference-server/server)中，并为其提供低延迟的**多任务抢占式调度能力**，将高优先级请求的尾延迟降低1.41倍。相比NVIDIA GPU定制的SOTA调度系统[Paella](https://github.com/eniac/paella)[^2]，能在高负载下取得1.3倍的尾延迟降低。
-- **💻 为终端带来流畅体验**：对于运行在 [Intel Core Ultra NPU](https://www.intel.cn/content/www/cn/zh/products/details/processors/core-ultra.html) 上的智能视频会议应用，XSched实现了一种基于Deadline的先进调度策略，保障语音转文字等**前台任务的实时响应**，同时让视频背景虚化等后台特效的帧处理**延迟显著降低**9.26 倍，消除卡顿并提升用户体验。
+- **💻 为终端带来流畅体验**：对于运行在 [Intel Core Ultra NPU](https://www.intel.cn/content/www/cn/zh/products/details/processors/core-ultra.html) 上的智能视频会议应用，XSched实现了一种基于改进最低松弛度优先(MLLF)的XPU调度策略[^3]，保障语音转文字等**前台任务的实时响应**，同时让视频背景虚化等后台特效的帧处理**延迟显著降低**9.26 倍，消除卡顿并提升用户体验。
 
 我们在不同硬件平台上准备了系统演示视频，展示XSched在多任务场景下的强大调度效果！
 
@@ -49,10 +51,8 @@ https://github.com/user-attachments/assets/bc668f4d-33d9-4492-9900-8c3b10fdd1af
 
 https://github.com/user-attachments/assets/885886e1-1920-4fb1-aa2d-50f4f88cf660
 
-------
 
-**统一系统抽象**和**多级硬件建模**不仅解决了当下的兼容性难题，更通过定义清晰的能力层级，为算力硬件的功能演进和生态建设指明了方向。更多技术细节，欢迎大家阅读我们的[论文](https://ipads.se.sjtu.edu.cn/_media/publications/xsched-osdi25.pdf)。
-
+---
 
 XSched是我们在抽象和管理异构算力硬件方向上，解决XPU多任务调度挑战，并从“专用”走向“通用”的重要一步。我们非常期待与学术界和工业界的同行们交流、合作，共同构建下一代计算系统的基石。
 
@@ -61,5 +61,6 @@ XSched是我们在抽象和管理异构算力硬件方向上，解决XPU多任�
 🔗 [Github](https://github.com/XpuOS/xsched) 📄 [论文直达](https://ipads.se.sjtu.edu.cn/_media/publications/xsched-osdi25.pdf)
 
 
-[^1]: Transparent GPU Sharing in Container Clouds for Deep Learning Workloads. Bingyang Wu, Zili Zhang, Zhihao Bai, Xuanzhe Liu, and Xin Jin. Symposium on Networked Systems Design and Implementation (NSDI), 2023.  
-[^2]: Paella: Low-latency Model Serving with Software defined GPU Scheduling. Kelvin K. W. Ng, Henri Maxime Demoulin, and Vincent Liu. Symposium on Operating Systems Principles (SOSP), 2023.  
+[^1]: Transparent GPU Sharing in Container Clouds for Deep Learning Workloads. Bingyang Wu, Zili Zhang, Zhihao Bai, Xuanzhe Liu, and Xin Jin. Symposium on Networked Systems Design and Implementation (NSDI), 2023. https://www.usenix.org/conference/nsdi23/presentation/wu 
+[^2]: Paella: Low-latency Model Serving with Software-defined GPU Scheduling. Kelvin K. W. Ng, Henri Maxime Demoulin, and Vincent Liu. Symposium on Operating Systems Principles (SOSP), 2023. https://dl.acm.org/doi/10.1145/3600006.3613163
+[^3]: A Modified Least-Laxity-First Scheduling Algorithm for Real-time Tasks. Sung-Heun Oh and Seung-Min Yang. International Conference on Real-Time Computing Systems and Applications (RTCSA), 1998.  https://ieeexplore.ieee.org/abstract/document/726348
