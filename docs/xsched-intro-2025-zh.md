@@ -52,6 +52,8 @@ https://github.com/user-attachments/assets/bc668f4d-33d9-4492-9900-8c3b10fdd1af
 https://github.com/user-attachments/assets/885886e1-1920-4fb1-aa2d-50f4f88cf660
 
 
+更多XSched的使用示例详见[应用示例]（https://github.com/XpuOS/xsched/tree/main/examples）
+
 ---
 
 XSched是我们在抽象和管理异构算力硬件方向上，解决XPU多任务调度挑战，并从“专用”走向“通用”的重要一步。我们非常期待与学术界和工业界的同行们交流、合作，共同构建下一代计算系统的基石。
