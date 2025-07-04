@@ -51,6 +51,8 @@ https://github.com/user-attachments/assets/bc668f4d-33d9-4492-9900-8c3b10fdd1af
 
 https://github.com/user-attachments/assets/885886e1-1920-4fb1-aa2d-50f4f88cf660
 
+https://github.com/user-attachments/assets/877aeb5f-35b6-4bc1-b553-d76525a8adb3
+
 
 更多XSched的使用示例详见[应用示例](https://github.com/XpuOS/xsched/tree/main/examples)
 
