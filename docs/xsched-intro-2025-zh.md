@@ -4,7 +4,7 @@
 
 我们发表在OSDI'25上的工作[**XSched**](https://www.usenix.org/conference/osdi25/presentation/shen-weihang)，目前已在GitHub[开源](https://github.com/XpuOS/xsched)！🚀
 
-当前我们正处在一个“计算单元大爆炸”的时代：从云端到边缘，NVIDIA、[AMD](https://www.amd.com/en/products/graphics/radeon-ai.html)、[Intel](https://www.intel.com/content/www/us/en/products/details/embedded-processors/core-ultra.html)、[昇腾](https://www.hiascend.com/)、[寒武纪](https://www.cambricon.com/)、[沐曦](https://www.metax-tech.com/)等厂商的GPU、NPU、ASIC、FPGA等各类异构加速器（XPU）被广泛部署。应用的智能化趋势意味着XPU将会如同CPU一样成为所有应用的必须品。然而，对于这些宝贵算力的管理和调度机制还普遍停留在个别应用独占资源的“史前时代”。当前XPU内置的硬件调度器策略单一且固化，通常仅支持FCFS（先来先服务）等最基本的非抢占式调度，难以满足实时性、优先性、公平性等多样化场景需求。尤其是处于快速发展中的国产GPU和AI芯片，算力竞争是当务之急，而丰富功能则难以兼顾。另一方面，软件调度技术的研究大多聚焦在拥有丰富生态和先进功能的GPU上，提供强大却也是高度定制的优化设计，难以应用到不同类型、不同品牌、甚至是不同世代的XPU上。我们项目的出发点很简单：**希望让XPU调度像今天的CPU调度一样，在支持丰富功能的同时拥有通用性、高效性、灵活性。**
+当前我们正处在一个“计算单元大爆炸”的时代：从云端到边缘，NVIDIA、[AMD](https://www.amd.com/en/products/graphics/radeon-ai.html)、[Intel](https://www.intel.com/content/www/us/en/products/details/embedded-processors/core-ultra.html)、[昇腾](https://www.hiascend.com/)、[寒武纪](https://www.cambricon.com/)、[沐曦](https://www.metax-tech.com/)等厂商的GPU、NPU、ASIC、FPGA等各类异构加速器（XPU）被广泛部署。应用的智能化趋势意味着XPU将会如同CPU一样成为所有应用的必须品。然而，对于这些宝贵算力的管理和调度机制还普遍停留在个别应用独占资源的“史前时代”。当前XPU内置的硬件调度器策略单一且固化，通常仅支持FCFS（先来先服务）等最基本的非抢占式调度，难以满足实时性、优先性、公平性等多样化场景需求。尤其是处于快速发展中的国产GPU和AI芯片，算力竞争是当务之急，而丰富功能则难以兼顾。另一方面，软件调度技术的研究大多聚焦在拥有丰富生态和先进功能的GPU上，提供强大却也是高度定制的优化设计，难以应用到不同类型、不同品牌、甚至是不同世代的XPU上。我们项目的出发点很简单：**希望让XPU调度像今天的CPU调度一样，在支持多任务共享的同时拥有通用性、高效性、灵活性。**
 
 为了驯服这些有着巨大差异、快速演进、不断创新的算力硬件，我们没有尝试为每一款新硬件重复造最适合当下的轮子，而是从操作系统的视角探索管理硬件的两大核心问题：系统抽象与硬件模型
 
