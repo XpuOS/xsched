@@ -52,7 +52,7 @@ https://github.com/user-attachments/assets/bc668f4d-33d9-4492-9900-8c3b10fdd1af
 https://github.com/user-attachments/assets/885886e1-1920-4fb1-aa2d-50f4f88cf660
 
 
-更多XSched的使用示例详见[应用示例]（https://github.com/XpuOS/xsched/tree/main/examples）
+更多XSched的使用示例详见[应用示例](https://github.com/XpuOS/xsched/tree/main/examples)
 
 ---
 
