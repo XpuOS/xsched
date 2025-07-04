@@ -43,6 +43,9 @@
 
 我们在不同硬件平台上准备了系统演示视频，展示XSched在多任务场景下的强大调度效果！
 
+https://github.com/user-attachments/assets/dffb821b-92e2-44c5-bd59-a6946b0c4d02
+
+https://github.com/user-attachments/assets/885886e1-1920-4fb1-aa2d-50f4f88cf660
 
 ------
 
