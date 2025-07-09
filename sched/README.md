@@ -22,12 +22,12 @@
 
 <img src="/docs/img/global-scheduler.png" alt="Global Scheduler Framework" width="600" />
 
-Actually, global scheduler only achieves two IPC channel. Its `Worker` thread just receive `Operation` by `rece_chan_` and call `Execute` bound when created (refering to `SetExecutor()` of `sched::Scheduler` in file [scheduler.h](../sched/include/xsched/sched/scheduler/scheduler.h)).
+Actually, global scheduler only achieves two IPC channel. Its `Worker` thread just receive `Operation` by `recv_chan_` and call `Execute` bound when created (refering to `SetExecutor()` of `sched::Scheduler` in file [scheduler.h](../sched/include/xsched/sched/scheduler/scheduler.h)).
 
 - `send_chan_` uses name `XSCHED_SERVER_CHANNEL_NAME` and its type is sender. When `preempt::SchedAgent` call `RecvEvent` to force scheduler to receive events, `send_chan_` will send event to receiver and do nothing else.
-- `rece_chan_` uses name bound to its PID and its type is receiver.
+- `recv_chan_` uses name bound to its PID and its type is receiver.
 
-If a process wants to use `GlobalScheduler`, user must first run XServer. XServer will create a `LocalScheduler` and two IPC channels to communicate with process's scheduler, receiving events sended by process's `send_chan_` and generating operations by policy in its `LocalScheduler`, then send these operations back to process's `rece_chan_`.
+If a process wants to use `GlobalScheduler`, user must first run XServer. XServer will create a `LocalScheduler` and two IPC channels to communicate with process's scheduler, receiving events sended by process's `send_chan_` and generating operations by policy in its `LocalScheduler`, then send these operations back to process's `recv_chan_`.
 
 ## Protocol
 
@@ -49,11 +49,12 @@ When policy in `sched::Scheduler` (LocalScheduler) generate scheduling operation
 
 | Name                 | Used Policy | Description                                 |
 | -------------------- | ----------- | ------------------------------------------- |
-| kHintTypePriority    | `HPF`       | Change priority of the xqueue               |
+| kHintTypePriority    | `HPF`, `HHPF` | Change priority of the xqueue             |
 | kHintTypeUtilization | `UP`, `PUP` | Change utilization of the xqueue or process |
 | kHintTypeTimeslice   | `UP`, `PUP` | Change time slice                           |
 | kHintTypeDeadline    | `KEDF`      | Change deadline of the xqueue               |
 | kHintTypeLaxity      | `LAX`       | Change laxity of the xqueue.                |
+| kHintTypeWindowActive| `AWF`       | Change window activity                      |
 
 ## Policies
 
@@ -64,10 +65,12 @@ Now we have implemented several policies, including:
 | Value | Full Name                     | Description                                      |
 | ----- | ----------------------------- | ------------------------------------------------ |
 | HPF   | Highest Priority First        | Firstly run the xqueue with highest priority     |
+| HHPF  | Heterogeneous Highest Priority First | Firstly run the xqueue with highest priority on heterogeneous devices |
 | UP    | Utilization Partition         | Assign time slices with weights to each xqueue   |
 | PUP   | Process Utilization Partition | Assign time slices with weights to each process  |
 | KEDF  | K-Earliest Deadline First     | Firstly run the k xqueues with earliest deadline |
 | LAX   | Laxity-based                  | Firstly run the xqueue with highest laxity       |
+| AWF   | Active Window First           | Firstly run the xqueue in the active window      |
 
 ## How to Implement Your Own Policy
 

@@ -117,8 +117,10 @@ Step 2: Set environment variables
 # use the global (GLB) scheduler, i.e., the xserver
 export XSCHED_SCHEDULER=GLB
 
-# Intercept the CUDA(HIP) calls using the shim library
+# Intercept the CUDA calls using the shim library
 export LD_LIBRARY_PATH=<install_path>/lib:$LD_LIBRARY_PATH
+# Intercept the HIP calls using the shim library
+export LD_PRELOAD=<install_path>/lib/libshimhip.so:$LD_PRELOAD
 ```
 
 Step 3: Run the app

@@ -6,9 +6,11 @@ This example shows how XSched can transparently schedule tasks.
 For CUDA:
 - An NVIDIA GPU.
 - CUDA runtime with NVCC.
+
 For HIP:
 - An AMD GPU.
 - HIP runtime with HIPCC
+
 ## Build XSched
 
 Make sure you have already built XSched with CUDA (or HIP) support.
@@ -126,9 +128,10 @@ export XSCHED_AUTO_XQUEUE_BATCH_SIZE=8
 # Intercept the CUDA calls using the shim library (libcuda.so -> libshimcuda.so).
 # For cuda, libshimcuda.so implements all the symbols in libcuda.so, and we set
 # LD_LIBRARY_PATH to the path of the XSched library to intercept the CUDA calls.
-# For other platforms like opencl, we may use LD_PRELOAD to intercept the calls.
 # Replace <install_path> with the path of the XSched installation directory.
 export LD_LIBRARY_PATH=<install_path>/lib:$LD_LIBRARY_PATH
+# For other platforms like opencl, we may use LD_PRELOAD to intercept the calls.
+export LD_PRELOAD=<install_path>/lib/libOpenCL.so:$LD_PRELOAD
 
 # run the app
 ./app
