@@ -2,6 +2,8 @@
 
 This example demonstrates how XSched can be integrated into Llama.cpp Inference Server to enable priority-based scheduling of one-model multiple-instance tasks.
 
+**The source code of this example is presented in this [repo](https://github.com/XpuOS/llama.cpp/tree/xsched).**
+
 ## Basic Idea
 
 Although Llama.cpp server supports multiple-users and parallel decoding, it is unable to set the priority of one request.
@@ -12,7 +14,7 @@ The vanilla Llama.cpp Server provides service in an one-model one-instance manne
 
 We use local scheduler and highest priority first policy to schedule these XQueues, similar to the [Intra-Process Scheduling Example](../3_intra_process_sched/README.md).
 
-With XSched, the inference tasks of the model using the higher-priority XQueues can preempt the lower-priority ones , so that their latencies can be significantly reduced and their thoughputs can be significantly increased.
+With XSched, the inference tasks of the model using the higher-priority XQueues can preempt the lower-priority ones, so that their latencies can be significantly reduced and their throughputs can be significantly increased.
 
 ## Download the LLM
 
@@ -25,32 +27,32 @@ wget https://huggingface.co/unsloth/DeepSeek-R1-0528-Qwen3-8B-GGUF/resolve/main/
 
 ## Build Modified Llama.cpp Server
 
-We build XSched first.
+First, build XSched.
 
 ```bash
 cd /xsched
 make cuda
 ```
 
-Then we build modified Llama.cpp Server.
+Then, build the modified Llama.cpp Server.
 
 ```bash
 cd /
-git clone git@github.com:XpuOS/llama.cpp.git
+git clone [git@github.com:XpuOS/llama.cpp.git](https://github.com/XpuOS/llama.cpp.git)
 cd llama.cpp
 git checkout -b xsched origin/xsched
 cmake -B build -DGGML_CUDA=on -DCMAKE_PREFIX_PATH=/xsched/output/lib
 cmake --build build -- -j$(nproc)
 ```
 
-Now we start the server.
+Now, start the server.
 
 ```bash
 cd /llama.cpp
 LD_LIBRARY_PATH=/xsched/output/lib:$LD_LIBRARY_PATH XSCHED_POLICY=HPF ./build/bin/llama-server -m /models/DeepSeek-R1-0528-Qwen3-8B-Q8_0.gguf -ngl 99 -c 4096 -np 2
 ```
 
-We can use a script to chat with the server.
+Use the script to chat with the server.
 
 ```bash
 # normal priority
