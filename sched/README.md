@@ -83,8 +83,8 @@ Create a new policy class in `sched/include/xsched/sched/policy` directory, and 
 
 ### 2. Register the new policy
 
-1. Add the new policy type to the enum `PolicyType` in `sched/include/xsched/sched/policy/policy.h`.
+1. Add the new policy type to the enum `PolicyType` in `include/xsched/types.h`.
 2. Add the new policy type to the function `CreatePolicy()` in `sched/src/policy/policy.cpp`.
 3. Add the new policy type to the definition of `XSCHED_POLICY` in `protocol/include/xsched/protocol/def.h`.
-4. Add the new policy type to the map `PolicyTypeNames` in `sched/src/protocol/names.cpp`.
+4. Add the new policy type to the map `kPolicyNames` in `sched/src/protocol/names.cpp`.
 5. Add the new hint type by need in `hint.h` and `hint.cpp`.
