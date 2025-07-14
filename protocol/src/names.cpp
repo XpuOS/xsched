@@ -62,6 +62,7 @@ static const std::map<XPolicyType, std::string> &PolicyNames() {
         { kPolicyKEarliestDeadlineFirst           , XSCHED_POLICY_NAME_KEDF },
         { kPolicyLaxity                           , XSCHED_POLICY_NAME_LAX  },
         { kPolicyActiveWindowFirst                , XSCHED_POLICY_NAME_AWF  },
+        { kPolicyCPUHighestPriorityFirst          , XSCHED_POLICY_NAME_CHPF },
         // NEW_POLICY: New policy type names go here.
     };
     return kPolicyNames;
