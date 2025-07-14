@@ -62,8 +62,10 @@ Please refer to [2_give_hints](../2_give_hints/README.md#link-xsched-with-your-o
 ## Run the App with XSched
 
 ```bash
-# Intercept the CUDA(HIP) calls using the shim library
+# Intercept the CUDA calls using the shim library
 export LD_LIBRARY_PATH=<install_path>/lib:$LD_LIBRARY_PATH
+# Intercept the HIP calls using the shim library
+export LD_PRELOAD=<install_path>/lib/libshimhip.so:$LD_PRELOAD
 
 ./app_concurrent
 ```
