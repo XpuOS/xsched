@@ -113,9 +113,11 @@ void Server::RecvWorker()
             XINFO("client process (%u) connected", client_pid);
 
             chan_mtx_.lock();
+            if(client_chans_.count(client_pid) == 0) {
+                pid_waiter_->AddWait(client_pid);
+            }
             client_chans_[client_pid] = client_chan;
             chan_mtx_.unlock();
-            pid_waiter_->AddWait(client_pid);
             scheduler_->RecvEvent(e);
             break;
         }
