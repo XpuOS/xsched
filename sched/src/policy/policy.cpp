@@ -11,6 +11,7 @@
 #include "xsched/sched/policy/kedf.h"
 #include "xsched/sched/policy/lax.h"
 #include "xsched/sched/policy/awf.h"
+#include "xsched/sched/policy/chpf.h"
 // NEW_POLICY: New policy headers go here.
 
 using namespace xsched::sched;
@@ -52,6 +53,8 @@ std::unique_ptr<Policy> xsched::sched::CreatePolicy(XPolicyType type)
             return std::make_unique<LaxityPolicy>();
         case kPolicyActiveWindowFirst:
             return std::make_unique<ActiveWindowFirstPolicy>();
+        case kPolicyCPUHighestPriorityFirst:
+            return std::make_unique<CPUHighestPriorityFirstPolicy>();
         // NEW_POLICY: New PolicyTypes handling goes here.
         default:
             XASSERT(false, "invalid policy type: %d", type);

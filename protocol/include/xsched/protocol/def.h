@@ -54,4 +54,5 @@
 #define XSCHED_POLICY_NAME_KEDF "KEDF" // K-Earliest Deadline First
 #define XSCHED_POLICY_NAME_LAX  "LAX"  // Laxity-based
 #define XSCHED_POLICY_NAME_AWF  "AWF"  // Active Window First
+#define XSCHED_POLICY_NAME_CHPF  "CHPF"  // CPU Highest Priority First
 // NEW_POLICY: New policy type names go here.
