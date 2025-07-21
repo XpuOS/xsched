@@ -7,6 +7,7 @@
 
 ## Latest News
 
+- [2025/07] We integrated XSched into [llama.cpp](integration/llama.cpp) and [NVIDIA Triton](integration/triton) to enable priority-based scheduling between multiple inference requests.
 - [2025/07] We presented our XSched paper at [OSDI 2025](https://www.usenix.org/conference/osdi25/presentation/shen-weihang) and prepared several interesting demo videos: [Ascend910](https://github.com/user-attachments/assets/bc668f4d-33d9-4492-9900-8c3b10fdd1af), [GV100](https://github.com/user-attachments/assets/dffb821b-92e2-44c5-bd59-a6946b0c4d02), [Least-Laxity-First](https://github.com/user-attachments/assets/885886e1-1920-4fb1-aa2d-50f4f88cf660), and [Active-Window-First](https://github.com/user-attachments/assets/877aeb5f-35b6-4bc1-b553-d76525a8adb3).
 - [2025/06] We officially released XSched! 
 
