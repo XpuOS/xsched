@@ -12,6 +12,12 @@
 - [2025/06] We officially released XSched! 
 
 
+## Demos
+- XSched eliminates video stuttering for AI video conference apps on Intel Core Ultra NPU
+
+https://github.com/user-attachments/assets/3eb256c3-9107-4d8b-ae8d-0e3ada54aec1
+
+
 ---
 
 ## About
