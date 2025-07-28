@@ -12,25 +12,33 @@
 - [2025/06] We officially released XSched! 
 
 
+---
+
+
 ## Demos
-- XSched eliminates video stuttering for AI video conference apps on Intel Core Ultra NPU
+XSched eliminates video stuttering in AI video conference applications on AI PCs
+
+- Hardware: [Intel Core Ultra NPU](https://www.intel.com/content/www/us/en/products/details/processors/core-ultra.html) (i.e., NPU 3720)
+- Workloads: fake-background-webcam ([LFBW](https://github.com/fangfufu/Linux-Fake-Background-Webcam)) and speech-to-text ([whisper.cpp](https://github.com/ggml-org/whisper.cpp))
+- Scheduling policy: a varient of [least-laxity-first](https://ieeexplore.ieee.org/document/726348) policy
+
+For more details, please see the 2nd case study in our [paper](docs/xsched-osdi25.pdf).
 
 https://github.com/user-attachments/assets/3eb256c3-9107-4d8b-ae8d-0e3ada54aec1
 
 
----
-
 ## About
 
-XSched is a preemptive scheduling framework for diverse XPUs (referring to various accelerators, such as GPUs, NPUs, ASICs, and FPGAs) with flexible policies. XSched provides unified interfaces for scheduling XPU tasks through a preemptible command queue abstraction (XQueue), and proposes a multi-level hardware model that enables advanced XPUs to achieve optimal scheduling performance while maintaining compatibility with emerging XPUs. 
+XSched is a preemptive scheduling framework for diverse XPUs (referring to various accelerators, such as GPUs, NPUs, ASICs, and FPGAs) across different brands, generations, and software platforms. XSched provides unified interfaces for scheduling XPU tasks through a preemptible command queue abstraction (XQueue), enabling hardware-agnostic, flexible scheduling policies for various objectives. XSched introduces a multi-level hardware model that helps advanced XPUs achieve optimal scheduling performance while maintaining compatibility with emerging XPUs. The framework is designed to efficiently schedule XPU tasks while remaining transparent to existing XPU-based applications. 
 
 
 ### Features
 
-- **Transparency:** Supports existing applications without code change.
-- **Flexibility:** Supports multiple scheduling policies and XPUs.
-- **Extensibility:** Accommodates new scheduling policies and XPUs easily.
-- **Performance:** Delivers high performance (microsecond-scale preemption) with low overhead (<3%).
+- **Transparency**: Works with existing applications without code changes.
+- **Flexibility**: Supports diverse scheduling policies and accelerator types.
+- **Extensibility**: Accommodates new hardware features and software platforms.
+- **Integration**: Adapts to both OS-level and system-level multitasking scenarios.
+- **Performance**: Delivers high scheduling performance with minimal runtime overhead.
 
 
 ## Application Scenarios
