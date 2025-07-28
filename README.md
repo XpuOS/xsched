@@ -246,7 +246,9 @@ If you use XSched for your research, please cite our [paper](docs/xsched-osdi25.
   author = {Weihang Shen and Mingcong Han and Jialong Liu and Rong Chen and Haibo Chen},
   booktitle = {19th USENIX Symposium on Operating Systems Design and Implementation (OSDI 25)},
   year = {2025},
+  isbn = {978-1-939133-47-2},
   address = {Boston, MA},
+  pages = {671--692},
   url = {https://www.usenix.org/conference/osdi25/presentation/shen-weihang},
   publisher = {USENIX Association},
   month = jul
