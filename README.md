@@ -184,11 +184,8 @@ make INSTALL_PATH=/path/to/install
 make cuda # or hip, levelzero, opencl, ascend, cudla, vpi
 ```
 
-### Core Interfaces
 
-Description coming soon...
-
-### Use cases
+### Use Cases
 
 #### Transparently Schedule Applications
 
