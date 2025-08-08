@@ -40,7 +40,7 @@
 #### XSched不仅是一个学术原型，它在多个真实场景中都展示了潜在的应用价值：
 
 - **☁️ 为云服务商降本增效**：在GPU多容器混合部署场景下，XSched能在**不修改应用代码**（对客户透明）且**几乎不影响**高优先级客户性能（<1% 开销）的同时，相比SOTA系统[TGS](https://github.com/pkusys/TGS)[^1]，多压榨出了2.74倍的GPU利用率，实现昂贵硬件的效率最大化。
-- **🤖 为智能服务削减延迟**：只需**约10行代码**，XSched就能集成到工业级推理服务框架[NVIDIA Triton](https://github.com/triton-inference-server/server)中，并为其提供低延迟的**多任务抢占式调度能力**，将高优先级请求的尾延迟降低1.41倍。相比NVIDIA GPU定制的SOTA调度系统[Paella](https://github.com/eniac/paella)[^2]，能在高负载下取得1.3倍的尾延迟降低。
+- **🤖 为智能服务削减延迟**：只需**约10行代码**，XSched就能集成到工业级推理服务框架[NVIDIA Triton](https://github.com/triton-inference-server/server)中，并为其提供低延迟的**多任务抢占式调度能力**，将高优先级请求的尾延迟降低1.41倍。相比NVIDIA GPU定制的SOTA调度系统[Paella](https://github.com/eniac/paella)[^2]，能在高负载下取得1.30倍的尾延迟降低。
 - **💻 为终端带来流畅体验**：对于运行在 [Intel Core Ultra NPU](https://www.intel.cn/content/www/cn/zh/products/details/processors/core-ultra.html) 上的智能视频会议应用，XSched实现了一种基于改进最低松弛度优先(MLLF)的XPU调度策略[^3]，保障语音转文字等**前台任务的实时响应**，同时让视频背景虚化等后台特效的帧处理**延迟显著降低**9.26 倍，消除卡顿并提升用户体验。
 
 我们在不同硬件平台上准备了系统演示视频，展示XSched在多任务场景下的强大调度效果！
