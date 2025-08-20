@@ -3,7 +3,7 @@
 [English](xsched-intro-2025-en.md) | [中文](xsched-intro-2025-zh.md)
 
 ###### July 2, 2025 • Weihang Shen and Rong Chen   
-
+  
 
 Our work [**XSched**](https://www.usenix.org/conference/osdi25/presentation/shen-weihang), published on OSDI'25, has been [open-sourced](https://github.com/XpuOS/xsched) on GitHub! 🚀
 
