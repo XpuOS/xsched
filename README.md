@@ -256,3 +256,8 @@ If you use XSched for your research, please cite our [paper](docs/xsched-osdi25.
 ```
 
 The artifacts of XSched is published on [Github](https://github.com/XpuOS/xsched-artifacts) and [Zenodo](https://doi.org/10.5281/zenodo.15327992).
+
+## Contact Us
+
+- For technical questions and feature requests, please submit via GitHub [Issues](https://github.com/XpuOS/xsched/issues)
+- For collaborations and partnerships, please reach out at [rongchen@sjtu.edu.cn](mailto:rongchen@sjtu.edu.cn)
