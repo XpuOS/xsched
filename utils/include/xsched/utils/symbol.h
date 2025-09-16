@@ -1,12 +1,15 @@
 #pragma once
 
-#include <dlfcn.h>
 #include <string>
 #include <unordered_map>
 
 #include "xsched/utils/lib.h"
 #include "xsched/utils/common.h"
 #include "xsched/utils/xassert.h"
+
+#if defined(__linux__)
+
+#include <dlfcn.h>
 
 inline void *GetRealDlSym()
 {
@@ -52,21 +55,21 @@ inline void *RealDlSym(void *handle, const char *name)
 }
 
 #define DLSYM_INTERCEPT_ENTRY(symbol) {#symbol, (void *)symbol}
-#define DEFINE_DLSYM_INTERCEPT(intercept_symbol_map) \
-    EXPORT_C_FUNC void *dlsym(void *handle, const char *name) \
-    { \
-        auto it = intercept_symbol_map.find(name); \
-        if (it != intercept_symbol_map.end()) { \
-            XDEBG("dlsym symbol replaced: %s -> %p", name, it->second); \
-            return it->second; \
-        } \
-        XDEBG("dlsym symbol ignored: %s", name); \
-        return RealDlSym(handle, name); \
+#define DEFINE_DLSYM_INTERCEPT(intercept_symbol_map)                               \
+    EXPORT_C_FUNC void *dlsym(void *handle, const char *name)                      \
+    {                                                                              \
+        auto it = intercept_symbol_map.find(name);                                 \
+        if (it != intercept_symbol_map.end()) {                                    \
+            XDEBG("dlsym symbol replaced: %s -> %p", name, it->second);            \
+            return it->second;                                                     \
+        }                                                                          \
+        XDEBG("dlsym symbol ignored: %s", name);                                   \
+        return RealDlSym(handle, name);                                            \
     }
 
-#define DEFINE_GET_SYMBOL_FUNC(func, env_name, search_names, search_dirs) \
-    static void *func(const char *symbol_name) \
-    { \
+#define DEFINE_GET_SYMBOL_FUNC(func, env_name, search_names, search_dirs)          \
+    static void *func(const char *symbol_name)                                     \
+    {                                                                              \
         static const std::vector<std::string> names = search_names;                \
         static const std::vector<std::string> dirs = search_dirs;                  \
         static const std::string dll_path = FindLibrary(env_name, names, dirs);    \
@@ -74,12 +77,12 @@ inline void *RealDlSym(void *handle, const char *name)
         XASSERT(dll_handle != nullptr, "fail to dlopen %s", dll_path.c_str());     \
         void *symbol = RealDlSym(dll_handle, symbol_name);                         \
         XASSERT(symbol != nullptr, "fail to get symbol %s", symbol_name);          \
-        return symbol; \
+        return symbol;                                                             \
     }
 
-#define DEFINE_CHECK_SYMBOL_FUNC(func, env_name, search_names, search_dirs) \
-    static bool func(const char *symbol_name) \
-    { \
+#define DEFINE_CHECK_SYMBOL_FUNC(func, env_name, search_names, search_dirs)        \
+    static bool func(const char *symbol_name)                                      \
+    {                                                                              \
         static const std::vector<std::string> names = search_names;                \
         static const std::vector<std::string> dirs = search_dirs;                  \
         static const std::string dll_path = FindLibrary(env_name, names, dirs);    \
@@ -88,3 +91,47 @@ inline void *RealDlSym(void *handle, const char *name)
         void *symbol = RealDlSym(dll_handle, symbol_name);                         \
         return symbol != nullptr; \
     }
+
+#elif defined(_WIN32)
+
+#include <windows.h>
+
+#define DLSYM_INTERCEPT_ENTRY(symbol) {#symbol, (void *)symbol}
+#define DEFINE_DLSYM_INTERCEPT(intercept_symbol_map)                                \
+    extern "C" __declspec(dllexport) FARPROC dlsym(HMODULE handle, LPCSTR name)     \
+    {                                                                               \
+        auto it = intercept_symbol_map.find(name);                                  \
+        if (it != intercept_symbol_map.end()) {                                     \
+            XDEBG("GetProcAddress symbol replaced: %s -> %p", name, it->second);    \
+            return (FARPROC)it->second;                                             \
+        }                                                                           \
+        XDEBG("GetProcAddress symbol ignored: %s", name);                           \
+        return GetProcAddress(handle, name);                                        \
+    }
+
+#define DEFINE_GET_SYMBOL_FUNC(func, env_name, search_names, search_dirs)           \
+    static void *func(const char *symbol_name)                                      \
+    {                                                                               \
+        static const std::vector<std::string> names = search_names;                 \
+        static const std::vector<std::string> dirs = search_dirs;                   \
+        static const std::string dll_path = FindLibrary(env_name, names, dirs);     \
+        static HMODULE dll_handle = LoadLibraryA(dll_path.c_str());                 \
+        XASSERT(dll_handle != nullptr, "fail to LoadLibrary %s", dll_path.c_str()); \
+        FARPROC symbol = ::GetProcAddress(dll_handle, symbol_name);                 \
+        XASSERT(symbol != nullptr, "fail to get symbol %s", symbol_name);           \
+        return (void*)symbol;                                                       \
+    }
+
+#define DEFINE_CHECK_SYMBOL_FUNC(func, env_name, search_names, search_dirs)         \
+    static bool func(const char *symbol_name)                                       \
+    {                                                                               \
+        static const std::vector<std::string> names = search_names;                 \
+        static const std::vector<std::string> dirs = search_dirs;                   \
+        static const std::string dll_path = FindLibrary(env_name, names, dirs);     \
+        static HMODULE dll_handle = LoadLibraryA(dll_path.c_str());                 \
+        XASSERT(dll_handle != nullptr, "fail to LoadLibrary %s", dll_path.c_str()); \
+        FARPROC symbol = GetProcAddress(dll_handle, symbol_name);                   \
+        return symbol != nullptr;                                                   \
+    }
+
+#endif

@@ -75,7 +75,7 @@ int main(int argc, char **argv)
     CLI11_PARSE(*xcli, argc, argv);
     Cli cli(addr, port);
 
-    if (top->parsed()) return cli.Top(1000.0 / frequency);
+    if (top->parsed()) return cli.TopXQueues(1000.0 / frequency);
     if (list->parsed()) return cli.ListXQueues();
     if (config->parsed()) return cli.ConfigXQueue(xq_cfg, level, threshold, batch_size);
 

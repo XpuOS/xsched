@@ -185,8 +185,8 @@ void AsyncXQueue::SetLaunchConfig(int64_t threshold, int64_t batch_size)
 
     // Check threshold and batch size are valid.
     XASSERT(threshold >= batch_size,
-            "command threshold (%ld) must not be smaller than command batch size (%ld)",
-            threshold, batch_size);
+            "command threshold (" FMT_64D ") must not be smaller than "
+            "command batch size (" FMT_64D ")", threshold, batch_size);
 
     // Not thread-safe.
     // TODO: change to thread-safe

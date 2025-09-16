@@ -1,0 +1,36 @@
+Language: Cpp
+BasedOnStyle: WebKit
+
+# Consecutive Alignments
+AlignConsecutiveAssignments: false
+AlignConsecutiveBitFields: AcrossComments
+AlignConsecutiveDeclarations: false
+AlignConsecutiveMacros: AcrossComments
+
+# Pointer
+PointerAlignment: Right
+DerivePointerAlignment: false
+
+# Comment
+AlignTrailingComments: true
+ReflowComments: true
+
+# Class
+AllowAllParametersOfDeclarationOnNextLine: true
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+
+# Single Line
+AllowShortBlocksOnASingleLine: true
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: All
+AllowShortIfStatementsOnASingleLine: true
+AllowShortLoopsOnASingleLine: true
+
+# Brace
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterEnum: true
+  AfterNamespace: true
+  AfterFunction: true
+  AfterClass: true
+  AfterStruct: true

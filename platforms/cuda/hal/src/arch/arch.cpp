@@ -52,6 +52,10 @@ std::shared_ptr<TarpHandler> TarpHandler::Instance(CUdevice dev)
 
 std::shared_ptr<HwQueue> xsched::cuda::CudaQueueCreate(CUstream stream)
 {
+#if defined(_WIN32)
+    return std::make_shared<CudaQueueLv1>(stream);
+#endif
+
     if (GetCudaLv3Implementation() == kCudaLv3ImplementationTsg) {
         return std::make_shared<CudaQueueLv3Tsg>(stream);
     }
@@ -74,12 +78,16 @@ std::shared_ptr<HwQueue> xsched::cuda::CudaQueueCreate(CUstream stream)
         return std::make_shared<CudaQueueLv3Trap>(stream);
     // NEW_CUDA_ARCH: New CUDA architecture support goes here
     default:
-        return nullptr;
+        return std::make_shared<CudaQueueLv1>(stream);
     }
 }
 
 CUresult xsched::cuda::DirectLaunch(std::shared_ptr<CudaKernelCommand> kernel, CUstream stream)
 {
+#if defined(_WIN32)
+    return CudaQueueLv1::DirectLaunch(kernel, stream);
+#endif
+
     if (GetCudaLv3Implementation() == kCudaLv3ImplementationTsg) {
         return CudaQueueLv3Tsg::DirectLaunch(kernel, stream);
     }

@@ -162,7 +162,7 @@ def merge_headers(headers, output_file, directory, all_header_files, include_dir
 
 def main():
     parser = argparse.ArgumentParser(description='Merge C/C++ header files into a single header file.')
-    parser.add_argument('directory', help='Directory containing header files to merge')
+    parser.add_argument('-d', '--directory', required=True, help='Directory containing header files to merge')
     parser.add_argument('-o', '--output', default='./merged.h', help='Output file path (default: ./merged.h)')
     parser.add_argument('-e', '--exclude', action='append', help='Pattern to exclude header files (can be used multiple times, supports glob patterns like *.hpp)')
     parser.add_argument('-I', '--include-dir', action='append', dest='include_dirs', 

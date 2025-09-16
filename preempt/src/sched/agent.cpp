@@ -66,6 +66,16 @@ void SchedAgent::InitScheduler(XSchedulerType scheduler_type, XPolicyType policy
 
     static const std::string kCmdline = []() -> std::string {
         std::string cmdline;
+        
+#if defined(_WIN32)
+        LPWSTR cmdlineW = GetCommandLineW();
+        int size = WideCharToMultiByte(CP_UTF8, 0, cmdlineW, -1, NULL, 0, NULL, NULL);
+        if (size > 0) {
+            std::vector<char> buffer(size);
+            WideCharToMultiByte(CP_UTF8, 0, cmdlineW, -1, buffer.data(), size, NULL, NULL);
+            cmdline = buffer.data();
+        }
+#elif defined(__linux__)
         std::ifstream cmdline_file("/proc/self/cmdline");
         if (cmdline_file.good()) {
             std::string arg;
@@ -74,6 +84,8 @@ void SchedAgent::InitScheduler(XSchedulerType scheduler_type, XPolicyType policy
             }
         }
         cmdline_file.close();
+#endif
+
         return ShrinkString(cmdline, ProcessCreateEvent::CmdlineCapacity() - 1);
     }();
 

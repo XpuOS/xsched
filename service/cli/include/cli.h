@@ -17,7 +17,7 @@ public:
 
     // XQueue query
     int ListXQueues();
-    int Top(uint64_t interval_ms);
+    int TopXQueues(uint64_t interval_ms);
 
     // XQueue config
     int ConfigXQueue(XQueueHandle handle, XPreemptLevel level,

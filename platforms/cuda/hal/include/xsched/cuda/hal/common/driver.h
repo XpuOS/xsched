@@ -13,9 +13,15 @@ namespace xsched::cuda
 class Driver
 {
 private:
+#if defined(_WIN32)
+    DEFINE_GET_SYMBOL_FUNC(GetSymbol, XSCHED_CUDA_LIB_ENV_NAME,
+                           std::vector<std::string>({"nvcuda_original.dll"}),
+                           std::vector<std::string>({}));
+#elif defined(__linux__)
     DEFINE_GET_SYMBOL_FUNC(GetSymbol, XSCHED_CUDA_LIB_ENV_NAME,
                            std::vector<std::string>({"libcuda.so", "libcuda.so.1"}),
                            std::vector<std::string>({}));
+#endif
 
 public:
     STATIC_CLASS(Driver);
@@ -461,6 +467,11 @@ public:
     DEFINE_STATIC_ADDRESS_CALL(GetSymbol("cuGreenCtxWaitEvent"), CUresult, GreenCtxWaitEvent, CUgreenCtx, hCtx, CUevent, hEvent);
     DEFINE_STATIC_ADDRESS_CALL(GetSymbol("cuStreamGetGreenCtx"), CUresult, StreamGetGreenCtx, CUstream, hStream, CUgreenCtx *, phCtx);
     DEFINE_STATIC_ADDRESS_CALL(GetSymbol("cuGreenCtxStreamCreate"), CUresult, GreenCtxStreamCreate, CUstream *, phStream, CUgreenCtx, greenCtx, unsigned int, flags, int, priority);
+    DEFINE_STATIC_ADDRESS_CALL(GetSymbol("cuLogsRegisterCallback"), CUresult, LogsRegisterCallback, CUlogsCallback, callbackFunc, void *, userData, CUlogsCallbackHandle *, callback_out);
+    DEFINE_STATIC_ADDRESS_CALL(GetSymbol("cuLogsUnregisterCallback"), CUresult, LogsUnregisterCallback, CUlogsCallbackHandle, callback);
+    DEFINE_STATIC_ADDRESS_CALL(GetSymbol("cuLogsCurrent"), CUresult, LogsCurrent, CUlogIterator *, iterator_out, unsigned int, flags);
+    DEFINE_STATIC_ADDRESS_CALL(GetSymbol("cuLogsDumpToFile"), CUresult, LogsDumpToFile, CUlogIterator *, iterator, const char *, pathToFile, unsigned int, flags);
+    DEFINE_STATIC_ADDRESS_CALL(GetSymbol("cuLogsDumpToMemory"), CUresult, LogsDumpToMemory, CUlogIterator *, iterator, char *, buffer, size_t *, size, unsigned int, flags);
     DEFINE_STATIC_ADDRESS_CALL(GetSymbol("cuMemHostRegister"), CUresult, MemHostRegister, void *, p, size_t, bytesize, unsigned int, Flags);
     DEFINE_STATIC_ADDRESS_CALL(GetSymbol("cuGraphicsResourceSetMapFlags"), CUresult, GraphicsResourceSetMapFlags, CUgraphicsResource, resource, unsigned int, flags);
     DEFINE_STATIC_ADDRESS_CALL(GetSymbol("cuLinkCreate"), CUresult, LinkCreate, unsigned int, numOptions, CUjit_option *, options, void **, optionValues, CUlinkState *, stateOut);

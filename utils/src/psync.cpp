@@ -1,3 +1,5 @@
+#if defined(__linux__)
+
 #include <cstring>
 
 #include "xsched/utils/log.h"
@@ -52,3 +54,5 @@ void ProcessSync::Sync(int expected_cnt, const char *client_name)
     Sync(expected_cnt);
     XINFO("psync %s done", client_name);
 }
+
+#endif

@@ -12,7 +12,7 @@ void LaxityPolicy::Sched(const Status &status)
     // find the task with the highest priority and the earliest laxity
     Priority highest_prio = PRIORITY_MIN;
     bool has_laxity = false;
-    auto earliest_laxity = std::chrono::system_clock::time_point::max();
+    auto earliest_laxity = (std::chrono::system_clock::time_point::max)();
     for (auto &status : status.xqueue_status) {
         if (!status.second->ready) continue;
 

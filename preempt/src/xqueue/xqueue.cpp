@@ -20,16 +20,17 @@ XResult XQueueManager::Add(XQueueHandle *xq_hp, HwQueueHandle hwq_h, int64_t lev
     std::lock_guard<std::mutex> lock(mtx_);
     std::shared_ptr<HwQueue> hwq_shptr = HwQueueManager::Get(hwq_h);
     if (hwq_shptr == nullptr) {
-        XWARN("HwQueue with handle 0x%lx does not exist or not registered", hwq_h);
+        XWARN("HwQueue with handle 0x" FMT_64X " does not exist or not registered", hwq_h);
         return kXSchedErrorNotFound;
     }
 
     if (hwq_shptr->GetXQueue() != nullptr) {
         XQueueHandle xq_h = hwq_shptr->GetXQueue()->GetHandle();
         auto it = xqs_.find(xq_h);
-        XASSERT(it != xqs_.end(), "XQueue with handle 0x%lx does not exist", xq_h);
-        XASSERT(it->second == hwq_shptr->GetXQueue(), "XQueue and handle 0x%lx mismatch", xq_h);
-        XWARN("HwQueue (0x%lx) already has an XQueue (0x%lx)", hwq_h, xq_h);
+        XASSERT(it != xqs_.end(), "XQueue with handle 0x" FMT_64X " does not exist", xq_h);
+        XASSERT(it->second == hwq_shptr->GetXQueue(),
+                "XQueue and handle 0x" FMT_64X " mismatch", xq_h);
+        XWARN("HwQueue (0x" FMT_64X ") already has an XQueue (0x" FMT_64X ")", hwq_h, xq_h);
         if (xq_hp != nullptr) *xq_hp = xq_h;
         return kXSchedSuccess;
     }
@@ -52,7 +53,7 @@ XResult XQueueManager::Del(XQueueHandle xq_h)
     std::unique_lock<std::mutex> lock(mtx_);
     auto it = xqs_.find(xq_h);
     if (it == xqs_.end()) {
-        XWARN("XQueue with handle 0x%lx does not exist", xq_h);
+        XWARN("XQueue with handle 0x" FMT_64X " does not exist", xq_h);
         return kXSchedErrorNotFound;
     }
 
@@ -123,7 +124,7 @@ XResult XQueueManager::AutoCreate(std::function<XResult(HwQueueHandle *)> create
         XWARN("fail to auto-create HwQueue, err: %d", res);
         return res;
     }
-    XDEBG("auto-created HwQueue 0x%lx", hwq);
+    XDEBG("auto-created HwQueue 0x" FMT_64X, hwq);
     XQueueHandle xq = 0;
     XPreemptLevel level = XSCHED_DEFAULT_PREEMPT_LEVEL;
 
@@ -134,11 +135,11 @@ XResult XQueueManager::AutoCreate(std::function<XResult(HwQueueHandle *)> create
 
     res = XQueueCreate(&xq, hwq, level, kQueueCreateFlagNone);
     if (res != kXSchedSuccess) {
-        XWARN("fail to auto-create XQueue (level-%d) for HwQueue 0x%lx, err: %d",
+        XWARN("fail to auto-create XQueue (level-%d) for HwQueue 0x" FMT_64X ", err: %d",
               level, hwq, res);
         return res;
     }
-    XDEBG("auto-created XQueue 0x%lx (level-%d) for HwQueue 0x%lx", xq, level, hwq);
+    XDEBG("auto-created XQueue 0x" FMT_64X " (level-%d) for HwQueue 0x" FMT_64X, xq, level, hwq);
 
     // set launch config by env
     int64_t env_threshold = -1;
@@ -148,10 +149,10 @@ XResult XQueueManager::AutoCreate(std::function<XResult(HwQueueHandle *)> create
     if (env_set_threshold || env_set_batch_size) {
         res = XQueueSetLaunchConfig(xq, env_threshold, env_batch_size);
         if (res != kXSchedSuccess) {
-            XWARN("fail to auto-set launch config [%ld, %ld] for XQueue 0x%lx, err: %d",
-                  env_threshold, env_batch_size, xq, res);
+            XWARN("fail to auto-set launch config [" FMT_64D ", " FMT_64D "] "
+                  "for XQueue 0x" FMT_64X ", err: %d", env_threshold, env_batch_size, xq, res);
         }
-        XDEBG("auto-set launch config [%ld, %ld] for XQueue 0x%lx",
+        XDEBG("auto-set launch config [" FMT_64D ", " FMT_64D "] for XQueue 0x" FMT_64X,
               env_threshold, env_batch_size, xq);
     }
 
@@ -160,10 +161,10 @@ XResult XQueueManager::AutoCreate(std::function<XResult(HwQueueHandle *)> create
     if (GetEnvInt64(XSCHED_AUTO_XQUEUE_PRIORITY_ENV_NAME, env_priority)) {
         res = XHintPriority(xq, env_priority);
         if (res != kXSchedSuccess) {
-            XWARN("fail to auto-set priority %ld for XQueue 0x%lx, err: %d",
+            XWARN("fail to auto-set priority " FMT_64D " for XQueue 0x" FMT_64X ", err: %d",
                   env_priority, xq, res);
         }
-        XDEBG("auto-set priority %ld for XQueue 0x%lx", env_priority, xq);
+        XDEBG("auto-set priority " FMT_64D " for XQueue 0x" FMT_64X, env_priority, xq);
     }
 
     // set utilization by env
@@ -171,10 +172,10 @@ XResult XQueueManager::AutoCreate(std::function<XResult(HwQueueHandle *)> create
     if (GetEnvInt64(XSCHED_AUTO_XQUEUE_UTILIZATION_ENV_NAME, env_utilization)) {
         res = XHintUtilization(xq, env_utilization);
         if (res != kXSchedSuccess) {
-            XWARN("fail to auto-set utilization %ld for XQueue 0x%lx, err: %d",
+            XWARN("fail to auto-set utilization " FMT_64D " for XQueue 0x" FMT_64X ", err: %d",
                   env_utilization, xq, res);
         }
-        XDEBG("auto-set utilization %ld %% for XQueue 0x%lx", env_utilization, xq);
+        XDEBG("auto-set utilization " FMT_64D " %% for XQueue 0x" FMT_64X, env_utilization, xq);
     }
 
     // set timeslice by env
@@ -182,10 +183,10 @@ XResult XQueueManager::AutoCreate(std::function<XResult(HwQueueHandle *)> create
     if (GetEnvInt64(XSCHED_AUTO_XQUEUE_TIMESLICE_ENV_NAME, env_timeslice)) {
         res = XHintTimeslice(env_timeslice);
         if (res != kXSchedSuccess) {
-            XWARN("fail to auto-set timeslice %ld for XQueue 0x%lx, err: %d",
+            XWARN("fail to auto-set timeslice " FMT_64D " for XQueue 0x" FMT_64X ", err: %d",
                   env_timeslice, xq, res);
         }
-        XDEBG("auto-set timeslice %ld us", env_timeslice);
+        XDEBG("auto-set timeslice " FMT_64D " us", env_timeslice);
     }
 
     // set deadline by env
@@ -193,10 +194,10 @@ XResult XQueueManager::AutoCreate(std::function<XResult(HwQueueHandle *)> create
     if (GetEnvInt64(XSCHED_AUTO_XQUEUE_DEADLINE_ENV_NAME, env_deadline)) {
         res = XHintDeadline(xq, env_deadline);
         if (res != kXSchedSuccess) {
-            XWARN("fail to auto-set deadline %ld for XQueue 0x%lx, err: %d",
+            XWARN("fail to auto-set deadline " FMT_64D " for XQueue 0x" FMT_64X ", err: %d",
                   env_deadline, xq, res);
         }
-        XDEBG("auto-set deadline %ld us for XQueue 0x%lx", env_deadline, xq);
+        XDEBG("auto-set deadline " FMT_64D " us for XQueue 0x" FMT_64X, env_deadline, xq);
     }
 
     // set kdeadline by env
@@ -204,10 +205,10 @@ XResult XQueueManager::AutoCreate(std::function<XResult(HwQueueHandle *)> create
     if (GetEnvInt64(XSCHED_AUTO_XQUEUE_KDEADLINE_ENV_NAME, env_kdeadline)) {
         res = XHintKDeadline(env_kdeadline);
         if (res != kXSchedSuccess) {
-            XWARN("fail to auto-set kdeadline %ld for XQueue 0x%lx, err: %d",
+            XWARN("fail to auto-set kdeadline " FMT_64D " for XQueue 0x" FMT_64X ", err: %d",
                   env_kdeadline, xq, res);
         }
-        XDEBG("auto-set kdeadline %ld for XQueue 0x%lx", env_kdeadline, xq);
+        XDEBG("auto-set kdeadline " FMT_64D " for XQueue 0x" FMT_64X, env_kdeadline, xq);
     }
 
     // set laxity by env
@@ -215,11 +216,11 @@ XResult XQueueManager::AutoCreate(std::function<XResult(HwQueueHandle *)> create
     if (GetEnvInt64(XSCHED_AUTO_XQUEUE_LAXITY_ENV_NAME, env_laxity)) {
         res = XHintLaxity(xq, env_laxity, PRIORITY_DEFAULT, env_priority);
         if (res != kXSchedSuccess) {
-            XWARN("fail to auto-set laxity %ld, laxity-prio %d, crit-prio %ld for XQueue 0x%lx",
-                  env_laxity, PRIORITY_DEFAULT, env_priority, xq);
+            XWARN("fail to auto-set laxity " FMT_64D ", laxity-prio %d, crit-prio " FMT_64D
+                  " for XQueue 0x" FMT_64X, env_laxity, PRIORITY_DEFAULT, env_priority, xq);
         }
-        XDEBG("auto-set laxity %ld, laxity-prio %d, crit-prio %ld for XQueue 0x%lx",
-              env_laxity, PRIORITY_DEFAULT, env_priority, xq);
+        XDEBG("auto-set laxity " FMT_64D ", laxity-prio %d, crit-prio " FMT_64D
+              " for XQueue 0x" FMT_64X, env_laxity, PRIORITY_DEFAULT, env_priority, xq);
     }
 
     return res;
@@ -235,22 +236,23 @@ XResult XQueueManager::AutoDestroy(HwQueueHandle hwq_h)
     }
     auto xq_shptr = HwQueueManager::GetXQueue(hwq_h);
     if (xq_shptr == nullptr) {
-        XWARN("XQueue for HwQueue 0x%lx does not exist", hwq_h);
+        XWARN("XQueue for HwQueue 0x" FMT_64X " does not exist", hwq_h);
         return kXSchedErrorNotFound;
     }
     XResult res = XQueueDestroy(xq_shptr->GetHandle());
     if (res != kXSchedSuccess) {
-        XWARN("fail to auto-destroy XQueue 0x%lx for HwQueue 0x%lx, err: %d",
+        XWARN("fail to auto-destroy XQueue 0x" FMT_64X " for HwQueue 0x" FMT_64X ", err: %d",
               xq_shptr->GetHandle(), hwq_h, res);
         return res;
     }
-    XDEBG("auto-destroyed XQueue 0x%lx for HwQueue 0x%lx", xq_shptr->GetHandle(), hwq_h);
+    XDEBG("auto-destroyed XQueue 0x" FMT_64X " for HwQueue 0x" FMT_64X,
+          xq_shptr->GetHandle(), hwq_h);
     res = HwQueueDestroy(hwq_h);
     if (res != kXSchedSuccess) {
-        XWARN("fail to auto-destroy HwQueue 0x%lx, err: %d", hwq_h, res);
+        XWARN("fail to auto-destroy HwQueue 0x" FMT_64X ", err: %d", hwq_h, res);
         return res;
     }
-    XDEBG("auto-destroyed HwQueue 0x%lx", hwq_h);
+    XDEBG("auto-destroyed HwQueue 0x" FMT_64X, hwq_h);
     return res;
 }
 
@@ -268,11 +270,11 @@ EXPORT_C_FUNC XResult XQueueSetPreemptLevel(XQueueHandle xq, int64_t level)
 {
     std::shared_ptr<XQueue> xq_shptr = XQueueManager::Get(xq);
     if (xq_shptr == nullptr) {
-        XWARN("XQueue with handle 0x%lx does not exist", xq);
+        XWARN("XQueue with handle 0x" FMT_64X " does not exist", xq);
         return kXSchedErrorNotFound;
     }
     if (!xq_shptr->GetFeatures(kQueueFeatureDynamicLevel)) {
-        XWARN("XQueue with handle 0x%lx does not support dynamic level", xq);
+        XWARN("XQueue with handle 0x" FMT_64X " does not support dynamic level", xq);
         return kXSchedErrorNotSupported;
     }
     xq_shptr->SetPreemptLevel((XPreemptLevel)level);
@@ -283,17 +285,17 @@ EXPORT_C_FUNC XResult XQueueSetLaunchConfig(XQueueHandle xq, int64_t threshold, 
 {
     std::shared_ptr<XQueue> xq_shptr = XQueueManager::Get(xq);
     if (xq_shptr == nullptr) {
-        XWARN("XQueue with handle 0x%lx does not exist", xq);
+        XWARN("XQueue with handle 0x" FMT_64X " does not exist", xq);
         return kXSchedErrorNotFound;
     }
 
     if (threshold <= 0 && batch_size <= 0) return kXSchedSuccess;
     if (threshold > 0 && !xq_shptr->GetFeatures(kQueueFeatureDynamicThreshold)) {
-        XWARN("XQueue with handle 0x%lx does not support dynamic command threshold", xq);
+        XWARN("XQueue with handle 0x" FMT_64X " does not support dynamic command threshold", xq);
         return kXSchedErrorNotSupported;
     }
     if (batch_size > 0 && !xq_shptr->GetFeatures(kQueueFeatureDynamicBatchSize)) {
-        XWARN("XQueue with handle 0x%lx does not support dynamic command batch size", xq);
+        XWARN("XQueue with handle 0x" FMT_64X " does not support dynamic command batch size", xq);
         return kXSchedErrorNotSupported;
     }
 
@@ -305,13 +307,13 @@ EXPORT_C_FUNC XResult XQueueSubmit(XQueueHandle xq, HwCommandHandle hw_cmd)
 {
     std::shared_ptr<XQueue> xq_shptr = XQueueManager::Get(xq);
     if (xq_shptr == nullptr) {
-        XWARN("XQueue with handle 0x%lx does not exist", xq);
+        XWARN("XQueue with handle 0x" FMT_64X " does not exist", xq);
         return kXSchedErrorNotFound;
     }
     // Get and DELETE the HwCommand from the HwCommandManager.
     std::shared_ptr<HwCommand> hw_cmd_shptr = HwCommandManager::Del(hw_cmd);
     if (hw_cmd_shptr == nullptr) {
-        XWARN("HwCommand with handle 0x%lx does not exist or not registered", hw_cmd);
+        XWARN("HwCommand with handle 0x" FMT_64X " does not exist or not registered", hw_cmd);
         return kXSchedErrorNotFound;
     }
     xq_shptr->Submit(hw_cmd_shptr);
@@ -322,12 +324,12 @@ EXPORT_C_FUNC XResult XQueueWait(XQueueHandle xq, HwCommandHandle hw_cmd)
 {
     std::shared_ptr<XQueue> xq_shptr = XQueueManager::Get(xq);
     if (xq_shptr == nullptr) {
-        XWARN("XQueue with handle 0x%lx does not exist", xq);
+        XWARN("XQueue with handle 0x" FMT_64X " does not exist", xq);
         return kXSchedErrorNotFound;
     }
     std::shared_ptr<HwCommand> hw_cmd_shptr = HwCommandManager::Get(hw_cmd);
     if (hw_cmd_shptr == nullptr) {
-        XWARN("HwCommand with handle 0x%lx does not exist or not registered", hw_cmd);
+        XWARN("HwCommand with handle 0x" FMT_64X " does not exist or not registered", hw_cmd);
         return kXSchedErrorNotFound;
     }
     xq_shptr->Wait(hw_cmd_shptr);
@@ -338,7 +340,7 @@ EXPORT_C_FUNC XResult XQueueWaitAll(XQueueHandle xq)
 {
     std::shared_ptr<XQueue> xq_shptr = XQueueManager::Get(xq);
     if (xq_shptr == nullptr) {
-        XWARN("XQueue with handle 0x%lx does not exist", xq);
+        XWARN("XQueue with handle 0x" FMT_64X " does not exist", xq);
         return kXSchedErrorNotFound;
     }
     xq_shptr->WaitAll();
@@ -350,7 +352,7 @@ EXPORT_C_FUNC XResult XQueueQuery(XQueueHandle xq, XQueueState *state)
     if (state == nullptr) return kXSchedErrorInvalidValue;
     std::shared_ptr<XQueue> xq_shptr = XQueueManager::Get(xq);
     if (xq_shptr == nullptr) {
-        XWARN("XQueue with handle 0x%lx does not exist", xq);
+        XWARN("XQueue with handle 0x" FMT_64X " does not exist", xq);
         return kXSchedErrorNotFound;
     }
     *state = xq_shptr->Query();
@@ -361,7 +363,7 @@ EXPORT_C_FUNC XResult XQueueSuspend(XQueueHandle xq, int64_t flags)
 {
     std::shared_ptr<XQueue> xq_shptr = XQueueManager::Get(xq);
     if (xq_shptr == nullptr) {
-        XWARN("XQueue with handle 0x%lx does not exist", xq);
+        XWARN("XQueue with handle 0x" FMT_64X " does not exist", xq);
         return kXSchedErrorNotFound;
     }
     xq_shptr->Suspend(flags);
@@ -372,7 +374,7 @@ EXPORT_C_FUNC XResult XQueueResume(XQueueHandle xq, int64_t flags)
 {
     std::shared_ptr<XQueue> xq_shptr = XQueueManager::Get(xq);
     if (xq_shptr == nullptr) {
-        XWARN("XQueue with handle 0x%lx does not exist", xq);
+        XWARN("XQueue with handle 0x" FMT_64X " does not exist", xq);
         return kXSchedErrorNotFound;
     }
     xq_shptr->Resume(flags);
@@ -384,7 +386,7 @@ EXPORT_C_FUNC XResult XQueueProfileHwCommandCount(XQueueHandle xq, int64_t *coun
     if (count == nullptr) return kXSchedErrorInvalidValue;
     std::shared_ptr<XQueue> xq_shptr = XQueueManager::Get(xq);
     if (xq_shptr == nullptr) {
-        XWARN("XQueue with handle 0x%lx does not exist", xq);
+        XWARN("XQueue with handle 0x" FMT_64X " does not exist", xq);
         return kXSchedErrorNotFound;
     }
     *count = xq_shptr->GetHwCommandCount();

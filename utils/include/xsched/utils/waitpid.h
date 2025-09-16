@@ -36,6 +36,8 @@ public:
     static std::unique_ptr<PidWaiter> Create(TerminateCallback callback);
 };
 
+#if defined(__linux__)
+
 class PidFdWaiter : public PidWaiter
 {
 public:
@@ -104,5 +106,28 @@ private:
     TerminateCallback callback_;
     std::unique_ptr<std::thread> thread_ = nullptr;
 };
+
+#elif defined(_WIN32)
+
+class WinPidWaiter : public PidWaiter {
+public:
+    WinPidWaiter(TerminateCallback callback): callback_(callback) {}
+    ~WinPidWaiter();
+
+    virtual void Start() override;
+    virtual void Stop() override;
+    virtual void AddWait(PID pid) override;
+
+private:
+    void WaitWorker();
+
+    TerminateCallback callback_;
+    std::unordered_set<PID> pids_;
+    std::mutex mtx_;
+    std::unique_ptr<std::thread> thread_;
+    std::atomic<bool> running_{false};
+};
+
+#endif
 
 } // namespace xsched::utils

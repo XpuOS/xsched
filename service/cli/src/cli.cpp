@@ -1,6 +1,14 @@
+#if defined(_WIN32)
+#define WIN32_LEAN_AND_MEAN
+#include <winsock2.h>
+#include <windows.h>
+#endif
+
 #include <algorithm>
 #include <unordered_map>
-#include <tabulate/table.hpp>
+#include <ftxui/dom/elements.hpp>
+#include <ftxui/screen/screen.hpp>
+#include <ftxui/component/component.hpp>
 
 #include "cli.h"
 #include "convert.h"
@@ -9,7 +17,7 @@
 #include "xsched/protocol/names.h"
 #include "xsched/protocol/device.h"
 
-using namespace tabulate;
+using namespace ftxui;
 using namespace xsched::sched;
 using namespace xsched::service;
 using namespace xsched::protocol;
@@ -25,56 +33,58 @@ int Cli::ListXQueues()
     std::unordered_map<PID, std::string> pid_to_cmdline;
     XSCHED_ASSERT(client_->QueryXQueues(xqueue_status, pid_to_cmdline));
 
-    Table table;
-    table.add_row({"PID", "DEV", "XQUEUE", "STAT", "SCHED", "LV", "CMD"});
-    table.row(0).format().font_style({FontStyle::bold}).font_align(FontAlign::center);
+    // list the table
+    std::vector<std::vector<Element>> rows;
 
-    if (xqueue_status.empty()) {
-        std::cout << table << std::endl;
-        return 0;
-    }
+    // header row
+    rows.push_back({
+        text(" PID ")    | bold | center,
+        text(" DEV ")    | bold | center,
+        text(" XQUEUE ") | bold | center,
+        text(" STAT ")   | bold | center,
+        text(" SCHED ")  | bold | center,
+        text(" LV ")     | bold | center,
+        text(" CMD ")    | bold | center,
+    });
 
+    // data rows
     std::sort(xqueue_status.begin(), xqueue_status.end(),
               [](const XQueueStatus &a, const XQueueStatus &b) { return a.pid < b.pid; });
-
-    size_t row = 1;
     for (const auto &status : xqueue_status) {
-        table.add_row({
-            std::to_string(status.pid),
-            GetDeviceTypeName(GetDeviceType(status.device)) + "(" + ToHex(status.device) + ")",
-            ToHex(status.handle),
-            status.ready     ? "RDY" : "BLK",
-            status.suspended ? "SUS" : "RUN",
-            std::to_string((int)status.level),
-            pid_to_cmdline[status.pid].substr(0, 60),
+        std::string dev = GetDeviceTypeName(GetDeviceType(status.device))
+                        + "(" + ToHex(status.device) + ")";
+        auto cmdl_it = pid_to_cmdline.find(status.pid);
+        const std::string &cmd = cmdl_it == pid_to_cmdline.end() ? "" : cmdl_it->second;
+        auto stat = status.ready ? text(" RDY ") | color(Color::Cyan)
+                                 : text(" BLK ") | color(Color::Yellow);
+        auto sched = status.suspended ? text(" SUS ") | color(Color::Red)
+                                      : text(" RUN ") | color(Color::Green);
+
+        rows.push_back({
+            text(" " + std::to_string(status.pid) + " ") | center,
+            text(" " + dev + " ") | center,
+            text(" " + ToHex(status.handle) + " ") | center,
+            stat  | center,
+            sched | center,
+            text(" " + std::to_string((int)status.level) + " ") | center,
+            text(" " + cmd + " ") | center,
         });
-
-        if (status.ready) {
-            table[row][3].format().font_color(Color::cyan);
-        } else {
-            table[row][3].format().font_color(Color::yellow);
-        }
-
-        if (status.suspended) {
-            table[row][4].format().font_color(Color::red);
-        } else {
-            table[row][4].format().font_color(Color::green);
-        }
-
-        for (size_t i = 0; i < 6; i++) {
-            table[row][i].format().font_align(FontAlign::center);
-        }
-        // Set command column to left align
-        table[row][6].format().font_align(FontAlign::left);
-
-        row++;
     }
 
-    std::cout << table << std::endl;
+    // render the table on terminal
+    auto table = gridbox(std::move(rows)) | borderLight;
+    auto document = vbox({
+        table,
+        filler(),
+    });
+
+    auto screen = Screen::Create(Dimension::Full(), Dimension::Fit(document));
+    Render(screen, document);
+    std::cout << screen.ToString() << std::endl;
     return 0;
 }
 
-int Cli::Top(uint64_t interval_ms)
+int Cli::TopXQueues(uint64_t interval_ms)
 {
     while (true) {
         std::cout << "\033[2J\033[H";

@@ -2,7 +2,12 @@
 
 #include <mutex>
 #include <atomic>
+
+#if defined(_WIN32)
+#include <windows.h>
+#else
 #include <pthread.h>
+#endif
 
 namespace xsched::utils
 {
@@ -32,6 +37,17 @@ public:
 
 class SpinLock : public MutexLock
 {
+#if defined(_WIN32)
+public:
+    SpinLock() { InitializeSRWLock(&srwlock_); }
+    virtual ~SpinLock() = default;
+    virtual void lock()   override { AcquireSRWLockExclusive(&srwlock_); }
+    virtual void unlock() override { ReleaseSRWLockExclusive(&srwlock_); }
+    void tryLock()                 { TryAcquireSRWLockExclusive(&srwlock_); }
+
+private:
+    SRWLOCK srwlock_;
+#else
 public:
     SpinLock() { pthread_spin_init(&spinlock_, PTHREAD_PROCESS_PRIVATE); }
     virtual ~SpinLock()            { pthread_spin_destroy(&spinlock_); }
@@ -41,6 +57,7 @@ public:
 
 private:
     pthread_spinlock_t spinlock_;
+#endif
 };
 
 class MCSLock : public MutexLock
@@ -59,11 +76,11 @@ private:
         kLockGranted = 1
     };
 
-    struct MCSNode
+    struct alignas(64) MCSNode
     {
         volatile LockStatus flag;
         volatile MCSNode *next;
-    } __attribute__((aligned(64)));
+    };
 
     static thread_local MCSNode me;
     std::atomic<MCSNode *> tail_{nullptr};

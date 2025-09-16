@@ -33,7 +33,8 @@ void UtilizationPartitionPolicy::Sched(const Status &status)
     if (xit == status.xqueue_status.end()) {
         // current xqueue is not found
         auto bit = utils_.find(cur_running_);
-        XASSERT(bit != utils_.end(), "utilization of XQueue 0x%lx not found.", cur_running_);
+        XASSERT(bit != utils_.end(),
+                "utilization of XQueue 0x" FMT_64X " not found", cur_running_);
         utils_.erase(bit);
         SwitchToAny(status);
         return;
@@ -43,7 +44,8 @@ void UtilizationPartitionPolicy::Sched(const Status &status)
     if (now < cur_end_ && xit->second->ready) return;
 
     auto bit = utils_.find(cur_running_);
-    XASSERT(bit != utils_.end(), "utilization of XQueue 0x%lx not found.", cur_running_);
+    XASSERT(bit != utils_.end(),
+            "utilization of XQueue 0x" FMT_64X " not found", cur_running_);
     
     // current xqueue has finished its time slice
     // select the next xqueue to run
@@ -119,6 +121,7 @@ std::chrono::microseconds UtilizationPartitionPolicy::GetBudget(Utilization util
     Utilization total_util = 0;
     int64_t totalUs = timeslice_.count();
     for (const auto &xqueue : utils_) { total_util += xqueue.second; }
+    if(total_util == 0) return std::chrono::microseconds(TIMESLICE_DEFAULT);
     return std::chrono::microseconds(totalUs * util / total_util);
 }
 

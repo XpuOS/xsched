@@ -3,11 +3,11 @@ cmake_minimum_required(VERSION 3.12)
 project(XSched VERSION 1.0.0)
 
 option(SHIM_SOFTLINK     "Create softlink for shim library."     OFF)
-option(CONTAINER_SUPPORT "Enable support for container runtime." OFF)
 option(BUILD_TEST        "Build test cases."                     OFF)
 
+# Generate a compile_commands.json for Clang
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_C_FLAGS_RELEASE   "$ENV{CFLAGS}   -O3 -DRELEASE_MODE")
 set(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -DRELEASE_MODE")
 set(CMAKE_C_FLAGS_DEBUG     "$ENV{CFLAGS}   -O0 -g2 -ggdb -DDEBUG_MODE")
@@ -44,5 +44,7 @@ install(FILES
 )
 
 export(EXPORT XSchedTargets FILE ${CMAKE_CURRENT_BINARY_DIR}/XSchedTargets.cmake)
+# Install the exported targets with namespace prefix "XSched::" to lib/cmake/XSched
+# Allow XSched to be imported by find_package(XSched) and used with XSched::libxxx
 install(EXPORT XSchedTargets NAMESPACE XSched:: DESTINATION lib/cmake/XSched)
 install(DIRECTORY ${XSCHED_INCLUDE_DIR}/ DESTINATION include)

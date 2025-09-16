@@ -92,7 +92,7 @@ EXPORT_C_FUNC XResult HwCommandDestroy(HwCommandHandle hw_cmd)
 {
     std::shared_ptr<HwCommand> hw_cmd_shptr = HwCommandManager::Del(hw_cmd);
     if (hw_cmd_shptr == nullptr) {
-        XWARN("HwCommand with handle 0x%lx does not exist or not registered", hw_cmd);
+        XWARN("HwCommand with handle 0x" FMT_64X " does not exist or not registered", hw_cmd);
         return kXSchedErrorNotFound;
     }
     return kXSchedSuccess;

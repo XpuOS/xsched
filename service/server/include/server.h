@@ -9,7 +9,7 @@
 #define CPPHTTPLIB_THREAD_POOL_COUNT 2
 #include <httplib.h>
 #include <json/json.h>
-#include <libipc/ipc.h>
+#include <ipc/ipc.h>
 
 #include "xsched/types.h"
 #include "xsched/utils/waitpid.h"
@@ -46,9 +46,9 @@ private:
     void PostHint(const httplib::Request &req, httplib::Response &res, const httplib::ContentReader &reader);
 
     std::mutex chan_mtx_;
-    std::unique_ptr<ipc::channel> recv_chan_ = nullptr;
-    std::unique_ptr<ipc::channel> self_chan_ = nullptr;
-    std::unordered_map<PID, std::shared_ptr<ipc::channel>> client_chans_;
+    std::unique_ptr<ipc::Node> recv_chan_ = nullptr;
+    std::unique_ptr<ipc::Node> self_chan_ = nullptr;
+    std::unordered_map<PID, std::shared_ptr<ipc::Node>> client_chans_;
     std::unique_ptr<utils::PidWaiter> pid_waiter_ = nullptr;
     std::unique_ptr<sched::LocalScheduler> scheduler_ = nullptr;
     

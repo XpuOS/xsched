@@ -1,5 +1,7 @@
 #pragma once
 
+#if defined(__linux__)
+
 #include <string>
 #include <chrono>
 #include <cstdint>
@@ -84,3 +86,5 @@ private:
 };
 
 } // namespace xsched::utils
+
+#endif

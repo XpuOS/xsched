@@ -98,12 +98,45 @@ ze_result_t CommandListManager::Append(ze_command_list_handle_t cmd_list, std::f
 
 uint64_t CommandListManager::GetSliceCmdCnt()
 {
-    static uint64_t slice_cmd_cnt = []()->uint64_t {
+    static uint64_t slice_cmd_cnt = []() -> uint64_t {
         uint64_t val = 0;
+        char *env = std::getenv(XSCHED_AUTO_XQUEUE_ENV_NAME);
+        if (env == nullptr || strlen(env) == 0 || strcmp(env, "0") == 0 || strcasecmp(env, "off") == 0) return 0;
         char *str = std::getenv(XSCHED_LEVELZERO_SLICE_CNT_ENV_NAME);
         if (str == nullptr) return 0;
         try { val = std::stoll(str); } catch (...) { return 0; }
         return val;
     }();
     return slice_cmd_cnt;
+}
+
+ze_result_t ImmediateCommandListManager::Create(ze_context_handle_t ctx, ze_device_handle_t dev, const ze_command_queue_desc_t *altdesc, ze_command_list_handle_t *cmd_list)
+{
+    ze_result_t res = Driver::CommandListCreateImmediate(ctx, dev, altdesc, cmd_list);
+    if (res != ZE_RESULT_SUCCESS) return res;
+
+    std::lock_guard<std::mutex> lock(mtx_);
+    auto it = immediates_.find(*cmd_list);
+    XASSERT(it == immediates_.end(), "immediate command list %p already exists", *cmd_list);
+    immediates_.insert(*cmd_list);
+    return res;
+}
+
+bool ImmediateCommandListManager::Exists(ze_command_list_handle_t cmd_list)
+{
+    std::lock_guard<std::mutex> lock(mtx_);
+    auto it = immediates_.find(cmd_list);
+    return it != immediates_.end();
+}
+
+ze_result_t ImmediateCommandListManager::Destroy(ze_command_list_handle_t cmd_list)
+{
+    ze_result_t res = Driver::CommandListDestroy(cmd_list);
+    if (res != ZE_RESULT_SUCCESS) return res;
+
+    std::lock_guard<std::mutex> lock(mtx_);
+    auto it = immediates_.find(cmd_list);
+    XASSERT(it != immediates_.end(), "immediate command list %p not found", cmd_list);
+    immediates_.erase(it);
+    return res;
 }

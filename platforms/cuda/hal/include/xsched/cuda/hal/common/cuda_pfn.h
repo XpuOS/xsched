@@ -230,8 +230,8 @@ extern "C" {
 #define PFN_cuMemPoolExportPointer  PFN_cuMemPoolExportPointer_v11020
 #define PFN_cuMemPoolImportPointer  PFN_cuMemPoolImportPointer_v11020
 #define PFN_cuPointerGetAttribute  PFN_cuPointerGetAttribute_v4000
-#define PFN_cuMemPrefetchAsync  __API_TYPEDEF_PTSZ(PFN_cuMemPrefetchAsync, 8000, 8000)
-#define PFN_cuMemAdvise  PFN_cuMemAdvise_v8000
+#define PFN_cuMemPrefetchAsync  __API_TYPEDEF_PTSZ(PFN_cuMemPrefetchAsync, 12020, 12020)
+#define PFN_cuMemAdvise  PFN_cuMemAdvise_v12020
 #define PFN_cuMemAdvise_v2  PFN_cuMemAdvise_v12020
 #define PFN_cuMemPrefetchAsync_v2  __API_TYPEDEF_PTSZ(PFN_cuMemPrefetchAsync, 12020, 12020)
 #define PFN_cuMemRangeGetAttribute  PFN_cuMemRangeGetAttribute_v8000
@@ -250,7 +250,7 @@ extern "C" {
 #define PFN_cuStreamGetPriority  __API_TYPEDEF_PTSZ(PFN_cuStreamGetPriority, 5050, 7000)
 #define PFN_cuStreamGetFlags  __API_TYPEDEF_PTSZ(PFN_cuStreamGetFlags, 5050, 7000)
 #define PFN_cuStreamGetDevice __API_TYPEDEF_PTSZ(PFN_cuStreamGetDevice, 12080, 12080)
-#define PFN_cuStreamGetCtx  __API_TYPEDEF_PTSZ(PFN_cuStreamGetCtx, 9020, 9020)
+#define PFN_cuStreamGetCtx  __API_TYPEDEF_PTSZ(PFN_cuStreamGetCtx, 12050, 12050)
 #define PFN_cuStreamWaitEvent  __API_TYPEDEF_PTSZ(PFN_cuStreamWaitEvent, 3020, 7000)
 #define PFN_cuStreamAddCallback  __API_TYPEDEF_PTSZ(PFN_cuStreamAddCallback, 5000, 7000)
 #define PFN_cuStreamBeginCapture  __API_TYPEDEF_PTSZ(PFN_cuStreamBeginCapture, 10010, 10010)
@@ -258,10 +258,10 @@ extern "C" {
 #define PFN_cuThreadExchangeStreamCaptureMode  PFN_cuThreadExchangeStreamCaptureMode_v10010
 #define PFN_cuStreamEndCapture  __API_TYPEDEF_PTSZ(PFN_cuStreamEndCapture, 10000, 10000)
 #define PFN_cuStreamIsCapturing  __API_TYPEDEF_PTSZ(PFN_cuStreamIsCapturing, 10000, 10000)
-#define PFN_cuStreamGetCaptureInfo  __API_TYPEDEF_PTSZ(PFN_cuStreamGetCaptureInfo, 10010, 10010)
+#define PFN_cuStreamGetCaptureInfo  __API_TYPEDEF_PTSZ(PFN_cuStreamGetCaptureInfo, 12030, 12030)
 #define PFN_cuStreamGetCaptureInfo_v2  __API_TYPEDEF_PTSZ(PFN_cuStreamGetCaptureInfo, 11030, 11030)
 #define PFN_cuStreamGetCaptureInfo_v3  __API_TYPEDEF_PTSZ(PFN_cuStreamGetCaptureInfo, 12030, 12030)
-#define PFN_cuStreamUpdateCaptureDependencies  __API_TYPEDEF_PTSZ(PFN_cuStreamUpdateCaptureDependencies, 11030, 11030)
+#define PFN_cuStreamUpdateCaptureDependencies  __API_TYPEDEF_PTSZ(PFN_cuStreamUpdateCaptureDependencies, 12030, 12030)
 #define PFN_cuStreamUpdateCaptureDependencies_v2  __API_TYPEDEF_PTSZ(PFN_cuStreamUpdateCaptureDependencies, 12030, 12030)
 #define PFN_cuStreamAttachMemAsync  __API_TYPEDEF_PTSZ(PFN_cuStreamAttachMemAsync, 6000, 7000)
 #define PFN_cuStreamQuery  __API_TYPEDEF_PTSZ(PFN_cuStreamQuery, 2000, 7000)
@@ -276,7 +276,7 @@ extern "C" {
 #define PFN_cuEventQuery  PFN_cuEventQuery_v2000
 #define PFN_cuEventSynchronize  PFN_cuEventSynchronize_v2000
 #define PFN_cuEventDestroy  PFN_cuEventDestroy_v4000
-#define PFN_cuEventElapsedTime  PFN_cuEventElapsedTime_v2000
+#define PFN_cuEventElapsedTime  PFN_cuEventElapsedTime_v12080
 #define PFN_cuEventElapsedTime_v2  PFN_cuEventElapsedTime_v12080
 #define PFN_cuImportExternalMemory  PFN_cuImportExternalMemory_v10000
 #define PFN_cuExternalMemoryGetMappedBuffer  PFN_cuExternalMemoryGetMappedBuffer_v10000
@@ -508,6 +508,11 @@ extern "C" {
 #define PFN_cuGreenCtxStreamCreate PFN_cuGreenCtxStreamCreate_v12050
 #define PFN_cuStreamGetCtx_v2  __API_TYPEDEF_PTSZ(PFN_cuStreamGetCtx, 12050, 12050)
 #define PFN_cuMemBatchDecompressAsync __API_TYPEDEF_PTSZ(PFN_cuMemBatchDecompressAsync, 12060, 12060)
+#define PFN_cuLogsRegisterCallback PFN_cuLogsRegisterCallback_v12090
+#define PFN_cuLogsUnregisterCallback PFN_cuLogsUnregisterCallback_v12090
+#define PFN_cuLogsCurrent PFN_cuLogsCurrent_v12090
+#define PFN_cuLogsDumpToFile PFN_cuLogsDumpToFile_v12090
+#define PFN_cuLogsDumpToMemory PFN_cuLogsDumpToMemory_v12090
 
 #define PFN_cuCheckpointProcessGetRestoreThreadId PFN_cuCheckpointProcessGetRestoreThreadId_v12080
 #define PFN_cuCheckpointProcessGetState PFN_cuCheckpointProcessGetState_v12080
@@ -1063,6 +1068,11 @@ typedef CUresult (CUDAAPI *PFN_cuStreamGetCtx_v12050)(CUstream hStream, CUcontex
 typedef CUresult (CUDAAPI *PFN_cuStreamGetCtx_v12050_ptsz)(CUstream hStream, CUcontext *pctx, CUgreenCtx *pGreenCtx);
     typedef CUresult (CUDAAPI *PFN_cuMemBatchDecompressAsync_v12060)(CUmemDecompressParams *paramsArray, size_t count, unsigned int flags, size_t *errorIndex, CUstream stream);
     typedef CUresult (CUDAAPI *PFN_cuMemBatchDecompressAsync_v12060_ptsz)(CUmemDecompressParams *paramsArray, size_t count, unsigned int flags, size_t *errorIndex, CUstream stream);
+typedef CUresult (CUDAAPI *PFN_cuLogsRegisterCallback_v12090)(CUlogsCallback callbackFunc, void *userData, CUlogsCallbackHandle *callback);
+typedef CUresult (CUDAAPI *PFN_cuLogsUnregisterCallback_v12090)(CUlogsCallbackHandle callback);
+typedef CUresult (CUDAAPI *PFN_cuLogsCurrent_v12090)(CUlogIterator *iterator, unsigned int flags);
+typedef CUresult (CUDAAPI *PFN_cuLogsDumpToFile_v12090)(CUlogIterator *iterator, const char *pathToFile, unsigned int flags);
+typedef CUresult (CUDAAPI *PFN_cuLogsDumpToMemory_v12090)(CUlogIterator *iterator, char *buffer, size_t *size, unsigned int flags);
 /*
  * Type definitions for older versioned functions in cuda.h
  */

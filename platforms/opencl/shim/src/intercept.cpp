@@ -122,6 +122,15 @@ DEFINE_EXPORT_C_REDIRECT_CALL(Driver::GetExtensionFunctionAddress, void *, clGet
 DEFINE_EXPORT_C_REDIRECT_CALL(XCreateCommandQueue, cl_command_queue, clCreateCommandQueue, cl_context, context, cl_device_id, device, cl_command_queue_properties, properties, cl_int *, errcode_ret);
 DEFINE_EXPORT_C_REDIRECT_CALL(Driver::CreateSampler, cl_sampler, clCreateSampler, cl_context, context, cl_bool, normalized_coords, cl_addressing_mode, addressing_mode, cl_filter_mode, filter_mode, cl_int *, errcode_ret);
 DEFINE_EXPORT_C_REDIRECT_CALL(Driver::EnqueueTask, cl_int, clEnqueueTask, cl_command_queue, command_queue, cl_kernel, kernel, cl_uint, num_events_in_wait_list, const cl_event *, event_wait_list, cl_event *, event);
+DEFINE_EXPORT_C_REDIRECT_CALL(Driver::CreateFromGLBuffer, cl_mem, clCreateImageFromGLBuffer, cl_context, context, cl_mem_flags, flags, cl_GLuint, bufobj, cl_int *, errcode_ret);
+DEFINE_EXPORT_C_REDIRECT_CALL(Driver::CreateFromGLTexture, cl_mem, clCreateImageFromGLTexture, cl_context, context, cl_mem_flags, flags, cl_GLenum, target, cl_GLuint, miplevel, cl_GLuint, texture, cl_int *, errcode_ret);
+DEFINE_EXPORT_C_REDIRECT_CALL(Driver::CreateFromGLRenderbuffer, cl_mem, clCreateImageFromGLRenderbuffer, cl_context, context, cl_mem_flags, flags, cl_GLuint, renderbuffer, cl_int *, errcode_ret);
+DEFINE_EXPORT_C_REDIRECT_CALL(Driver::GetGLObjectInfo, cl_int, clGetGLObjectInfo, cl_mem, memobj, cl_gl_object_type *, gl_object_type, cl_GLuint *, gl_object_name);
+DEFINE_EXPORT_C_REDIRECT_CALL(Driver::GetGLTextureInfo, cl_int, clGetGLTextureInfo, cl_mem, memobj, cl_gl_texture_info, param_name, size_t, param_value_size, void *, param_value, size_t *, param_value_size_ret);
+DEFINE_EXPORT_C_REDIRECT_CALL(Driver::EnqueueAcquireGLObjects, cl_int, clEnqueueAcquireGLObjects, cl_command_queue, command_queue, cl_uint, num_objects, const cl_mem *, mem_objects, cl_uint, num_events_in_wait_list, const cl_event *, event_wait_list, cl_event *, event);
+DEFINE_EXPORT_C_REDIRECT_CALL(Driver::EnqueueReleaseGLObjects, cl_int, clEnqueueReleaseGLObjects, cl_command_queue, command_queue, cl_uint, num_objects, const cl_mem *, mem_objects, cl_uint, num_events_in_wait_list, const cl_event *, event_wait_list, cl_event *, event);
+DEFINE_EXPORT_C_REDIRECT_CALL(Driver::CreateFromGLTexture2D, cl_mem, clCreateFromGLTexture2D, cl_context, context, cl_mem_flags, flags, cl_GLenum, target, cl_GLint, miplevel, cl_GLuint, zoffset, cl_int *, errcode_ret);
+DEFINE_EXPORT_C_REDIRECT_CALL(Driver::CreateFromGLTexture3D, cl_mem, clCreateFromGLTexture3D, cl_context, context, cl_mem_flags, flags, cl_GLenum, target, cl_GLint, miplevel, cl_GLuint, zoffset, cl_int *, errcode_ret);
 
 // extension functions
 DEFINE_EXPORT_C_REDIRECT_CALL(XSetKernelArgMemPointerINTEL, cl_int, clSetKernelArgMemPointerINTEL, cl_kernel, kernel, cl_uint, arg_index, const void *, arg_value);

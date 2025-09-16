@@ -1,13 +1,13 @@
-#include "monitor.h"
-#include "xsched/utils/log.h"
-#include "xsched/protocol/def.h"
-
 #ifdef CPPHTTPLIB_THREAD_POOL_COUNT
 #undef CPPHTTPLIB_THREAD_POOL_COUNT
 #define CPPHTTPLIB_THREAD_POOL_COUNT 1
 #endif
 #include <httplib.h>
 #include <CLI/CLI.hpp>
+
+#include "monitor.h"
+#include "xsched/utils/log.h"
+#include "xsched/protocol/def.h"
 
 using namespace xsched::service;
 

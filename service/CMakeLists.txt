@@ -44,7 +44,9 @@ target_compile_options(xcli PRIVATE
 
 target_link_libraries(xcli PRIVATE
     CLI11
-    tabulate
+    ftxui::screen
+    ftxui::dom
+    ftxui::component
     utils
     sched
     protocol

@@ -1,5 +1,7 @@
 #pragma once
 
+#if defined(__linux__)
+
 #include <thread>
 #include <string>
 #include <sys/ipc.h>
@@ -27,3 +29,5 @@ private:
 };
     
 } // namespace xsched::utils
+
+#endif

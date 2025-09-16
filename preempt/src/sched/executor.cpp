@@ -68,15 +68,16 @@ void SchedExecutor::ExecuteConfigOperation(std::shared_ptr<const sched::ConfigOp
     if (level > kPreemptLevelUnknown) {
         XResult res = XQueueSetPreemptLevel(handle, level);
         if (res != kXSchedSuccess) {
-            XWARN("XQueueSetPreemptLevel failed, xq: 0x%lx, level: %d, result: %d", handle, level, res);
+            XWARN("XQueueSetPreemptLevel failed, xq: 0x" FMT_64X ", level: %d, result: %d",
+                  handle, level, res);
         }
     }
 
     if (threshold > 0 || batch_size > 0) {
         XResult res = XQueueSetLaunchConfig(handle, threshold, batch_size);
         if (res != kXSchedSuccess) {
-            XWARN("XQueueSetThreshold failed, xq: 0x%lx, threshold: %ld, batch size: %ld, result: %d",
-                  handle, threshold, batch_size, res);
+            XWARN("XQueueSetThreshold failed, xq: 0x" FMT_64X ", threshold: " FMT_64D
+                  ", batch size: " FMT_64D ", result: %d", handle, threshold, batch_size, res);
         }
     }
 }

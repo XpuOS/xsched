@@ -15,7 +15,7 @@ void KEarliestDeadlineFirstPolicy::Sched(const Status &status)
     // calculate the deadline of each xqueue
     for (auto &status : status.xqueue_status) {
         XQueueHandle handle = status.second->handle;
-        auto ddl = std::chrono::system_clock::time_point::max();
+        auto ddl = (std::chrono::system_clock::time_point::max)();
         if (!status.second->ready) {
             ddls.emplace_back(DeadlineEntry{.xqueue=handle,.deadline=ddl});
             continue;
@@ -64,11 +64,11 @@ void KEarliestDeadlineFirstPolicy::RecvHint(std::shared_ptr<const Hint> hint)
         XASSERT(h != nullptr, "hint type not match");
         size_t k = h->K();
         if (k < 1) {
-            XWARN("invalid k %lu", k);
+            XWARN("invalid k " FMT_64U, k);
             break;
         }
         k_ = k;
-        XINFO("k set to %lu", k);
+        XINFO("k set to " FMT_64U, k);
         break;
     }
     default:

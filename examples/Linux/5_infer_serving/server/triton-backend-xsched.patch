@@ -1,0 +1,76 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 5da6ecd..6471619 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -94,6 +94,8 @@ if(${TRITON_ENABLE_NVTX})
+   add_definitions(-DTRITON_ENABLE_NVTX=1)
+ endif() # TRITON_ENABLE_NVTX
+ 
++find_package(XSched REQUIRED)
++
+ #
+ # Shared library implementing the Triton Backend API
+ #
+@@ -197,6 +199,13 @@ target_link_libraries(
+       CUDA::cudart
+ )
+ 
++target_link_libraries(
++    triton-tensorrt-backend 
++    PRIVATE
++      XSched::preempt
++      XSched::halcuda
++)
++
+ 
+ #
+ # Install
+diff --git a/src/tensorrt.cc b/src/tensorrt.cc
+index a9a023b..cef3c1f 100644
+--- a/src/tensorrt.cc
++++ b/src/tensorrt.cc
+@@ -45,6 +45,8 @@
+ #include <set>
+ #include <thread>
+ #include <unordered_map>
++#include "xsched/cuda/hal.h"
++#include "xsched/xsched.h"
+ 
+ //
+ // TensorRT Backend that implements the TRITONBACKEND API.
+@@ -2926,6 +2928,15 @@ ModelInstanceState::EvaluateTensorRTContext(
+   return nullptr;
+ }
+ 
++void SetStreamXQueuePriority(CUstream stream, int priority)
++{
++    HwQueueHandle hwqueue;
++    CudaQueueCreate(&hwqueue, (CUstream)stream);
++    XQueueHandle xqueue;
++    XQueueCreate(&xqueue, hwqueue, kPreemptLevelDeactivate, kQueueCreateFlagNone);
++    XHintPriority(xqueue, -priority); // In XSched, lower number means lower priority
++}
++
+ TRITONSERVER_Error*
+ ModelInstanceState::InitStreamsAndEvents()
+ {
+@@ -2961,15 +2972,19 @@ ModelInstanceState::InitStreamsAndEvents()
+           CreateCudaStream(DeviceId(), cuda_stream_priority_, &stream_));
+     }
+   }
++  SetStreamXQueuePriority(stream_, cuda_stream_priority_);
+ #ifdef TRITON_ENABLE_STATS
+   RETURN_IF_ERROR(
+       CreateCudaStream(DeviceId(), cuda_stream_priority_, &signal_stream_));
++  SetStreamXQueuePriority(signal_stream_, cuda_stream_priority_);
+ #endif  // TRITON_ENABLE_STATS
+   RETURN_IF_ERROR(
+       CreateCudaStream(DeviceId(), cuda_stream_priority_, &input_copy_stream_));
++  SetStreamXQueuePriority(input_copy_stream_, cuda_stream_priority_);
+   if (model_state_->SeparateOutputStream()) {
+     RETURN_IF_ERROR(CreateCudaStream(
+         DeviceId(), cuda_stream_priority_, &output_copy_stream_));
++    SetStreamXQueuePriority(output_copy_stream_, cuda_stream_priority_);
+   }
+   // Create CUDA events associated with the execution states
+   RETURN_IF_ERROR(InitEventSet(model_state_->BusyWaitEvents()));

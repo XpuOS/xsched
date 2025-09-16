@@ -1,3 +1,5 @@
+#if defined(__linux__)
+
 #include "xsched/utils/log.h"
 #include "xsched/utils/timing.h"
 
@@ -68,3 +70,5 @@ int64_t Accumulator::GetAccumulatedNs()
     Stop();
     return accumulated_ns_;
 }
+
+#endif

@@ -155,7 +155,7 @@ void LaunchWorker::WorkerLoop()
 
 void LaunchWorker::LaunchHwCommand(std::shared_ptr<HwCommand> hw_cmd)
 {
-    XDEBG("launch hw_cmd (%p) idx (%ld)", hw_cmd.get(), hw_cmd->GetIdx());
+    XDEBG("launch hw_cmd (%p) idx " FMT_64D, hw_cmd.get(), hw_cmd->GetIdx());
     // If a HwCommand is deactivated, all non-idempotent HwCommands launched after it should also
     // be deactivated. Otherwise the XPU will become inconsist. So, if a HwCommand is not
     // deactivatable, it should wait until all in-flight deactivatable HwCommands are completed.

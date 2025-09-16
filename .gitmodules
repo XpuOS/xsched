@@ -1,18 +1,18 @@
 [submodule "3rdparty/CLI11"]
 	path = 3rdparty/CLI11
 	url = https://github.com/XpuOS/thirdparty-CLI11.git
-[submodule "3rdparty/cpp-ipc"]
-	path = 3rdparty/cpp-ipc
-	url = https://github.com/XpuOS/thirdparty-cpp-ipc.git
 [submodule "3rdparty/cpp-httplib"]
 	path = 3rdparty/cpp-httplib
 	url = https://github.com/XpuOS/thirdparty-cpp-httplib.git
 [submodule "3rdparty/jsoncpp"]
 	path = 3rdparty/jsoncpp
 	url = https://github.com/XpuOS/thirdparty-jsoncpp.git
-[submodule "3rdparty/tabulate"]
-	path = 3rdparty/tabulate
-	url = https://github.com/XpuOS/thirdparty-tabulate.git
 [submodule "3rdparty/cuxtra"]
 	path = 3rdparty/cuxtra
 	url = https://github.com/XpuOS/cuxtra.git
+[submodule "3rdparty/ftxui"]
+	path = 3rdparty/ftxui
+	url = https://github.com/XpuOS/thirdparty-FTXUI.git
+[submodule "3rdparty/ipc"]
+	path = 3rdparty/ipc
+	url = https://github.com/XpuOS/ipc.git

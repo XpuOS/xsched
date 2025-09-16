@@ -1,11 +1,11 @@
+#include <httplib.h>
+#include <X11/Xlib.h>
+#include <X11/Xatom.h>
+
 #include "launcher.h"
 #include "xsched/utils/log.h"
 #include "xsched/utils/common.h"
 #include "xsched/utils/xassert.h"
-
-#include <httplib.h>
-#include <X11/Xlib.h>
-#include <X11/Xatom.h>
 
 using namespace xsched::service;
 

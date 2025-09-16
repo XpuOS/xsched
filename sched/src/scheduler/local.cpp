@@ -199,7 +199,7 @@ void LocalScheduler::UpdateStatus(std::shared_ptr<const Event> event)
     {
         auto e = std::dynamic_pointer_cast<const XQueueCreateEvent>(event);
         XASSERT(e != nullptr, "event type not match");
-        XINFO("XQueue (0x%lx) from process (%u) created", e->Handle(), e->Pid());
+        XINFO("XQueue (0x" FMT_64X ") from process " FMT_PID " created", e->Handle(), e->Pid());
         auto it = status_.xqueue_status.find(e->Handle());
         if (it == status_.xqueue_status.end()) {
             // if xqueue status not exist, create one
@@ -218,7 +218,7 @@ void LocalScheduler::UpdateStatus(std::shared_ptr<const Event> event)
     {
         auto e = std::dynamic_pointer_cast<const XQueueDestroyEvent>(event);
         XASSERT(e != nullptr, "event type not match");
-        XINFO("XQueue (0x%lx) from process (%u) destroyed", e->Handle(), e->Pid());
+        XINFO("XQueue (0x" FMT_64X ") from process " FMT_PID " destroyed", e->Handle(), e->Pid());
         XQueueHandle handle = e->Handle();
         auto qit = status_.xqueue_status.find(handle);
         if (qit == status_.xqueue_status.end()) break;

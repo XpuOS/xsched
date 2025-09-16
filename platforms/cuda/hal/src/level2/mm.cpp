@@ -69,12 +69,12 @@ void ResizableBuffer::ExpandTo(size_t new_size, CUstream stream)
 {
     if (new_size <= size_) return;
     if (new_size > VM_DEFAULT_SIZE) {
-        XERRO("resizable buffer %p cannot be expanded to %ldB: exceeds max size of %ldB",
+        XERRO("resizable buffer %p cannot be expanded to %zuB: exceeds max size of %ldB",
               (void *)ptr_, new_size, VM_DEFAULT_SIZE);
     }
 
     new_size = ROUND_UP(new_size, granularity_);
-    XINFO("expanding buffer %p from %ldB to %ldB", (void *)ptr_, size_, new_size);
+    XINFO("expanding buffer %p from %zuB to %zuB", (void *)ptr_, size_, new_size);
     size_t handle_size = new_size - size_;
 
     // alloc pm space

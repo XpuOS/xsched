@@ -12,17 +12,7 @@ unset(HTTPLIB_USE_ZLIB_IF_AVAILABLE CACHE)
 unset(HTTPLIB_USE_BROTLI_IF_AVAILABLE CACHE)
 unset(HTTPLIB_INSTALL CACHE)
 
-set(CMAKE_CXX_FLAGS_OLD ${CMAKE_CXX_FLAGS})
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
-if(CONTAINER_SUPPORT)
-    set(LIBIPC_USE_POSIX_ON_LINUX ON CACHE BOOL "libipc use posix on linux" FORCE)
-else()
-    set(LIBIPC_USE_POSIX_ON_LINUX OFF CACHE BOOL "libipc use posix on linux" FORCE)
-endif()
-    add_subdirectory(cpp-ipc EXCLUDE_FROM_ALL) # add PIC flag for cpp-ipc
-set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS_OLD})
-unset(CMAKE_CXX_FLAGS_OLD)
-unset(LIBIPC_USE_POSIX_ON_LINUX CACHE)
+add_subdirectory(ipc EXCLUDE_FROM_ALL)
 
 add_subdirectory(cuxtra EXCLUDE_FROM_ALL)
 
@@ -40,4 +30,4 @@ unset(JSONCPP_WITH_CMAKE_PACKAGE CACHE)
 unset(BUILD_SHARED_LIBS CACHE)
 unset(BUILD_OBJECT_LIBS CACHE)
 
-add_subdirectory(tabulate EXCLUDE_FROM_ALL)
+add_subdirectory(ftxui EXCLUDE_FROM_ALL)

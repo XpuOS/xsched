@@ -4,6 +4,7 @@
 #include "convert.h"
 #include "xsched/utils/log.h"
 #include "xsched/utils/xassert.h"
+#include "xsched/utils/common.h"
 #include "xsched/protocol/def.h"
 #include "xsched/protocol/names.h"
 #include "xsched/sched/protocol/operation.h"
@@ -46,8 +47,8 @@ Server::~Server()
 void Server::Run()
 {
     std::string server_name(XSCHED_SERVER_CHANNEL_NAME);
-    recv_chan_ = std::make_unique<ipc::channel>(server_name.c_str(), ipc::receiver);
-    self_chan_ = std::make_unique<ipc::channel>(server_name.c_str(), ipc::sender);
+    recv_chan_ = std::make_unique<ipc::Node>(server_name.c_str(), ipc::NodeType::kReceiver);
+    self_chan_ = std::make_unique<ipc::Node>(server_name.c_str(), ipc::NodeType::kSender);
 
     scheduler_->SetExecutor(std::bind(&Server::Execute, this, std::placeholders::_1));
     scheduler_->Run();
@@ -77,9 +78,11 @@ void Server::Stop()
         pid_waiter_ = nullptr;
     }
 
-    if (self_chan_) {
-        auto e = std::make_unique<SchedulerTerminateEvent>();
-        XASSERT(self_chan_->send(e->Data(), e->Size()), "cannot send terminate event");
+    if (recv_chan_) {
+        // recv_chan_->Receive() will fail and return nullptr
+        // FIXME: possible error when calling Stop() twice,
+        // recv_chan_ could be set to nullptr here by RecvWorker()
+        recv_chan_->Remove();
     }
 }
 
@@ -88,29 +91,35 @@ void Server::RecvWorker()
     XINFO("events receiver started");
 
     while (true) {
-        auto data = recv_chan_->recv();
-        auto e = Event::CopyConstructor(data.data());
+        std::shared_ptr<const Event> e = nullptr;
+        auto data = recv_chan_->Receive();
+        if(UNLIKELY(data == nullptr)) {
+            XDEBG("channel %s receive fail, exiting RecvWorker thread", recv_chan_->getName().c_str());
+            e = std::make_shared<SchedulerTerminateEvent>();
+        } else {
+            e = Event::CopyConstructor(data->Data());
+        }
 
         switch (e->Type())
         {
         case kEventSchedulerTerminate:
-            for (auto &it : client_chans_) it.second->disconnect();
-            recv_chan_->disconnect();
-            self_chan_->disconnect();
             scheduler_->Stop();
+            recv_chan_->Remove();
+            self_chan_->Remove();
+            for (auto &it : client_chans_) it.second->Remove();
 
-            client_chans_.clear();
             scheduler_ = nullptr;
             recv_chan_ = nullptr;
             self_chan_ = nullptr;
+            client_chans_.clear();
             return;
         case kEventProcessCreate:
         {
             PID client_pid = e->Pid();
             std::string client_name = std::string(XSCHED_CLIENT_CHANNEL_PREFIX)
                                     + std::to_string(client_pid);
-            auto client_chan = std::make_shared<ipc::channel>(client_name.c_str(), ipc::sender);
-            XINFO("client process (%u) connected", client_pid);
+            auto client_chan = std::make_shared<ipc::Node>(client_name.c_str(), ipc::NodeType::kSender);
+            XINFO("client process " FMT_PID " connected", client_pid);
 
             chan_mtx_.lock();
             client_chans_[client_pid] = client_chan;
@@ -142,7 +151,7 @@ void Server::CleanUpProcess(PID pid)
         // because scheduler_->RecvEvent(e) is asynchronous.
         client_chans_.erase(it);
     }
-    XINFO("client process (%u) closed", pid);
+    XINFO("client process " FMT_PID " closed", pid);
 }
 
 void Server::ProcessTerminate(PID pid)
@@ -169,15 +178,15 @@ void Server::Execute(std::shared_ptr<const Operation> operation)
         chan_mtx_.unlock();
         // It is possible that the server has received ProcessDestroyEvent in RecvWorker(),
         // and the channel has been closed before the scheduler processes the event.
-        XDEBG("cannot find client channel for client process %u", client_pid);
+        XDEBG("cannot find client channel for client process " FMT_PID, client_pid);
         return;
     }
 
-    std::shared_ptr<ipc::channel> client_chan = it->second;
+    std::shared_ptr<ipc::Node> client_chan = it->second;
     chan_mtx_.unlock();
 
-    XASSERT(client_chan->send(operation->Data(), operation->Size()),
-            "cannot send operation to client process %u", client_pid);
+    XASSERT(client_chan->Send(operation->Data(), operation->Size()),
+            "cannot send operation to client process " FMT_PID, client_pid);
 }
 
 XQueueHandle Server::GetXQueueHandle(const Json::Value &request)
@@ -196,7 +205,7 @@ bool Server::GetXQueueStatus(XQueueHandle handle, XQueueStatus &status)
     query.status_.reserve(128);
 
     auto e = std::make_unique<XQueueQueryEvent>(handle, &query);
-    XASSERT(self_chan_->send(e->Data(), e->Size()), "cannot send XQueue query event");
+    XASSERT(self_chan_->Send(e->Data(), e->Size()), "cannot send XQueue query event");
     query.Wait();
 
     if (query.status_.empty()) return false;
@@ -227,7 +236,7 @@ void Server::GetXQueue(const httplib::Request &req, httplib::Response &res)
     query.processes_.reserve(128);
 
     auto e = std::make_unique<XQueueQueryEvent>(handle, &query);
-    XASSERT(self_chan_->send(e->Data(), e->Size()), "cannot send XQueue query event");
+    XASSERT(self_chan_->Send(e->Data(), e->Size()), "cannot send XQueue query event");
     query.Wait();
 
     if (query.status_.empty() || query.processes_.empty()) {
@@ -257,7 +266,7 @@ void Server::GetXQueues(const httplib::Request &, httplib::Response &res)
     query.processes_.reserve(256);
     
     auto e = std::make_unique<XQueueQueryAllEvent>(&query);
-    XASSERT(self_chan_->send(e->Data(), e->Size()), "cannot send XQueue query all event");
+    XASSERT(self_chan_->Send(e->Data(), e->Size()), "cannot send XQueue query all event");
     query.Wait();
 
     Json::Value xqueues(Json::arrayValue);

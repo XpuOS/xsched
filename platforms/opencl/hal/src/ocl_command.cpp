@@ -64,7 +64,7 @@ bool OclCommand::EnableSynchronization()
 KernelArgument::KernelArgument(KernelArgumentType t, cl_uint idx, size_t sz, const void *val)
     : type_(t), index_(idx), size_(sz), value_(val)
 {
-    if (size_ == 0) return;
+    if (size_ == 0 || val == nullptr) return;
     void *ptr = malloc(size_);
     XASSERT(ptr != nullptr, "failed to allocate memory for argument");
     memcpy(ptr, val, size_);

@@ -1,9 +1,15 @@
 #include "xsched/utils/lock.h"
+#include "xsched/utils/common.h"
 
-#ifdef __x86_64__
-    #define memory_barrier() asm volatile("pause" ::: "memory")
-#elif __aarch64__
-    #define memory_barrier() asm volatile("yield" ::: "memory")
+#if defined(__linux__)
+    #if defined(ARCH_X86_64)
+        #define memory_barrier() asm volatile("pause" ::: "memory")
+    #elif defined(ARCH_AARCH64)
+        #define memory_barrier() asm volatile("yield" ::: "memory")
+    #endif
+#elif defined(_WIN32)
+    #include <intrin.h>
+    #define memory_barrier() _mm_pause()
 #endif
 
 using namespace xsched::utils;

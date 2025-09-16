@@ -18,7 +18,7 @@ EXPORT_C_FUNC XResult XHintPriority(XQueueHandle xq, Priority prio)
 {
     XResult res = XQueueManager::Exists(xq);
     if (res != kXSchedSuccess) {
-        XWARN("XQueue with handle 0x%lx does not exist", xq);
+        XWARN("XQueue with handle 0x" FMT_64X " does not exist", xq);
         return res;
     }
     SchedAgent::SendHint(std::make_shared<PriorityHint>(xq, prio));
@@ -29,7 +29,7 @@ EXPORT_C_FUNC XResult XHintUtilization(XQueueHandle xq, Utilization util)
 {
     XResult res = XQueueManager::Exists(xq);
     if (res != kXSchedSuccess) {
-        XWARN("XQueue with handle 0x%lx does not exist", xq);
+        XWARN("XQueue with handle 0x" FMT_64X " does not exist", xq);
         return res;
     }
     SchedAgent::SendHint(std::make_shared<UtilizationHint>(GetProcessId(), xq, util));
@@ -46,7 +46,7 @@ EXPORT_C_FUNC XResult XHintLaxity(XQueueHandle xq, Laxity lax_us, Priority lax_p
 {
     XResult res = XQueueManager::Exists(xq);
     if (res != kXSchedSuccess) {
-        XWARN("XQueue with handle 0x%lx does not exist", xq);
+        XWARN("XQueue with handle 0x" FMT_64X " does not exist", xq);
         return res;
     }
     SchedAgent::SendHint(std::make_shared<LaxityHint>(xq, lax_us, lax_prio, crit_prio));
@@ -57,7 +57,7 @@ EXPORT_C_FUNC XResult XHintDeadline(XQueueHandle xq, Deadline ddl_us)
 {
     XResult res = XQueueManager::Exists(xq);
     if (res != kXSchedSuccess) {
-        XWARN("XQueue with handle 0x%lx does not exist", xq);
+        XWARN("XQueue with handle 0x" FMT_64X " does not exist", xq);
         return res;
     }
     SchedAgent::SendHint(std::make_shared<DeadlineHint>(xq, ddl_us));

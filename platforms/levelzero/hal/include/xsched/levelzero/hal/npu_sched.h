@@ -6,8 +6,14 @@
 #include <unistd.h>
 #include <assert.h>
 #include <string.h>
+
+#if defined(__linux__)
 #include <drm/drm.h>
 #include <sys/ioctl.h>
+#endif
+
+#include "xsched/utils/log.h"
+#include "xsched/utils/common.h"
 
 #define VPU_ENGINE_COMPUTE 0
 #define VPU_ENGINE_COPY	   1
@@ -20,10 +26,10 @@
 #define DRM_IVPU_SCHED_OP_ENGINE_RESUME		4
 
 struct drm_ivpu_schedule {
-	__u32 cmdq_id;
-	__u32 engine_id;
-	__u32 operation;
-	__u32 request_id;
+	uint32_t cmdq_id;
+	uint32_t engine_id;
+	uint32_t operation;
+	uint32_t request_id;
 };
 
 #define DRM_IVPU_SCHEDULE         0x10
@@ -35,6 +41,7 @@ struct drm_ivpu_schedule {
 
 inline int get_npu_fd()
 {
+#if defined(__linux__)
     static int npu_fd = -1;
     static const char *npu_path = "/dev/accel/accel0";
     if (npu_fd != -1) return npu_fd;
@@ -42,10 +49,10 @@ inline int get_npu_fd()
     for (int fd = 0; fd < FD_SCAN_MAX; ++fd) {
         char path[FD_LINK_LEN_MAX];
         char link[FD_LINK_LEN_MAX];
-    
+
         int link_len = sprintf(link, "/proc/self/fd/%d", fd);
         assert(link_len < FD_LINK_LEN_MAX);
-    
+
         ssize_t len = readlink(link, path, sizeof(path) - 1);
         if (len < 0) continue;
         assert((size_t)len < sizeof(path));
@@ -62,10 +69,15 @@ inline int get_npu_fd()
     assert(npu_fd != -1);
     printf("opened npu fd (%s): %d\n", npu_path, npu_fd);
     return npu_fd;
+#endif
+
+    XERRO_UNSUPPORTED();
+    return -1;
 }
 
 inline int npu_sched_suspend_cmdq(uint32_t cmdq_id)
 {
+#if defined(__linux__)
     int fd = get_npu_fd();
     struct drm_ivpu_schedule params = {
         .cmdq_id = cmdq_id,
@@ -75,10 +87,16 @@ inline int npu_sched_suspend_cmdq(uint32_t cmdq_id)
     };
 
     return ioctl(fd, DRM_IOCTL_IVPU_SCHEDULE, &params);
+#endif
+
+    XERRO_UNSUPPORTED();
+    UNUSED(cmdq_id);
+    return -1;
 }
 
 inline int npu_sched_resume_cmdq(uint32_t cmdq_id)
 {
+#if defined(__linux__)
     int fd = get_npu_fd();
     struct drm_ivpu_schedule params = {
         .cmdq_id = cmdq_id,
@@ -88,10 +106,16 @@ inline int npu_sched_resume_cmdq(uint32_t cmdq_id)
     };
 
     return ioctl(fd, DRM_IOCTL_IVPU_SCHEDULE, &params);
+#endif
+
+    XERRO_UNSUPPORTED();
+    UNUSED(cmdq_id);
+    return -1;
 }
 
 inline int npu_sched_preempt_engine(unsigned int request_id)
 {
+#if defined(__linux__)
     int fd = get_npu_fd();
     struct drm_ivpu_schedule params = {
         .cmdq_id = 0,
@@ -101,10 +125,16 @@ inline int npu_sched_preempt_engine(unsigned int request_id)
     };
 
     return ioctl(fd, DRM_IOCTL_IVPU_SCHEDULE, &params);
+#endif
+
+    XERRO_UNSUPPORTED();
+    UNUSED(request_id);
+    return -1;
 }
 
 inline int npu_sched_reset_engine()
 {
+#if defined(__linux__)
     int fd = get_npu_fd();
     struct drm_ivpu_schedule params = {
         .cmdq_id = 0,
@@ -114,10 +144,15 @@ inline int npu_sched_reset_engine()
     };
 
     return ioctl(fd, DRM_IOCTL_IVPU_SCHEDULE, &params);
+#endif
+
+    XERRO_UNSUPPORTED();
+    return -1;
 }
 
 inline int npu_sched_resume_engine()
 {
+#if defined(__linux__)
     int fd = get_npu_fd();
     struct drm_ivpu_schedule params = {
         .cmdq_id = 0,
@@ -127,6 +162,10 @@ inline int npu_sched_resume_engine()
     };
 
     return ioctl(fd, DRM_IOCTL_IVPU_SCHEDULE, &params);
+#endif
+
+    XERRO_UNSUPPORTED();
+    return -1;
 }
 
 typedef struct _ze_command_queue_handle_t *ze_command_queue_handle_t;

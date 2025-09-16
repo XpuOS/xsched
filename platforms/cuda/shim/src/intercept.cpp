@@ -452,6 +452,11 @@ DEFINE_EXPORT_C_REDIRECT_CALL(Driver::GreenCtxRecordEvent, CUresult, cuGreenCtxR
 DEFINE_EXPORT_C_REDIRECT_CALL(Driver::GreenCtxWaitEvent, CUresult, cuGreenCtxWaitEvent, CUgreenCtx, hCtx, CUevent, hEvent);
 DEFINE_EXPORT_C_REDIRECT_CALL(Driver::StreamGetGreenCtx, CUresult, cuStreamGetGreenCtx, CUstream, hStream, CUgreenCtx *, phCtx);
 DEFINE_EXPORT_C_REDIRECT_CALL(Driver::GreenCtxStreamCreate, CUresult, cuGreenCtxStreamCreate, CUstream *, phStream, CUgreenCtx, greenCtx, unsigned int, flags, int, priority);
+DEFINE_EXPORT_C_REDIRECT_CALL(Driver::LogsRegisterCallback, CUresult, cuLogsRegisterCallback, CUlogsCallback, callbackFunc, void *, userData, CUlogsCallbackHandle *, callback_out);
+DEFINE_EXPORT_C_REDIRECT_CALL(Driver::LogsUnregisterCallback, CUresult, cuLogsUnregisterCallback, CUlogsCallbackHandle, callback);
+DEFINE_EXPORT_C_REDIRECT_CALL(Driver::LogsCurrent, CUresult, cuLogsCurrent, CUlogIterator *, iterator_out, unsigned int, flags);
+DEFINE_EXPORT_C_REDIRECT_CALL(Driver::LogsDumpToFile, CUresult, cuLogsDumpToFile, CUlogIterator *, iterator, const char *, pathToFile, unsigned int, flags);
+DEFINE_EXPORT_C_REDIRECT_CALL(Driver::LogsDumpToMemory, CUresult, cuLogsDumpToMemory, CUlogIterator *, iterator, char *, buffer, size_t *, size, unsigned int, flags);
 DEFINE_EXPORT_C_REDIRECT_CALL(Driver::MemHostRegister, CUresult, cuMemHostRegister, void *, p, size_t, bytesize, unsigned int, Flags);
 DEFINE_EXPORT_C_REDIRECT_CALL(Driver::GraphicsResourceSetMapFlags, CUresult, cuGraphicsResourceSetMapFlags, CUgraphicsResource, resource, unsigned int, flags);
 DEFINE_EXPORT_C_REDIRECT_CALL(Driver::LinkCreate, CUresult, cuLinkCreate, unsigned int, numOptions, CUjit_option *, options, void **, optionValues, CUlinkState *, stateOut);
@@ -1030,8 +1035,32 @@ static const std::unordered_map<std::string, std::map<int, void *>> intercept_fu
     { "cuKernelGetName"                                     , {{ 12030, (void *)cuKernelGetName                                     }}},
     { "cuKernelGetParamInfo"                                , {{ 12040, (void *)cuKernelGetParamInfo                                }}},
     { "cuLibraryGetUnifiedFunction"                         , {{ 12000, (void *)cuLibraryGetUnifiedFunction                         }}},
+    { "cuCoredumpGetAttribute"                              , {{ 12010, (void *)cuCoredumpGetAttribute                              }}},
+    { "cuCoredumpGetAttributeGlobal"                        , {{ 12010, (void *)cuCoredumpGetAttributeGlobal                        }}},
+    { "cuCoredumpSetAttribute"                              , {{ 12010, (void *)cuCoredumpSetAttribute                              }}},
+    { "cuCoredumpSetAttributeGlobal"                        , {{ 12010, (void *)cuCoredumpSetAttributeGlobal                        }}},
+    { "cuDeviceRegisterAsyncNotification"                   , {{ 12040, (void *)cuDeviceRegisterAsyncNotification                   }}},
+    { "cuDeviceUnregisterAsyncNotification"                 , {{ 12040, (void *)cuDeviceUnregisterAsyncNotification                 }}},
+    { "cuGreenCtxCreate"                                    , {{ 12040, (void *)cuGreenCtxCreate                                    }}},
+    { "cuGreenCtxDestroy"                                   , {{ 12040, (void *)cuGreenCtxDestroy                                   }}},
+    { "cuDeviceGetDevResource"                              , {{ 12040, (void *)cuDeviceGetDevResource                              }}},
+    { "cuCtxGetDevResource"                                 , {{ 12040, (void *)cuCtxGetDevResource                                 }}},
+    { "cuGreenCtxGetDevResource"                            , {{ 12040, (void *)cuGreenCtxGetDevResource                            }}},
+    { "cuGreenCtxRecordEvent"                               , {{ 12040, (void *)cuGreenCtxRecordEvent                               }}},
+    { "cuGreenCtxWaitEvent"                                 , {{ 12040, (void *)cuGreenCtxWaitEvent                                 }}},
+    { "cuDevResourceGenerateDesc"                           , {{ 12040, (void *)cuDevResourceGenerateDesc                           }}},
+    { "cuDevSmResourceSplitByCount"                         , {{ 12040, (void *)cuDevSmResourceSplitByCount                         }}},
+    { "cuStreamGetGreenCtx"                                 , {{ 12040, (void *)cuStreamGetGreenCtx                                 }}},
+    { "cuCtxFromGreenCtx"                                   , {{ 12040, (void *)cuCtxFromGreenCtx                                   }}},
+    { "cuCtxRecordEvent"                                    , {{ 12050, (void *)cuCtxRecordEvent                                    }}},
+    { "cuCtxWaitEvent"                                      , {{ 12050, (void *)cuCtxWaitEvent                                      }}},
     { "cuGreenCtxStreamCreate"                              , {{ 12050, (void *)cuGreenCtxStreamCreate                              }}},
     { "cuMemBatchDecompressAsync"                           , {{ 12060, (void *)cuMemBatchDecompressAsync                           }}},
+    { "cuLogsRegisterCallback"                              , {{ 12090, (void *)cuLogsRegisterCallback                              }}},
+    { "cuLogsUnregisterCallback"                            , {{ 12090, (void *)cuLogsUnregisterCallback                            }}},
+    { "cuLogsCurrent"                                       , {{ 12090, (void *)cuLogsCurrent                                       }}},
+    { "cuLogsDumpToFile"                                    , {{ 12090, (void *)cuLogsDumpToFile                                    }}},
+    { "cuLogsDumpToMemory"                                  , {{ 12090, (void *)cuLogsDumpToMemory                                  }}},
     { "cuGraphInstantiate"                                  , {{ 10000, (void *)cuGraphInstantiate                                  }, { 11000, (void *)cuGraphInstantiate_v2                }}},
     { "cuCheckpointProcessGetRestoreThreadId"               , {{ 12080, (void *)cuCheckpointProcessGetRestoreThreadId               }}},
     { "cuCheckpointProcessGetState"                         , {{ 12080, (void *)cuCheckpointProcessGetState                         }}},
@@ -1056,7 +1085,7 @@ static inline void GetInterceptAddr(const char *symbol, void **pfn, int cuda_ver
 
 EXPORT_C_FUNC CUresult XGetProcAddress(const char *symbol, void **pfn, int cudaVersion, cuuint64_t flags)
 {
-    XDEBG("XGetProcAddress(symbol: %s, cudaVersion: %d, flag: 0x%lx)", symbol, cudaVersion, flags);
+    XDEBG("XGetProcAddress(symbol: %s, cudaVersion: %d, flag: 0x" FMT_64X ")", symbol, cudaVersion, flags);
     CUresult res = Driver::GetProcAddress(symbol, pfn, cudaVersion, flags);
     if (res != CUDA_SUCCESS) return res;
     GetInterceptAddr(symbol, pfn, cudaVersion);
@@ -1065,7 +1094,7 @@ EXPORT_C_FUNC CUresult XGetProcAddress(const char *symbol, void **pfn, int cudaV
 
 EXPORT_C_FUNC CUresult XGetProcAddress_v2(const char *symbol, void **pfn, int cudaVersion, cuuint64_t flags, CUdriverProcAddressQueryResult *symbolStatus)
 {
-    XDEBG("XGetProcAddress_v2(symbol: %s, cudaVersion: %d, flag: 0x%lx)", symbol, cudaVersion, flags);
+    XDEBG("XGetProcAddress_v2(symbol: %s, cudaVersion: %d, flag: 0x" FMT_64X ")", symbol, cudaVersion, flags);
     CUresult res = Driver::GetProcAddress_v2(symbol, pfn, cudaVersion, flags, symbolStatus);
     if (res != CUDA_SUCCESS) return res;
     GetInterceptAddr(symbol, pfn, cudaVersion);

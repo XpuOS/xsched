@@ -8,6 +8,7 @@
 #include "xsched/utils/symbol.h"
 #include "xsched/utils/function.h"
 #include "xsched/opencl/hal/cl_ext.h"
+#include "xsched/opencl/hal/cl_gl.h"
 
 namespace xsched::opencl
 {
@@ -35,9 +36,15 @@ typedef void (*clEnqueueSVMFreeARM_arg3_t)(cl_command_queue, cl_uint, void *[], 
 class Driver
 {
 private:
+#if defined(_WIN32)
+    DEFINE_GET_SYMBOL_FUNC(GetSymbol, XSCHED_LEVELZERO_LIB_ENV_NAME,
+                           std::vector<std::string>({"OpenCL_original.dll"}),
+                           std::vector<std::string>({}));
+#elif defined(__linux__)
     DEFINE_GET_SYMBOL_FUNC(GetSymbol, XSCHED_CUDA_LIB_ENV_NAME,
                            std::vector<std::string>({"libOpenCL.so", "libOpenCL.so.1", "libOpenCL.so.1.2", "libOpenCL.so.1.0", "libOpenCL.so.1.0.0"}),
                            std::vector<std::string>({"/usr/local/cuda/lib64"})); // for cuda gpus using opencl
+#endif
 
 public:
     STATIC_CLASS(Driver);
@@ -155,6 +162,15 @@ public:
     DEFINE_STATIC_ADDRESS_CALL(GetSymbol("clCreateCommandQueue"), cl_command_queue, CreateCommandQueue, cl_context, context, cl_device_id, device, cl_command_queue_properties, properties, cl_int *, errcode_ret);
     DEFINE_STATIC_ADDRESS_CALL(GetSymbol("clCreateSampler"), cl_sampler, CreateSampler, cl_context, context, cl_bool, normalized_coords, cl_addressing_mode, addressing_mode, cl_filter_mode, filter_mode, cl_int *, errcode_ret);
     DEFINE_STATIC_ADDRESS_CALL(GetSymbol("clEnqueueTask"), cl_int, EnqueueTask, cl_command_queue, command_queue, cl_kernel, kernel, cl_uint, num_events_in_wait_list, const cl_event *, event_wait_list, cl_event *, event);
+    DEFINE_STATIC_ADDRESS_CALL(GetSymbol("clCreateFromGLBuffer"), cl_mem, CreateFromGLBuffer, cl_context, context, cl_mem_flags, flags, cl_GLuint, bufobj, cl_int *, errcode_ret);
+    DEFINE_STATIC_ADDRESS_CALL(GetSymbol("clCreateFromGLTexture"), cl_mem, CreateFromGLTexture, cl_context, context, cl_mem_flags, flags, cl_GLenum, target, cl_GLint, miplevel, cl_GLuint, texture, cl_int *, errcode_ret);
+    DEFINE_STATIC_ADDRESS_CALL(GetSymbol("clCreateFromGLRenderbuffer"), cl_mem, CreateFromGLRenderbuffer, cl_context, context, cl_mem_flags, flags, cl_GLuint, renderbuffer, cl_int *, errcode_ret);
+    DEFINE_STATIC_ADDRESS_CALL(GetSymbol("clGetGLObjectInfo"), cl_int, GetGLObjectInfo, cl_mem, memobj, cl_gl_object_type *, gl_object_type, cl_GLuint *, gl_object_name);
+    DEFINE_STATIC_ADDRESS_CALL(GetSymbol("clGetGLTextureInfo"), cl_int, GetGLTextureInfo, cl_mem, memobj, cl_gl_texture_info, param_name, size_t, param_value_size, void *, param_value, size_t *, param_value_size_ret);
+    DEFINE_STATIC_ADDRESS_CALL(GetSymbol("clEnqueueAcquireGLObjects"), cl_int, EnqueueAcquireGLObjects, cl_command_queue, command_queue, cl_uint, num_objects, const cl_mem *, mem_objects, cl_uint, num_events_in_wait_list, const cl_event *, event_wait_list, cl_event *, event);
+    DEFINE_STATIC_ADDRESS_CALL(GetSymbol("clEnqueueReleaseGLObjects"), cl_int, EnqueueReleaseGLObjects, cl_command_queue, command_queue, cl_uint, num_objects, const cl_mem *, mem_objects, cl_uint, num_events_in_wait_list, const cl_event *, event_wait_list, cl_event *, event);
+    DEFINE_STATIC_ADDRESS_CALL(GetSymbol("clCreateFromGLTexture2D"), cl_mem, CreateFromGLTexture2D, cl_context, context, cl_mem_flags, flags, cl_GLenum, target, cl_GLint, miplevel, cl_GLuint, texture, cl_int *, errcode_ret);
+    DEFINE_STATIC_ADDRESS_CALL(GetSymbol("clCreateFromGLTexture3D"), cl_mem, CreateFromGLTexture3D, cl_context, context, cl_mem_flags, flags, cl_GLenum, target, cl_GLint, miplevel, cl_GLuint, texture, cl_int *, errcode_ret);
 
     DEFINE_OPENCL_EXTENSION_FUNCTION(cl_command_buffer_khr, CreateCommandBufferKHR, cl_uint, num_queues, const cl_command_queue *, queues, const cl_command_buffer_properties_khr *, properties, cl_int *, errcode_ret);
     DEFINE_OPENCL_EXTENSION_FUNCTION(cl_int, FinalizeCommandBufferKHR, cl_command_buffer_khr, command_buffer);

@@ -111,7 +111,7 @@ void ProcessUtilizationPartitionPolicy::RecvHint(std::shared_ptr<const Hint> hin
             break;
         }
         utils_[pid] = util;
-        XINFO("utilization of process %u set to %d", pid, util);
+        XINFO("utilization of process " FMT_PID " set to %d", pid, util);
         break;
     }
     case kHintTypeTimeslice:
@@ -120,11 +120,11 @@ void ProcessUtilizationPartitionPolicy::RecvHint(std::shared_ptr<const Hint> hin
         XASSERT(h != nullptr, "hint type not match");
         Timeslice ts_us = h->Ts();
         if (ts_us < TIMESLICE_MIN || ts_us > TIMESLICE_MAX) {
-            XWARN("invalid timeslice %ld", ts_us);
+            XWARN("invalid timeslice " FMT_64D, ts_us);
             break;
         }
         timeslice_avg_us_ = ts_us;
-        XINFO("timeslice set to %ld us", ts_us);
+        XINFO("timeslice set to " FMT_64D " us", ts_us);
         break;
     }
     default:
@@ -157,7 +157,7 @@ int64_t ProcessUtilizationPartitionPolicy::GetBudgetUs(PID pid)
 bool ProcessUtilizationPartitionPolicy::ProcessReady(PID pid, const Status &status)
 {
     const auto it = status.process_status.find(pid);
-    XASSERT(it != status.process_status.end(), "process %u not found", pid);
+    XASSERT(it != status.process_status.end(), "process " FMT_PID " not found", pid);
 
     // if one xqueue is ready, the process is ready
     for (auto xq: it->second->running_xqueues) {

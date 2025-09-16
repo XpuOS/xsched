@@ -12,4 +12,8 @@ target_compile_options(utils PRIVATE
     -Wextra
     -Werror
 )
-target_link_libraries(utils PUBLIC pthread dl)
+if (CMAKE_SYSTEM_NAME MATCHES "Linux")
+    target_link_libraries(utils PUBLIC pthread dl)
+elseif (CMAKE_SYSTEM_NAME MATCHES "Windows")
+    target_link_libraries(utils PUBLIC pthread shlwapi)
+endif()

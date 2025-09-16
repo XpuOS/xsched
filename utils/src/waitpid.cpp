@@ -1,10 +1,16 @@
 #include <string>
-#include <unistd.h>
 #include <signal.h>
+
+#if defined(__linux__)
+#include <unistd.h>
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
 #include <sys/syscall.h>
 #include <sys/inotify.h>
+#elif defined(_WIN32)
+#include <windows.h>
+#include <tlhelp32.h>
+#endif
 
 #include "xsched/utils/log.h"
 #include "xsched/utils/common.h"
@@ -21,11 +27,9 @@ using namespace xsched::utils;
 
 std::unique_ptr<PidWaiter> PidWaiter::Create(TerminateCallback callback)
 {
-    if (callback == nullptr) {
-        XERRO("callback is nullptr");
-        return nullptr;
-    }
+    if (callback == nullptr) XERRO("callback is nullptr");
 
+#if defined(__linux__)
     // check if the system supports pidfd_open
     int self_pid_fd = PidFdWaiter::OpenPidFd(GetProcessId(), 0);
     if (self_pid_fd == -1) {
@@ -36,7 +40,12 @@ std::unique_ptr<PidWaiter> PidWaiter::Create(TerminateCallback callback)
     XASSERT(!close(self_pid_fd), "fail to close self pid fd");
     XINFO("pidfd_open is supported, using pidfd_wait method");
     return std::make_unique<PidFdWaiter>(callback);
+#elif defined(_WIN32)
+    return std::make_unique<WinPidWaiter>(callback);
+#endif
 }
+
+#if defined(__linux__)
 
 PidFdWaiter::~PidFdWaiter()
 {
@@ -277,3 +286,79 @@ void INotifyPidWaiter::WaitWorker()
         }
     }
 }
+
+#elif defined(_WIN32)
+
+WinPidWaiter::~WinPidWaiter()
+{
+    this->Stop();
+}
+
+void WinPidWaiter::Start()
+{
+    running_.store(true);
+    thread_ = std::make_unique<std::thread>(&WinPidWaiter::WaitWorker, this);
+}
+
+void WinPidWaiter::Stop()
+{
+    running_.store(false);
+    if (thread_ && thread_->joinable()) {
+        thread_->join();
+    }
+    thread_ = nullptr;
+}
+
+void WinPidWaiter::AddWait(PID pid)
+{
+    std::lock_guard<std::mutex> lock(mtx_);
+    pids_.insert(pid);
+}
+
+void WinPidWaiter::WaitWorker()
+{
+    while (running_.load()) {
+        std::unordered_set<PID> current_pids;
+        {
+            std::lock_guard<std::mutex> lock(mtx_);
+            current_pids = pids_;
+        }
+
+        std::list<PID> terminated;
+        for (auto pid : current_pids) {
+            HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pid);
+            if (hProcess == NULL) {
+                DWORD err = GetLastError();
+                if (err == ERROR_INVALID_PARAMETER) {
+                    terminated.push_back(pid);
+                    callback_(pid);
+                } else {
+                    XWARN("fail to open process " FMT_PID ", error: %lu", pid, err);
+                }
+                continue;
+            }
+            
+            DWORD exitCode;
+            if (GetExitCodeProcess(hProcess, &exitCode)) {
+                if (exitCode != STILL_ACTIVE) {
+                    terminated.push_back(pid);
+                    callback_(pid);
+                }
+            } else {
+                XWARN("fail to get exit code for process " FMT_PID, pid);
+            }
+            CloseHandle(hProcess);
+        }
+
+        if (!terminated.empty()) {
+            std::lock_guard<std::mutex> lock(mtx_);
+            for (auto pid : terminated) {
+                pids_.erase(pid);
+            }
+        }
+
+        std::this_thread::sleep_for(std::chrono::microseconds(SCAN_INTERVAL_US));
+    }
+}
+
+#endif

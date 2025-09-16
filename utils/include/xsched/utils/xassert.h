@@ -10,6 +10,6 @@
     do { \
         bool val = static_cast<bool>(expr); \
         if (UNLIKELY(!val)) { \
-            XERRO("Assertion failed: " format, ##__VA_ARGS__); \
+            XERRO("Assertion failed: " format __VA_OPT__(,) __VA_ARGS__); \
         } \
     } while (0);

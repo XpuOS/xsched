@@ -1,0 +1,184 @@
+#include <chrono>
+#include <thread>
+#include <random>
+#include <thread>
+#include <cstdio>
+#include <cstdlib>
+#include <cuda_runtime.h>
+#include <cuda.h>
+#include <cmath>
+
+#include "xsched/xsched.h"
+#include "xsched/cuda/hal.h"
+
+#define VECTOR_SIZE (1 << 25) // 32MB
+#define N 100    // Number of vector additions per task
+#define M 10000  // Number of tasks, (almost) never stops
+#define EPSILON 1e-5f  // Error tolerance for floating-point comparison
+
+// 1 is for low priority, 2 is for high priority
+cudaStream_t stream_1, stream_2;
+HwQueueHandle hwq_1, hwq_2;
+XQueueHandle xq_1, xq_2;
+
+struct HwCommandParams {
+    float *d_A;
+    float *d_B;
+    float *d_C;
+};
+
+__global__ void vector_add(const float* A, const float* B, float* C, int n)
+{
+    int i = blockDim.x * blockIdx.x + threadIdx.x;
+    if (i >= n) return;
+    C[i] = A[i] + B[i];
+}
+
+bool verify_result(const float* h_A, const float* h_B, const float* h_C, int n) {
+    for (int i = 0; i < n; ++i) {
+        float expected = h_A[i] + h_B[i];
+        if (fabsf(h_C[i] - expected) > EPSILON) {
+            printf("Verification failed at element %d: expected %f, got %f\n", 
+                   i, expected, h_C[i]);
+            return false;
+        }
+    }
+    return true;
+}
+
+XResult callback(HwQueueHandle queue, void *params) {
+    int block_size = 256;
+    int grid_size = (VECTOR_SIZE + block_size - 1) / block_size;
+    
+    HwCommandParams *hw_params = (HwCommandParams *)params;
+    float *d_A = hw_params->d_A;
+    float *d_B = hw_params->d_B;
+    float *d_C = hw_params->d_C;
+
+    cudaStream_t stream;
+    if (queue == hwq_1) {
+        stream = stream_1;
+    } else if (queue == hwq_2) {
+        stream = stream_2;
+    } else {
+        return kXSchedErrorInvalidValue;
+    }
+
+    vector_add<<<grid_size, block_size, 0, stream>>>(d_A, d_B, d_C, VECTOR_SIZE);
+    return kXSchedSuccess;
+}
+
+void task(float *d_A, float *d_B, float *d_C, bool is_high_priority)
+{
+    // Launch kernel N times
+    for (int i = 0; i < N; ++i) {
+        HwCommandHandle hw_command;
+        HwCommandParams* params = new HwCommandParams{d_A, d_B, d_C};
+        HwCommandCreateCallback(&hw_command, callback, params);
+        if (is_high_priority) {
+            XQueueSubmit(xq_2, hw_command);
+        } else {
+            XQueueSubmit(xq_1, hw_command);
+        }
+    }
+
+    if (is_high_priority) {
+        // TODO: Two synchronization methods need to be used simultaneously
+        // Removing any of them will result in abnormal synchronization results
+        // Task completion time will change from ~75 ms to ~35ms
+        XQueueWaitAll(xq_2); // Wait for high-priority queue to finish
+        cudaStreamSynchronize(stream_2); // Ensure all operations in high-priority stream are complete
+    } else {
+        XQueueWaitAll(xq_1); // Wait for low-priority queue to finish
+        cudaStreamSynchronize(stream_1); // Ensure all operations in low-priority stream are complete
+    }
+}
+
+void run(bool is_high_priority)
+{
+    size_t size = VECTOR_SIZE * sizeof(float);
+    float *h_A, *h_B, *h_C;
+    float *d_A, *d_B, *d_C;
+
+    // Allocate host memory
+    h_A = (float*)malloc(size);
+    h_B = (float*)malloc(size);
+    h_C = (float*)malloc(size);
+
+    // Initialize host vectors
+    for (int i = 0; i < VECTOR_SIZE; ++i) {
+        h_A[i] = static_cast<float>(rand()) / RAND_MAX;
+        h_B[i] = static_cast<float>(rand()) / RAND_MAX;
+    }
+
+    // Allocate device memory
+    cudaMalloc(&d_A, size);
+    cudaMalloc(&d_B, size);
+    cudaMalloc(&d_C, size);
+
+    // Copy vectors to device
+    cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_B, h_B, size, cudaMemcpyHostToDevice);
+
+    // Run tasks
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dis(30, 50);
+
+    for (int i = 0; i < M; ++i) {
+        auto start = std::chrono::high_resolution_clock::now();
+        // If this is the high-priority task,
+        // suspend the low-priority task when the high-priority task starts.
+        if (is_high_priority) XQueueSuspend(xq_1, 0);
+        task(d_A, d_B, d_C, is_high_priority);        
+        // If this is the high-priority task,
+        // resume the low-priority task when the high-priority task finishes.
+        if (is_high_priority) XQueueResume(xq_1, 0);
+        auto end = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+        printf("%s prio Task %d completed in %lld ms\n", is_high_priority ? "high" : "low ", i, duration.count());
+
+        // // Copy result back to host
+        // cudaMemcpy(h_C, d_C, size, cudaMemcpyDeviceToHost);
+        // // Verify the result
+        // bool is_correct = verify_result(h_A, h_B, h_C, VECTOR_SIZE);
+        // if (!is_correct) {
+        //     printf("%s prio Task %d: Result verification failed!\n", 
+        //            is_high_priority ? "high" : "low ", i);
+        // }
+
+        // Sleep for random interval between tasks
+        std::this_thread::sleep_for(std::chrono::milliseconds(dis(gen)));
+    }
+
+    // Free memory
+    cudaFree(d_A);
+    cudaFree(d_B);
+    cudaFree(d_C);
+    free(h_A);
+    free(h_B);
+    free(h_C);
+}
+
+int main()
+{
+    cudaStreamCreate(&stream_1);
+    CudaQueueCreate(&hwq_1, stream_1);
+    XQueueCreate(&xq_1, hwq_1, kPreemptLevelBlock, kQueueCreateFlagNone);
+    XQueueSetLaunchConfig(xq_1, 8, 4);
+
+    cudaStreamCreate(&stream_2);
+    CudaQueueCreate(&hwq_2, stream_2);
+    XQueueCreate(&xq_2, hwq_2, kPreemptLevelBlock, kQueueCreateFlagNone);
+    XQueueSetLaunchConfig(xq_2, 8, 4);
+
+    // run two tasks within one process
+    std::thread thread_lp(run, false);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    std::thread thread_hp(run, true);
+
+    thread_lp.join();
+    thread_hp.join();
+
+    return 0;
+}

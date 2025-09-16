@@ -17,7 +17,7 @@ class ZeQueue : public preempt::HwQueue
 public:
     ZeQueue(ze_device_handle_t dev, ze_command_queue_handle_t cmdq);
     virtual ~ZeQueue() { FencePool::Destroy(kCmdq); }
-    
+
     virtual void Launch(std::shared_ptr<preempt::HwCommand> hw_cmd) override;
     virtual void Synchronize() override;
 
@@ -46,7 +46,26 @@ public:
 
 private:
     uint32_t kmd_cmdq_id_;
-    
 };
 
-}  // namespace xsched::levelzero
+class ZeList : public preempt::HwQueue
+{
+public:
+    ZeList(ze_device_handle_t dev, ze_command_list_handle_t cmdl);
+    virtual ~ZeList() = default;
+
+    virtual void Launch(std::shared_ptr<preempt::HwCommand> hw_cmd) override;
+    virtual void Synchronize() override;
+
+    virtual XDevice GetDevice() override { return device_; }
+    virtual HwQueueHandle GetHandle() override { return GetHwQueueHandle(kCmdl); }
+    virtual bool SupportDynamicLevel() override { return false; }
+    virtual XPreemptLevel GetMaxSupportedLevel() override { return kPreemptLevelBlock; }
+
+protected:
+    const ze_device_handle_t kDev;
+    const ze_command_list_handle_t kCmdl;
+    XDevice device_;
+};
+
+} // namespace xsched::levelzero

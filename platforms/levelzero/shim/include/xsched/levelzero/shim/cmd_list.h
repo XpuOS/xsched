@@ -1,5 +1,6 @@
 #pragma once
 
+#include <set>
 #include <list>
 #include <mutex>
 #include <memory>
@@ -37,12 +38,33 @@ public:
     ze_result_t Append(ze_command_list_handle_t cmd_list, std::function<ze_result_t(ze_command_list_handle_t)> append_func);
 
 private:
-    CommandListManager() = default;
+    CommandListManager()  = default;
     ~CommandListManager() = default;
     static uint64_t GetSliceCmdCnt();
 
     std::mutex mtx_;
     std::unordered_map<ze_command_list_handle_t, std::shared_ptr<SlicedCommandList>> slices_;
+};
+
+class ImmediateCommandListManager
+{
+public:
+    static ImmediateCommandListManager &Instance()
+    {
+        static ImmediateCommandListManager immediate_manager;
+        return immediate_manager;
+    }
+
+    ze_result_t Create(ze_context_handle_t ctx, ze_device_handle_t dev, const ze_command_queue_desc_t *altdesc, ze_command_list_handle_t *cmd_list);
+    bool Exists(ze_command_list_handle_t cmd_list);
+    ze_result_t Destroy(ze_command_list_handle_t cmd_list);
+
+private:
+    ImmediateCommandListManager()  = default;
+    ~ImmediateCommandListManager() = default;
+
+    std::mutex mtx_;
+    std::set<ze_command_list_handle_t> immediates_;
 };
 
 } // namespace xsched::levelzero

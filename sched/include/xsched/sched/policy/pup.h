@@ -25,7 +25,7 @@ class ProcessUtilizationPartitionPolicy : public Policy
 {
 public:
     ProcessUtilizationPartitionPolicy(): Policy(kPolicyProcessUtilizationPartition)
-    { timeslice_end_ = std::chrono::system_clock::time_point::min(); }
+    { timeslice_end_ = (std::chrono::system_clock::time_point::min)(); }
     virtual ~ProcessUtilizationPartitionPolicy() = default;
 
     virtual void Sched(const Status &status) override;

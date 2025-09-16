@@ -2,7 +2,7 @@
 
 ## Example
 
-*Using example refer to [examples/2_link_xsched](../examples/2_link_xsched/README.md)*
+*Using example refer to [examples/2_give_hints](../examples/Linux/2_give_hints/README.md)*
 
 ## API List
 

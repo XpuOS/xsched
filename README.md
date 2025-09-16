@@ -7,6 +7,7 @@
 
 ## Latest News
 
+- [2025/08] We migrated XSched to Windows and completed validation on CUDA, LevelZero, and OpenCL.
 - [2025/07] We integrated XSched into [llama.cpp](integration/llama.cpp) and [NVIDIA Triton](integration/triton) to enable priority-based scheduling between multiple inference requests.
 - [2025/07] We presented our XSched paper at [OSDI 2025](https://www.usenix.org/conference/osdi25/presentation/shen-weihang) and prepared several interesting demo videos: [Ascend910](https://github.com/user-attachments/assets/bc668f4d-33d9-4492-9900-8c3b10fdd1af), [GV100](https://github.com/user-attachments/assets/dffb821b-92e2-44c5-bd59-a6946b0c4d02), [Least-Laxity-First](https://github.com/user-attachments/assets/885886e1-1920-4fb1-aa2d-50f4f88cf660), and [Active-Window-First](https://github.com/user-attachments/assets/877aeb5f-35b6-4bc1-b553-d76525a8adb3).
 - [2025/06] We officially released XSched! Check out our [blog post](docs/xsched-intro-2025-en.md).
@@ -182,6 +183,9 @@ make INSTALL_PATH=/path/to/install
 
 # build XSched along with platform-specific components (HAL, Shim, etc.)
 make cuda # or hip, levelzero, opencl, ascend, cudla, vpi
+# or specify PLATFORM
+make PLATFORM = cuda
+make PLATFORM = "cuda levelzero opencl" # build multiple platforms at once
 ```
 
 
@@ -190,12 +194,17 @@ make cuda # or hip, levelzero, opencl, ascend, cudla, vpi
 #### Transparently Schedule Applications
 
 XSched is designed to be transparent to applications. By setting a few [environment variables](protocol/README.md), you can schedule your application with XSched.
-See our [example](examples/1_transparent_sched/README.md) for transparent scheduling.
+See our example ([Linux](examples/Linux/1_transparent_sched/README.md), [Windows](examples/Windows/1_transparent_sched/README.md)) for transparent scheduling.
 
 #### Linking with XSched for Customized Scheduling
 
 You can also explicitly link with XSched and use XQueue APIs & Hint APIs in your application for more flexibility.
-See our examples: [give hints](examples/2_give_hints/README.md), [intra-process scheduling](examples/3_intra_process_sched/README.md), and [manual scheduling](examples/4_manual_sched/README.md) for more details.
+See our examples for more details:
+
+- give hints ([Linux](examples/Linux/2_give_hints/README.md), [Windows](examples/Windows/2_give_hints/README.md))
+- intra-process scheduling ([Linux](examples/Linux/3_intra_process_sched/README.md), [Windows](examples/Windows/3_intra_process_sched/README.md))
+- manual scheduling ([Linux](examples/Linux/4_manual_sched/README.md), [Windows](examples/Windows/4_manual_sched/cuda/README.md))
+- non-transparent scheduling ([Linux](examples/Linux/8_nontransparent_sched/README.md), [Windows](examples/Windows/8_nontransparent_sched/cuda/README.md))
 
 #### More Examples
 
@@ -219,8 +228,8 @@ XSched consists of four key components: XPU shim (XShim), XPU task preemption mo
 
 We will continue to support XSched on more OSes and platforms, and improve the performance of XSched. Please stay tuned!
 
-- [ ] Integrated into LLM serving systems (e.g., llama.cpp, vLLM)
-- [ ] Support Windows
+- [x] Integrated into LLM serving systems (e.g., llama.cpp, vLLM)
+- [x] Support Windows
 - [ ] Support MacOS
 - [ ] Install as system daemon
 

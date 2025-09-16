@@ -19,10 +19,6 @@ void ExitSignal(int)
 
 int main(int argc, char *argv[])
 {
-    XINFO("removing shared memory garbage (/dev/shm/__IPC_SHM*xsched*)");
-    int ret = system("rm -rf /dev/shm/__IPC_SHM*xsched*");
-    if (ret != 0) XWARN("failed to remove shared memory garbage");
-
     std::string policy_name = GetPolicyTypeName(kPolicyHighestPriorityFirst);
     std::string port = std::to_string(XSCHED_SERVER_DEFAULT_PORT);
 
@@ -38,7 +34,9 @@ int main(int argc, char *argv[])
     }
 
     XASSERT(signal(SIGINT, ExitSignal) != SIG_ERR, "failed to set SIGINT handler");
+#if defined(__linux__)
     XASSERT(signal(SIGQUIT, ExitSignal) != SIG_ERR, "failed to set SIGQUIT handler");
+#endif
 
     server = std::make_unique<Server>(policy_name, port);
     server->Run();

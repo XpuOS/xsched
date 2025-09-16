@@ -135,12 +135,21 @@ void TestDeadLoopPreempt(cudaStream_t stream, XQueueHandle xq)
     XINFO("[RESULT] dead loop, preempt p50: %.2f", p50);
     XINFO("[RESULT] dead loop, preempt p95: %.2f", p95);
     XINFO("[RESULT] dead loop, preempt p99: %.2f", p99);
+    fflush(stderr);
+    exit(0);
 
-    runner.Stop();
+    // runner.Stop();
 }
 
-int main()
+int main(int argc, char **argv)
 {
+    if (argc != 2) {
+        XINFO("Usage: %s <level=1,2,3>", argv[0]);
+        XERRO("lack arguments, abort");
+    }
+
+    int level = atoi(argv[1]);
+
     srand(time(NULL));
 
     cudaStream_t stream;
@@ -152,12 +161,16 @@ int main()
     XQueueHandle xq;
     HwQueueHandle hwq;
     CudaQueueCreate(&hwq, stream);
-    XQueueCreate(&xq, hwq, kPreemptLevelInterrupt, kQueueCreateFlagNone);
+    XQueueCreate(&xq, hwq, level, kQueueCreateFlagNone);
     XQueueSetLaunchConfig(xq, 8, 4);
+
+    for (size_t i = 10; i < 100; i += 10) {
+        TestBlockPreempt(i, stream, xq);
+    }
 
     for (size_t i = 100; i <= BLOCK_TIME_MAX_US; i += 100) {
         TestBlockPreempt(i, stream, xq);
     }
 
-    TestDeadLoopPreempt(stream, xq);
+    if (level == 3) TestDeadLoopPreempt(stream, xq);
 }

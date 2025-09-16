@@ -39,11 +39,11 @@ void HeterogeneousHighestPriorityFirstPolicy::RecvHint(std::shared_ptr<const Hin
     if (priority < PRIORITY_MIN) priority = PRIORITY_MIN;
     if (priority > PRIORITY_MAX) priority = PRIORITY_MAX;
     if (priority != h->Prio()) {
-        XWARN("priority %d not in range [%d, %d], overide priority for XQueue 0x%lx to %d",
+        XWARN("priority %d not in range [%d, %d], overide priority for XQueue 0x" FMT_64X " to %d",
               h->Prio(), PRIORITY_MIN, PRIORITY_MAX, h->Handle(), priority);
     }
 
-    XINFO("set priority %d for XQueue 0x%lx", priority, h->Handle());
+    XINFO("set priority %d for XQueue 0x" FMT_64X, priority, h->Handle());
     priorities_[h->Handle()] = priority;
 }
 

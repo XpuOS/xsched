@@ -6,6 +6,7 @@ import argparse
 import subprocess
 import os
 import tempfile
+import sys
 
 def preprocess_file(file_path, include_paths):
     """Preprocess the file using clang with the specified include paths.
@@ -45,8 +46,12 @@ def extract_function_names(file_path):
         content = f.read()
     
     # Regular expression to match PFN type definitions with version numbers
-    # Matches patterns like: typedef CUresult ( *PFN_functionName_v####)
-    pattern = r'typedef\s+CUresult\s+\( \*PFN_(\w+)_v(\d+)\)'
+    if sys.platform.startswith('win'):
+        # Matches patterns like: typedef CUresult (__attribute__((__stdcall__)) *PFN_functionName_v####)
+        pattern = r'\s*typedef\s+CUresult\s*\(__attribute__\(\(__stdcall__\)\) \*PFN_(\w+)_v(\d+)\)'
+    else:
+        # Matches patterns like: typedef CUresult ( *PFN_functionName_v####)
+        pattern = r'typedef\s+CUresult\s+\( \*PFN_(\w+)_v(\d+)\)'
     
     # Store function names and their versions
     function_versions = defaultdict(set)

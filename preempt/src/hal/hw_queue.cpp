@@ -12,13 +12,13 @@ XResult HwQueueManager::Add(HwQueueHandle hwq_h, std::function<std::shared_ptr<H
     std::lock_guard<std::mutex> lock(mtx_);
     auto it = hwqs_.find(hwq_h);
     if (it != hwqs_.end()) {
-        XWARN("HwQueue with handle 0x%lx already exists", hwq_h);
+        XWARN("HwQueue with handle 0x" FMT_64X " already exists", hwq_h);
         return kXSchedSuccess;
     }
 
     auto hwq = create();
     if (hwq == nullptr) {
-        XWARN("Fail to create HwQueue with handle 0x%lx", hwq_h);
+        XWARN("Fail to create HwQueue with handle 0x" FMT_64X, hwq_h);
         return kXSchedErrorUnknown;
     }
 
@@ -32,13 +32,13 @@ XResult HwQueueManager::Del(HwQueueHandle hwq_h)
     std::lock_guard<std::mutex> lock(mtx_);
     auto it = hwqs_.find(hwq_h);
     if (it == hwqs_.end()) {
-        XWARN("HwQueue with handle 0x%lx does not exist", hwq_h);
+        XWARN("HwQueue with handle 0x" FMT_64X " does not exist", hwq_h);
         return kXSchedErrorNotFound;
     }
 
     auto xq_shptr = it->second->GetXQueue();
     if (xq_shptr != nullptr) {
-        XWARN("HwQueue (0x%lx) is still associated with XQueue (0x%lx), "
+        XWARN("HwQueue (0x" FMT_64X ") is still associated with XQueue (0x" FMT_64X "), "
               "please first destroy the XQueue using XQueueDestroy()",
               hwq_h, xq_shptr->GetHandle());
         return kXSchedErrorNotAllowed;
@@ -72,13 +72,13 @@ EXPORT_C_FUNC XResult HwQueueLaunch(HwQueueHandle hwq, HwCommandHandle hw_cmd)
 {
     std::shared_ptr<HwQueue> hwq_shptr = HwQueueManager::Get(hwq);
     if (hwq_shptr == nullptr) {
-        XWARN("HwQueue with handle 0x%lx does not exist", hwq);
+        XWARN("HwQueue with handle 0x" FMT_64X " does not exist", hwq);
         return kXSchedErrorNotFound;
     }
     // Get and DELETE the HwCommand from the HwCommandManager.
     std::shared_ptr<HwCommand> hw_cmd_shptr = HwCommandManager::Del(hw_cmd);
     if (hw_cmd_shptr == nullptr) {
-        XWARN("HwCommand with handle 0x%lx does not exist or not registered", hw_cmd);
+        XWARN("HwCommand with handle 0x" FMT_64X " does not exist or not registered", hw_cmd);
         return kXSchedErrorNotFound;
     }
 
@@ -93,7 +93,7 @@ EXPORT_C_FUNC XResult HwQueueSynchronize(HwQueueHandle hwq)
 {
     std::shared_ptr<HwQueue> hwq_shptr = HwQueueManager::Get(hwq);
     if (hwq_shptr == nullptr) {
-        XWARN("HwQueue with handle 0x%lx does not exist", hwq);
+        XWARN("HwQueue with handle 0x" FMT_64X " does not exist", hwq);
         return kXSchedErrorNotFound;
     }
     hwq_shptr->Synchronize();

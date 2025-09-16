@@ -197,7 +197,7 @@ uint64_t InstrumentManager::Reactivate()
 #define PREEMPT_BUFFER_DEBUG    false
 
 #if PREEMPT_BUFFER_DEBUG
-    XINFO("preempt idx: %lu\n", preempt_idx_);
+    XINFO("preempt idx: %" FMT_64U, preempt_idx_);
     uint32_t buffer_host[MAX_DEBUG_BLOCK_SIZE * 2 + 4];
     CUDA_ASSERT(Driver::MemcpyDtoHAsync_v2(buffer_host, preempt_buf_ptr_,
                                            sizeof(buffer_host), op_stream_));
