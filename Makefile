@@ -27,7 +27,6 @@ endif
 
 BUILD_PATH			= ${WORK_PATH}/build
 INSTALL_PATH		= ${WORK_PATH}/output
-LIB_PATH			= ${INSTALL_PATH}/lib
 
 define uppercase
 $(subst z,Z,$(subst y,Y,$(subst x,X,$(subst w,W,$(subst v,V,$(subst u,U,$(subst t,T,$(subst s,S,$(subst r,R,$(subst q,Q,$(subst p,P,$(subst o,O,$(subst n,N,$(subst m,M,$(subst l,L,$(subst k,K,$(subst j,J,$(subst i,I,$(subst h,H,$(subst g,G,$(subst f,F,$(subst e,E,$(subst d,D,$(subst c,C,$(subst b,B,$(subst a,A,$(1)))))))))))))))))))))))))))

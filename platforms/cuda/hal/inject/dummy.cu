@@ -1,4 +1,4 @@
-__global__ void test(int *i)
+__global__ void dummy(int *i)
 {
     i[0] = i[1] + 1;
     i[1] = i[2] + 1;
