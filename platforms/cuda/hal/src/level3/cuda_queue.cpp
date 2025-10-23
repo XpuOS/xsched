@@ -69,6 +69,7 @@ void CudaQueueLv3Tsg::Interrupt()
 void CudaQueueLv3Tsg::Restore(const CommandLog &)
 {
     XASSERT(level_ >= kPreemptLevelInterrupt, "Restore() not supported on level-%d", level_);
+    tsg_context_->Restore();
 }
 
 void CudaQueueLv3Tsg::OnPreemptLevelChange(XPreemptLevel level)
