@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./docs/images/logo.png" alt="xsched project logo" width="200"/>
+</p>
+
 # XSched: Preemptive Scheduling for Diverse XPUs
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue)](https://github.com/XpuOS/xsched/blob/main/LICENSE)
