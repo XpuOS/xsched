@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./docs/images/logo.png" alt="xsched project logo" width="128"/>
+  <img src="./docs/img/xsched-logo-v.png" alt="xsched project logo" width="128"/>
 </p>
 
 # XSched: Preemptive Scheduling for Diverse XPUs
