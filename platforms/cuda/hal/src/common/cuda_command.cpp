@@ -7,6 +7,8 @@
 #include "xsched/cuda/hal/common/cuda_assert.h"
 #include "xsched/cuda/hal/common/cuda_command.h"
 
+#include <dlfcn.h>
+
 using namespace xsched::cuda;
 
 CudaCommand::CudaCommand(preempt::XCommandProperties props): HwCommand(props)
@@ -133,3 +135,5 @@ CUresult CudaEventWaitCommand::Launch(CUstream stream)
     if (!event_) return CUDA_SUCCESS; // already waited in BeforeLaunch()
     return Driver::StreamWaitEvent(stream, event_, flags_);
 }
+
+struct dim3 { unsigned int x, y, z; };

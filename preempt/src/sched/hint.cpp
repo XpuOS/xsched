@@ -16,11 +16,12 @@ EXPORT_C_FUNC XResult XHintSetScheduler(XSchedulerType scheduler, XPolicyType po
 
 EXPORT_C_FUNC XResult XHintPriority(XQueueHandle xq, Priority prio)
 {
-    XResult res = XQueueManager::Exists(xq);
-    if (res != kXSchedSuccess) {
+    std::shared_ptr<XQueue> xq_shptr = XQueueManager::Get(xq);
+    if (xq_shptr == nullptr) {
         XWARN("XQueue with handle 0x" FMT_64X " does not exist", xq);
-        return res;
+        return kXSchedErrorNotFound;
     }
+    xq_shptr->SetPriority(prio);
     SchedAgent::SendHint(std::make_shared<PriorityHint>(xq, prio));
     return kXSchedSuccess;
 }
