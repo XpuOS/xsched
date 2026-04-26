@@ -108,6 +108,7 @@ typedef enum {
     kPolicyActiveWindowFirst                 = 7,
     kPolicyCPUHighestPriorityFirst           = 8,
     // NEW_POLICY: New XPolicyTypes go here.
+    kPolicyCompletelyFairScheduler           = 9,
 
     kPolicyMax,
 } XPolicyType;
