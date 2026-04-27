@@ -56,4 +56,5 @@
 #define XSCHED_POLICY_NAME_AWF  "AWF"  // Active Window First
 #define XSCHED_POLICY_NAME_CHPF  "CHPF"  // CPU Highest Priority First
 #define XSCHED_POLICY_NAME_CFS  "CFS"  //Complete Fair Scheduler
+#define XSCHED_POLICY_NAME_MLFQ   "MLFQ"
 // NEW_POLICY: New policy type names go here.

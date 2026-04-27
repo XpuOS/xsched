@@ -109,8 +109,7 @@ typedef enum {
     kPolicyCPUHighestPriorityFirst           = 8,
     // NEW_POLICY: New XPolicyTypes go here.
     kPolicyCompletelyFairScheduler           = 9,
-
-    kPolicyMax,
+    kPolicyMultiLevelFeedbackQueue           = 10,
 } XPolicyType;
 
 typedef XResult (*LaunchCallback)(HwQueueHandle, void *);
