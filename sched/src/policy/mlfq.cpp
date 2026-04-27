@@ -168,6 +168,7 @@ void MultiLevelFeedbackQueuePolicy::Sched(const Status &status)
 
 void MultiLevelFeedbackQueuePolicy::RecvHint(std::shared_ptr<const Hint> hint)
 {
+    (void)hint;
     // Not strictly needed for autonomous Soft Priority Recovery,
     // but can be implemented to support manual user priorities if required.
 }

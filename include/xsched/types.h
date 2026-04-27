@@ -110,6 +110,8 @@ typedef enum {
     // NEW_POLICY: New XPolicyTypes go here.
     kPolicyCompletelyFairScheduler           = 9,
     kPolicyMultiLevelFeedbackQueue           = 10,
+
+    kPolicyMax,
 } XPolicyType;
 
 typedef XResult (*LaunchCallback)(HwQueueHandle, void *);

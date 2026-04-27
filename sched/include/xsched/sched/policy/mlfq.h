@@ -3,7 +3,7 @@
 #include <map>
 #include <chrono>
 
-#include "xsched/sched/policy.h"
+#include "xsched/sched/policy/policy.h"
 
 namespace xsched {
 namespace sched {
@@ -28,7 +28,7 @@ struct MLFQNode {
 
 class MultiLevelFeedbackQueuePolicy : public Policy {
 public:
-    MultiLevelFeedbackQueuePolicy() = default;
+    MultiLevelFeedbackQueuePolicy() : Policy(kPolicyMultiLevelFeedbackQueue) {}
     ~MultiLevelFeedbackQueuePolicy() override = default;
 
     void Sched(const Status &status) override;
