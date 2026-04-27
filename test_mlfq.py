@@ -33,7 +33,7 @@ try:
                 duration = (time.time() - start_time) * 1000
                 print(f"[{task_type}] Task batch {batch_count} completed in {duration:.0f} ms. 准备进入长休眠(Idle)...")
                 
-                # 关键：Idle 时间要大于我们在 mlfq.cpp 里设置的 recovery_threshold_ (100ms)
+                # Idle 时间要大于 mlfq.cpp 里设置的 recovery_threshold_ (100ms)
                 time.sleep(0.5) 
 
             # 长任务：疯狂进行矩阵乘法，不怎么休息 (模拟后台长文本生成、模型训练)

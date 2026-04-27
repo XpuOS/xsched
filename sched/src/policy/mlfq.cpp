@@ -9,7 +9,7 @@ void MultiLevelFeedbackQueuePolicy::Sched(const Status &status)
     auto now = std::chrono::system_clock::now();
     bool has_ready_tasks = false;
 
-    // 1. Maintain variables: i_a (idle time) and q_a (request time) through edge detection
+    // Maintain variables: i_a (idle time) and q_a (request time) through edge detection
     for (auto &st : status.xqueue_status) {
         XQueueHandle handle = st.second->handle;
         bool is_ready_now = st.second->ready;
@@ -39,7 +39,7 @@ void MultiLevelFeedbackQueuePolicy::Sched(const Status &status)
         node.was_ready_last_tick = is_ready_now;
     }
 
-    // 2. Count number of tasks (N) per priority level on each device
+    // Count number of tasks (N) per priority level on each device
     std::map<XDevice, std::map<int, int>> N_count;
     for (auto &st : status.xqueue_status) {
         if (st.second->ready) {
@@ -48,7 +48,7 @@ void MultiLevelFeedbackQueuePolicy::Sched(const Status &status)
         }
     }
 
-    // 3. Update pending times and check for priority recovery / demotion
+    // Update pending times and check for priority recovery / demotion
     for (auto &st : status.xqueue_status) {
         XQueueHandle handle = st.second->handle;
         XDevice device = st.second->device;
@@ -104,7 +104,7 @@ void MultiLevelFeedbackQueuePolicy::Sched(const Status &status)
         }
     }
 
-    // 4. Select the highest priority task per device to execute
+    // Select the highest priority task per device to execute
     std::map<XDevice, XQueueHandle> best_handles;
     std::map<XDevice, int> best_prios;
 
@@ -128,7 +128,7 @@ void MultiLevelFeedbackQueuePolicy::Sched(const Status &status)
         }
     }
 
-    // 5. Suspend / Resume execution based on the selection
+    // Suspend / Resume execution based on the selection
     for (auto &st : status.xqueue_status) {
         XDevice device = st.second->device;
         XQueueHandle handle = st.second->handle;
@@ -160,7 +160,7 @@ void MultiLevelFeedbackQueuePolicy::Sched(const Status &status)
         }
     }
 
-    // 6. Schedule next timer interrupt to keep evaluating time slices
+    // Schedule next timer interrupt to keep evaluating time slices
     if (has_ready_tasks) {
         this->AddTimer(now + default_tick_);
     }
