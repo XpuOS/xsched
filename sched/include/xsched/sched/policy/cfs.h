@@ -27,7 +27,7 @@ public:
 
 private:
     std::unordered_map<XQueueHandle, CFSNode> cfs_infos_;
-    std::chrono::microseconds time_slice_{1000}; // 设置 1ms 的时间片
+    std::chrono::microseconds time_slice_{1000}; // set timeslice to 1ms
 };
 
 } // namespace xsched::sched
