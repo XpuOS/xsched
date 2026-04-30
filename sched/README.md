@@ -15,8 +15,8 @@
 
 **Note:**
 
-- **If a process's scheduler type is** **`LocalScheduler`, it means the process can only schedule xqueues created by itself.**
-- **The scheduler type of** **`XServer`** **must be** **`GlobalScheduler`.**
+- **If a process's scheduler type is `LocalScheduler`, it means the process can only schedule xqueues created by itself.**
+- **The scheduler type of `XServer` must be `GlobalScheduler`.**
 
 ### Global Scheduler
 
@@ -47,14 +47,15 @@ When policy in `sched::Scheduler` (LocalScheduler) generate scheduling operation
 
 `hint` are customized data structures to change policy parameters. Developers can define their own hint types when implementing a new policy. The hint types we support now are as follows:
 
-| Name                  | Used Policy   | Description                                 |
-| --------------------- | ------------- | ------------------------------------------- |
-| kHintTypePriority     | `HPF`, `HHPF` | Change priority of the xqueue               |
-| kHintTypeUtilization  | `UP`, `PUP`   | Change utilization of the xqueue or process |
-| kHintTypeTimeslice    | `UP`, `PUP`   | Change time slice                           |
-| kHintTypeDeadline     | `KEDF`        | Change deadline of the xqueue               |
-| kHintTypeLaxity       | `LAX`         | Change laxity of the xqueue.                |
-| kHintTypeWindowActive | `AWF`         | Change window activity                      |
+| Name                 | Used Policy | Description                                 |
+| -------------------- | ----------- | ------------------------------------------- |
+| kHintTypePriority    | `HPF`, `HHPF` | Change priority of the xqueue             |
+| kHintTypeUtilization | `UP`, `PUP` | Change utilization of the xqueue or process |
+| kHintTypeTimeslice   | `UP`, `PUP` | Change time slice                           |
+| kHintTypeDeadline    | `KEDF`      | Change deadline of the xqueue               |
+| kHintTypeLaxity      | `LAX`       | Change laxity of the xqueue.                |
+| kHintTypeWindowActive| `AWF`       | Change window activity                      |
+| kHintTypePriority    | `CFS`, `MLFQ`| Used by CFS for weight calculation and MLFQ |
 
 ## Policies
 
@@ -62,15 +63,18 @@ When policy in `sched::Scheduler` (LocalScheduler) generate scheduling operation
 
 Now we have implemented several policies, including:
 
-| Value | Full Name                            | Description                                                           |
-| ----- | ------------------------------------ | --------------------------------------------------------------------- |
-| HPF   | Highest Priority First               | Firstly run the xqueue with highest priority                          |
+| Value | Full Name                     | Description                                      |
+| ----- | ----------------------------- | ------------------------------------------------ |
+| HPF   | Highest Priority First        | Firstly run the xqueue with highest priority     |
 | HHPF  | Heterogeneous Highest Priority First | Firstly run the xqueue with highest priority on heterogeneous devices |
-| UP    | Utilization Partition                | Assign time slices with weights to each xqueue                        |
-| PUP   | Process Utilization Partition        | Assign time slices with weights to each process                       |
-| KEDF  | K-Earliest Deadline First            | Firstly run the k xqueues with earliest deadline                      |
-| LAX   | Laxity-based                         | Firstly run the xqueue with highest laxity                            |
-| AWF   | Active Window First                  | Firstly run the xqueue in the active window                           |
+| UP    | Utilization Partition         | Assign time slices with weights to each xqueue   |
+| PUP   | Process Utilization Partition | Assign time slices with weights to each process  |
+| KEDF  | K-Earliest Deadline First     | Firstly run the k xqueues with earliest deadline |
+| LAX   | Laxity-based                  | Firstly run the xqueue with highest laxity       |
+| AWF   | Active Window First           | Firstly run the xqueue in the active window      |
+| CHPF  | CPU Highest Priority First    | Read CPU nice values from /proc to assign GPU priority |
+| CFS   | Completely Fair Scheduler     | Linux-like CFS using vruntime and weights        |
+| MLFQ  | Multi-Level Feedback Queue    | Features Soft Priority Recovery for interactive tasks |
 
 ## How to Implement Your Own Policy
 
@@ -83,11 +87,8 @@ Create a new policy class in `sched/include/xsched/sched/policy` directory, and 
 
 ### 2. Register the new policy
 
-- Add the new policy type to the enum `PolicyType` in `include/xsched/types.h`.
-- Add the new policy type to the function `CreatePolicy()` in `sched/src/policy/policy.cpp`.
-
-* Add the new policy type to the definition of `XSCHED_POLICY` in `protocol/include/xsched/protocol/def.h`.
-
-- Add the new policy type to the map `kPolicyNames` in `sched/src/protocol/names.cpp`.
-- Add the new hint type by need in `hint.h` and `hint.cpp`.
-
+1. Add the new policy type to the enum `PolicyType` in `include/xsched/types.h`.
+2. Add the new policy type to the function `CreatePolicy()` in `sched/src/policy/policy.cpp`.
+3. Add the new policy type to the definition of `XSCHED_POLICY` in `protocol/include/xsched/protocol/def.h`.
+4. Add the new policy type to the map `kPolicyNames` in `sched/src/protocol/names.cpp`.
+5. Add the new hint type by need in `hint.h` and `hint.cpp`.
