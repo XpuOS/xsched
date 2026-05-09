@@ -13,6 +13,8 @@
 #include "xsched/sched/policy/awf.h"
 #include "xsched/sched/policy/chpf.h"
 // NEW_POLICY: New policy headers go here.
+#include "xsched/sched/policy/cfs.h"
+#include "xsched/sched/policy/mlfq.h"
 
 using namespace xsched::sched;
 
@@ -56,6 +58,10 @@ std::unique_ptr<Policy> xsched::sched::CreatePolicy(XPolicyType type)
         case kPolicyCPUHighestPriorityFirst:
             return std::make_unique<CPUHighestPriorityFirstPolicy>();
         // NEW_POLICY: New PolicyTypes handling goes here.
+        case kPolicyCompletelyFairScheduler:
+            return std::make_unique<CompletelyFairSchedulerPolicy>();
+        case kPolicyMultiLevelFeedbackQueue:
+            return std::make_unique<MultiLevelFeedbackQueuePolicy>();
         default:
             XASSERT(false, "invalid policy type: %d", type);
             return nullptr;

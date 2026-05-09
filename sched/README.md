@@ -55,6 +55,7 @@ When policy in `sched::Scheduler` (LocalScheduler) generate scheduling operation
 | kHintTypeDeadline    | `KEDF`      | Change deadline of the xqueue               |
 | kHintTypeLaxity      | `LAX`       | Change laxity of the xqueue.                |
 | kHintTypeWindowActive| `AWF`       | Change window activity                      |
+| kHintTypePriority    | `CFS`, `MLFQ`| Used by CFS for weight calculation and MLFQ |
 
 ## Policies
 
@@ -71,6 +72,9 @@ Now we have implemented several policies, including:
 | KEDF  | K-Earliest Deadline First     | Firstly run the k xqueues with earliest deadline |
 | LAX   | Laxity-based                  | Firstly run the xqueue with highest laxity       |
 | AWF   | Active Window First           | Firstly run the xqueue in the active window      |
+| CHPF  | CPU Highest Priority First    | Read CPU nice values from /proc to assign GPU priority |
+| CFS   | Completely Fair Scheduler     | Linux-like CFS using vruntime and weights        |
+| MLFQ  | Multi-Level Feedback Queue    | Features Soft Priority Recovery for interactive tasks |
 
 ## How to Implement Your Own Policy
 
