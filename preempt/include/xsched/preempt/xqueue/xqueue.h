@@ -45,6 +45,9 @@ public:
     /// @param batch_size The new command batch size, <= 0 means no change.
     virtual void SetLaunchConfig(int64_t threshold, int64_t batch_size) = 0;
 
+    void SetPriority(Priority prio) { priority_ = prio; }
+    Priority GetPriority() const { return priority_; }
+
     XQueueImplType           GetImplType() const { return kImplType; }
     XDevice                  GetDevice()   const { return kDevice;   }
     XQueueHandle             GetHandle()   const { return kHandle;   }
@@ -58,6 +61,7 @@ protected:
     const XDevice                  kDevice;
     const XQueueHandle             kHandle;
     const std::shared_ptr<HwQueue> kHwQueue;
+    Priority                       priority_ = PRIORITY_DEFAULT;
 };
 
 class XQueueManager

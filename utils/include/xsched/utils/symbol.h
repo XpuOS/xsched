@@ -76,6 +76,7 @@ inline void *RealDlSym(void *handle, const char *name)
         static void *dll_handle = dlopen(dll_path.c_str(), RTLD_NOW | RTLD_LOCAL); \
         XASSERT(dll_handle != nullptr, "fail to dlopen %s", dll_path.c_str());     \
         void *symbol = RealDlSym(dll_handle, symbol_name);                         \
+        XDEBG("GetSymbol: %s from %s -> %p", symbol_name, dll_path.c_str(), symbol); \
         XASSERT(symbol != nullptr, "fail to get symbol %s", symbol_name);          \
         return symbol;                                                             \
     }

@@ -98,6 +98,16 @@ private:
     virtual CUresult Launch(CUstream stream) override;
 };
 
+class CudaRuntimeLaunchCommand : public CudaCommand
+{
+public:
+    CudaRuntimeLaunchCommand() : CudaCommand(preempt::kCommandPropertyDeactivatable) {}
+    virtual ~CudaRuntimeLaunchCommand() = default;
+
+private:
+    virtual CUresult Launch(CUstream stream) override { (void)stream; return CUDA_SUCCESS; }
+};
+
 // host function
 class CudaHostFuncCommand : public CudaCommand
 {

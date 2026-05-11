@@ -63,8 +63,12 @@ std::shared_ptr<HwQueue> xsched::cuda::CudaQueueCreate(CUstream stream)
     CUdevice dev;
     CUcontext stream_ctx;
     CUcontext current_ctx;
-    CUDA_ASSERT(Driver::StreamGetCtx(stream, &stream_ctx));
     CUDA_ASSERT(Driver::CtxGetCurrent(&current_ctx));
+    if (stream == nullptr) {
+        stream_ctx = current_ctx;
+    } else {
+        CUDA_ASSERT(Driver::StreamGetCtx(stream, &stream_ctx));
+    }
     XASSERT(current_ctx == stream_ctx,
             "create CudaQueue failed: current context (%p) does not match stream context (%p)",
             current_ctx, stream_ctx);
@@ -95,8 +99,12 @@ CUresult xsched::cuda::DirectLaunch(std::shared_ptr<CudaKernelCommand> kernel, C
     CUdevice dev;
     CUcontext stream_ctx;
     CUcontext current_ctx;
-    CUDA_ASSERT(Driver::StreamGetCtx(stream, &stream_ctx));
     CUDA_ASSERT(Driver::CtxGetCurrent(&current_ctx));
+    if (stream == nullptr) {
+        stream_ctx = current_ctx;
+    } else {
+        CUDA_ASSERT(Driver::StreamGetCtx(stream, &stream_ctx));
+    }
     XASSERT(current_ctx == stream_ctx,
             "direct launch kernel failed: current context (%p) does not match stream context (%p)",
             current_ctx, stream_ctx);

@@ -2,6 +2,7 @@
 
 #include "xsched/preempt/hal/hw_queue.h"
 #include "xsched/preempt/xqueue/xqueue.h"
+#include "xsched/cuda/hal.h"
 #include "xsched/cuda/hal/common/cuda.h"
 #include "xsched/cuda/hal/common/driver.h"
 #include "xsched/cuda/hal/common/handle.h"
@@ -13,27 +14,37 @@ namespace xsched::cuda
 #define CUDA_SHIM_FUNC(name, cmd, ...) \
 inline CUresult X##name(FOR_EACH_PAIR_COMMA(DECLARE_PARAM, __VA_ARGS__), CUstream stream) \
 { \
-    if (stream == 0) { \
-        WaitBlockingXQueues(); \
-        return Driver::name(FOR_EACH_PAIR_COMMA(DECLARE_ARG, __VA_ARGS__), stream); \
-    } \
     auto xq = xsched::preempt::HwQueueManager::GetXQueue(GetHwQueueHandle(stream)); \
-    if (xq == nullptr) return Driver::name(FOR_EACH_PAIR_COMMA(DECLARE_ARG, __VA_ARGS__), stream); \
-    auto hw_cmd = std::make_shared<cmd>(FOR_EACH_PAIR_COMMA(DECLARE_ARG, __VA_ARGS__)); \
-    xq->Submit(hw_cmd); \
-    return CUDA_SUCCESS; \
+    if (xq == nullptr) { \
+        xsched::preempt::XQueueManager::AutoCreate([&](HwQueueHandle *hwq) -> XResult { \
+            return CudaQueueCreate(hwq, stream); \
+        }); \
+        xq = xsched::preempt::HwQueueManager::GetXQueue(GetHwQueueHandle(stream)); \
+    } \
+    if (xq != nullptr) { \
+        /* Use a dummy token for accounting, avoid double-execution of the real memory command */ \
+        auto token = std::make_shared<CudaRuntimeLaunchCommand>(); \
+        xq->Submit(token); \
+    } \
+    return Driver::name(FOR_EACH_PAIR_COMMA(DECLARE_ARG, __VA_ARGS__), stream); \
 }
 
 void WaitBlockingXQueues();
 
 ////////////////////////////// kernel related //////////////////////////////
 CUresult XLaunchKernel(CUfunction f, unsigned int gdx, unsigned int gdy, unsigned int gdz, unsigned int bdx, unsigned int bdy, unsigned int bdz, unsigned int shmem, CUstream stream, void **params, void **extra);
+CUresult XLaunchKernelRuntime(const void *func, unsigned int gdx, unsigned int gdy, unsigned int gdz, unsigned int bdx, unsigned int bdy, unsigned int bdz, size_t shmem, void **args, CUstream stream);
 CUresult XLaunchKernelEx(const CUlaunchConfig *config, CUfunction f, void **params, void **extra);
 CUresult XLaunchHostFunc(CUstream stream, CUhostFn fn, void *data);
 
 ////////////////////////////// memory related //////////////////////////////
-CUDA_SHIM_FUNC(MemcpyHtoDAsync_v2, CudaMemcpyHtoDV2Command, CUdeviceptr, dstDevice, const void *, srcHost, size_t, ByteCount);
-CUDA_SHIM_FUNC(MemcpyDtoHAsync_v2, CudaMemcpyDtoHV2Command, void *, dstHost, CUdeviceptr, srcDevice, size_t, ByteCount);
+CUresult XMemcpyHtoD_v2(CUdeviceptr dstDevice, const void *srcHost, size_t ByteCount);
+CUresult XMemcpyDtoH_v2(void *dstHost, CUdeviceptr srcDevice, size_t ByteCount);
+CUresult XMemcpyHtoD(CUdeviceptr_v1 dstDevice, const void *srcHost, unsigned int ByteCount);
+CUresult XMemcpyDtoH(void *dstHost, CUdeviceptr_v1 srcDevice, unsigned int ByteCount);
+CUresult XMemcpyHtoDAsync_v2(CUdeviceptr dstDevice, const void *srcHost, size_t ByteCount, CUstream hStream);
+CUresult XMemcpyDtoHAsync_v2(void *dstHost, CUdeviceptr srcDevice, size_t ByteCount, CUstream hStream);
+
 CUDA_SHIM_FUNC(MemcpyDtoDAsync_v2, CudaMemcpyDtoDV2Command, CUdeviceptr, dstDevice, CUdeviceptr, srcDevice, size_t, ByteCount);
 CUDA_SHIM_FUNC(Memcpy2DAsync_v2, CudaMemcpy2DV2Command, const CUDA_MEMCPY2D *, pCopy);
 CUDA_SHIM_FUNC(Memcpy3DAsync_v2, CudaMemcpy3DV2Command, const CUDA_MEMCPY3D *, pCopy);
