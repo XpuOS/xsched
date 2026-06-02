@@ -262,11 +262,11 @@ void KernelParamManager::RegisterStaticCodeObject(const void* data)
     // Now, we need to find where the data is from
     // so we can call amd_comgr_set_data_from_file_slice() later
     std::string fname;
-    size_t foffset;
+    size_t foffset = 0;
     if (!FindFileNameFromAddress(image, &fname, &foffset)) XERRO("Failed to find file name from address");
 
-    int fd;
-    size_t fsize;
+    int fd = -1;
+    size_t fsize = 0;
     if (!GetFileHandle(fname.c_str(), &fd, &fsize)) XERRO("Failed to get file handle and size");
 
     // Create the data object and set the file slice
@@ -288,8 +288,8 @@ void KernelParamManager::RegisterDynamicCodeObject(const char* file_path, hipMod
 {
     // Similar to RegisterStaticCodeObject but read from file_path directly
     // Store results in module_kernel_params_[mod]
-    int fd;
-    size_t fsize;
+    int fd = -1;
+    size_t fsize = 0;
     if (!GetFileHandle(file_path, &fd, &fsize)) XERRO("Failed to get file handle for dynamic code object");
 
     // const char* file_content = nullptr; 
