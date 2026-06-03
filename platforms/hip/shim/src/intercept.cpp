@@ -412,6 +412,7 @@ DEFINE_EXPORT_CXX_REDIRECT_CALL(XExtModuleLaunchKernel, hipError_t, hipExtModule
 
 // Special functions for static code object and function registration
 DEFINE_EXPORT_C_REDIRECT_CALL(XRegisterFatBinary, void**, __hipRegisterFatBinary, const void*, data);
+DEFINE_EXPORT_C_REDIRECT_CALL(Driver::UnregisterFatBinary, void, __hipUnregisterFatBinary, void**, modules);
 DEFINE_EXPORT_C_REDIRECT_CALL(XRegisterFunction, void, __hipRegisterFunction, void**, modules, const void*, hostFunction, char*, deviceFunction, const char*, deviceName, unsigned int, threadLimit, void*, tid, void*, bid, dim3*, blockDim, dim3*, gridDim, int*, wSize);
 
 EXPORT_C_FUNC void *dlsym(void *handle, const char *name) 
@@ -420,6 +421,7 @@ EXPORT_C_FUNC void *dlsym(void *handle, const char *name)
     #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     static const std::unordered_map<std::string, void *> intercept_symbol_map = {   
         DLSYM_INTERCEPT_ENTRY(__hipRegisterFatBinary),
+        DLSYM_INTERCEPT_ENTRY(__hipUnregisterFatBinary),
         DLSYM_INTERCEPT_ENTRY(__hipRegisterFunction),
         DLSYM_INTERCEPT_ENTRY(hipInit),
         DLSYM_INTERCEPT_ENTRY(hipDriverGetVersion),
