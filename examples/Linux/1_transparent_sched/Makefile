@@ -5,6 +5,12 @@ NVCC_FLAGS = -O3 -std=c++11
 HIPCC = hipcc
 HIPCC_FLAGS = -O3 -std=c++11
 
+# HIP library path and name — override for your platform:
+#   Standard AMD ROCm:      make hip
+#   Hygon DTK 26.04:        make hip HIP_LIB_PATH=/opt/dtk-26.04/lib HIP_LIB=amdhpi64
+HIP_LIB_PATH ?= /opt/rocm/lib
+HIP_LIB ?= amdhip64
+
 # Target executable
 TARGET = app
 
@@ -16,7 +22,7 @@ cuda: $(SRC_CUDA)
 	$(NVCC) $(NVCC_FLAGS) -o $(TARGET) $<
 
 hip: $(SRC_HIP)
-	$(HIPCC) $(HIPCC_FLAGS) -L/opt/rocm/lib -lamdhip64 -o $(TARGET) $<
+	$(HIPCC) $(HIPCC_FLAGS) -L$(HIP_LIB_PATH) -l$(HIP_LIB) -o $(TARGET) $<
 
 clean:
 	rm -f $(TARGET)

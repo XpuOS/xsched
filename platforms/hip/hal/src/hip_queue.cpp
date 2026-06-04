@@ -12,15 +12,22 @@ using namespace xsched::protocol;
 
 HipQueue::HipQueue(hipStream_t stream): kStream(stream)
 {
-    // Get hip context
-    // FIXME: we should get the context from the stream
+    // Get hip context — DTK may not support hipCtxGetCurrent (error 201),
+    // so fall back gracefully; context_=nullptr means CtxSetCurrent is a no-op.
     hipCtx_t current_context = nullptr;
-    HIP_ASSERT(Driver::CtxGetCurrent(&current_context));
+    if (Driver::CtxGetCurrent(&current_context) != hipSuccess) {
+        current_context = nullptr;
+    }
     context_ = current_context;
 
-    // Get device
+    // Get device from stream — hipStreamGetDevice queries the stream object
+    // directly and works on both ROCm and DTK without requiring a current context.
     hipDevice_t device = 0;
-    HIP_ASSERT(Driver::CtxGetDevice(&device));
+    if (Driver::StreamGetDevice(kStream, &device) != hipSuccess) {
+        int device_id = 0;
+        HIP_ASSERT(Driver::GetDevice(&device_id));
+        device = static_cast<hipDevice_t>(device_id);
+    }
 
     // Get device PCI address
     hipDeviceProp_t prop;
@@ -43,7 +50,11 @@ void HipQueue::Synchronize()
 
 void HipQueue::OnXQueueCreate()
 {
-    HIP_ASSERT(Driver::CtxSetCurrent(context_));
+    // context_ may be nullptr on platforms that don't support
+    // hipCtxGetCurrent (e.g., Hygon DTK), skip context switching.
+    if (context_ != nullptr) {
+        HIP_ASSERT(Driver::CtxSetCurrent(context_));
+    }
 }
 
 void HipQueue::Launch(std::shared_ptr<preempt::HwCommand> hw_cmd)
