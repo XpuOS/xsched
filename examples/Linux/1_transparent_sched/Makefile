@@ -6,9 +6,9 @@ HIPCC = hipcc
 HIPCC_FLAGS = -O3 -std=c++11
 
 # HIP library path and name — override for your platform:
-#   Standard AMD ROCm:      make hip
-#   Hygon DTK 26.04:        make hip HIP_LIB_PATH=/opt/dtk-26.04/lib HIP_LIB=amdhpi64
-HIP_LIB_PATH ?= /opt/rocm/lib
+#   Standard AMD ROCm:      make hip HIP_LIB_PATH=/opt/rocm/lib HIP_LIB=amdhip64
+#   Hygon DTK 26.04:        make hip HIP_LIB_PATH=/opt/dtk-26.04/lib HIP_LIB=amdhip64
+HIP_LIB_PATH ?= /opt/dtk-26.04/lib
 HIP_LIB ?= amdhip64
 
 # Target executable

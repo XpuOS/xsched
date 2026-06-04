@@ -1,4 +1,3 @@
-#include "xsched/utils/pci.h"
 #include "xsched/protocol/device.h"
 #include "xsched/preempt/hal/hw_queue.h"
 #include "xsched/hip/hal/handle.h"
@@ -24,16 +23,22 @@ HipQueue::HipQueue(hipStream_t stream): kStream(stream)
     // directly and works on both ROCm and DTK without requiring a current context.
     hipDevice_t device = 0;
     if (Driver::StreamGetDevice(kStream, &device) != hipSuccess) {
-        int device_id = 0;
-        HIP_ASSERT(Driver::GetDevice(&device_id));
-        device = static_cast<hipDevice_t>(device_id);
+        int ordinal = 0;
+        HIP_ASSERT(Driver::GetDevice(&ordinal));
+        HIP_ASSERT(Driver::DeviceGet(&device, ordinal));
     }
 
-    // Get device PCI address
-    hipDeviceProp_t prop;
-    HIP_ASSERT(Driver::GetDeviceProperties(&prop, device));
-    device_ = MakeDevice(
-        kDeviceTypeGPU, MakePciId(prop.pciDomainID, prop.pciBusID, prop.pciDeviceID, 0));
+    // Build device ID from UUID instead of hipGetDeviceProperties, because
+    // DTK does not export hipGetDeviceProperties (neither base nor R0600 variant).
+    // hipDeviceGetUuid is available on both ROCm and DTK.
+    hipUUID uuid;
+    HIP_ASSERT(Driver::DeviceGetUuid(&uuid, device));
+    uint32_t device_id = 0;
+    for (int i = 0; i < 16; i++) {
+        device_id ^= static_cast<uint32_t>(static_cast<unsigned char>(uuid.bytes[i]))
+                     << ((i % 4) * 8);
+    }
+    device_ = MakeDevice(kDeviceTypeGPU, device_id);
 
     // Get stream flags
     HIP_ASSERT(Driver::StreamGetFlags(kStream, &stream_flags_));
