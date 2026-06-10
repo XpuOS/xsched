@@ -151,6 +151,9 @@ def main():
     parser.add_argument("--priority", type=int,
                         default=int(os.environ.get("XSCHED_AUTO_XQUEUE_PRIORITY", "0")),
                         help="xsched priority (also settable via XSCHED_AUTO_XQUEUE_PRIORITY)")
+    parser.add_argument("--gpu", type=int, default=0,
+                        help="GPU device ID to use (default: 0, set to different IDs "
+                             "for high/low priority servers)")
     parser.add_argument("--host", type=str, default="0.0.0.0")
     args = parser.parse_args()
 
@@ -161,12 +164,17 @@ def main():
         print("[ERRO] No HIP/CUDA device available!")
         sys.exit(1)
 
-    DEVICE = torch.device("cuda:0")
+    gpu_count = torch.cuda.device_count()
+    if args.gpu >= gpu_count:
+        print(f"[ERRO] GPU {args.gpu} not available (total: {gpu_count})")
+        sys.exit(1)
+
+    DEVICE = torch.device(f"cuda:{args.gpu}")
     props = torch.cuda.get_device_properties(DEVICE)
-    print(f"[INFO] Device: {props.name} ({props.total_memory // 1024 // 1024} MiB)")
+    print(f"[INFO] Device: {props.name} GPU#{args.gpu} ({props.total_memory // 1024 // 1024} MiB)")
     print(f"[INFO] xsched priority: {PRIORITY}")
 
-    # Load model
+    # Load model — pin to single GPU, no cross-device splitting
     print(f"[INFO] Loading tokenizer from {args.model}...")
     TOKENIZER = AutoTokenizer.from_pretrained(args.model, trust_remote_code=True)
     if TOKENIZER.pad_token is None:
@@ -176,7 +184,7 @@ def main():
     MODEL = AutoModelForCausalLM.from_pretrained(
         args.model,
         torch_dtype=torch.float16,
-        device_map="auto",
+        device_map={"": DEVICE},
         trust_remote_code=True,
     )
     MODEL.eval()

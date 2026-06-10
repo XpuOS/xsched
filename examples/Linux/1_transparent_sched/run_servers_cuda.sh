@@ -53,6 +53,8 @@ export LD_PRELOAD="${XSCHED_DIR}/output/lib/libshimcuda.so"
 # ---- test parameters ----
 HIGH_PORT="${HIGH_PORT:-8080}"
 LOW_PORT="${LOW_PORT:-8081}"
+HIGH_GPU="${HIGH_GPU:-0}"
+LOW_GPU="${LOW_GPU:-1}"
 HIGH_PRIORITY="${HIGH_PRIORITY:-10}"
 LOW_PRIORITY="${LOW_PRIORITY:--10}"
 MAX_NEW_TOKENS="${MAX_NEW_TOKENS:-256}"
@@ -75,21 +77,23 @@ if [ ! -d "$MODEL_PATH" ]; then
 fi
 
 start_high() {
-    echo "[INFO] Starting HIGH priority server on port ${HIGH_PORT}..."
+    echo "[INFO] Starting HIGH priority server on port ${HIGH_PORT} (GPU#${HIGH_GPU})..."
     XSCHED_AUTO_XQUEUE_PRIORITY="${HIGH_PRIORITY}" \
         python3 "${SCRIPT_DIR}/model_server.py" \
         --model "${MODEL_PATH}" \
         --port "${HIGH_PORT}" \
-        --priority "${HIGH_PRIORITY}"
+        --priority "${HIGH_PRIORITY}" \
+        --gpu "${HIGH_GPU}"
 }
 
 start_low() {
-    echo "[INFO] Starting LOW priority server on port ${LOW_PORT}..."
+    echo "[INFO] Starting LOW priority server on port ${LOW_PORT} (GPU#${LOW_GPU})..."
     XSCHED_AUTO_XQUEUE_PRIORITY="${LOW_PRIORITY}" \
         python3 "${SCRIPT_DIR}/model_server.py" \
         --model "${MODEL_PATH}" \
         --port "${LOW_PORT}" \
-        --priority "${LOW_PRIORITY}"
+        --priority "${LOW_PRIORITY}" \
+        --gpu "${LOW_GPU}"
 }
 
 bench_high() {
