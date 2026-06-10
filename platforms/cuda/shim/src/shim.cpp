@@ -10,6 +10,7 @@
 #include "xsched/cuda/hal/common/levels.h"
 #include "xsched/cuda/hal/level1/cuda_queue.h"
 #include "xsched/cuda/hal/common/cuda_command.h"
+#include "xsched/utils/env.h"
 
 using namespace xsched::preempt;
 
@@ -264,10 +265,12 @@ CUresult XCtxSynchronize()
 
 CUresult XStreamCreate(CUstream *stream, unsigned int flags)
 {
-    CUresult res = Driver::StreamCreate(stream, flags);
+    int64_t prio = PRIORITY_DEFAULT;
+    GetEnvInt64(XSCHED_AUTO_XQUEUE_PRIORITY_ENV_NAME, prio);
+    CUresult res = Driver::StreamCreateWithPriority(stream, flags, (int)prio);
     if (res != CUDA_SUCCESS) return res;
     XQueueManager::AutoCreate([&](HwQueueHandle *hwq) { return CudaQueueCreate(hwq, *stream); });
-    XDEBG("XStreamCreate(stream: %p, flags: 0x%x)", *stream, flags);
+    XDEBG("XStreamCreate(stream: %p, flags: 0x%x, prio: " FMT_64D ")", *stream, flags, prio);
     return res;
 }
 
