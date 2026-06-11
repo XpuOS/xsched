@@ -235,13 +235,12 @@ hipError_t XStreamWaitEvent(hipStream_t stream, hipEvent_t event, unsigned int f
 
     if (stream == nullptr) {
         HipSyncBlockingXQueues();
-        xevent->Synchronize();
-        return Driver::StreamWaitEvent(stream, event, flags);
     }
 
     auto xqueue = GetOrCreateXQueue(stream);
     if (xqueue == nullptr) {
-        if (xevent->GetXQueueHandle() == 0) {
+        if (stream == nullptr || xevent->GetXQueueHandle() == 0) {
+            xevent->Synchronize();
             return Driver::StreamWaitEvent(stream, event, flags);
         }
         xevent->Synchronize();
