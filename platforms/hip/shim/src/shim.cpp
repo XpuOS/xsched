@@ -33,19 +33,34 @@ void HipSyncBlockingXQueues()
     for (auto sync_command : sync_commands) sync_command->Wait();
 }
 
+// Get or create an XQueue for any stream, including the default stream (nullptr).
+// This is the equivalent of vllm_xsched's GetXQueueCached — without it, vLLM's
+// default-stream kernel launches bypass XSched entirely.
+static inline std::shared_ptr<XQueue> GetOrCreateXQueue(hipStream_t stream)
+{
+    auto xq = HwQueueManager::GetXQueue(GetHwQueueHandle(stream));
+    if (!xq) {
+        XQueueManager::AutoCreate([&](HwQueueHandle *hwq) -> XResult {
+            return HipQueueCreate(hwq, stream);
+        });
+        xq = HwQueueManager::GetXQueue(GetHwQueueHandle(stream));
+    }
+    return xq;
+}
+
 hipError_t XLaunchKernel(const void *f, dim3 numBlocks, dim3 dimBlocks, void **args,
                          size_t sharedMemBytes, hipStream_t stream)
 {
+    // Default stream must sync all other streams before launching
     if (stream == nullptr) {
         HipSyncBlockingXQueues();
-        return Driver::LaunchKernel(f, numBlocks, dimBlocks, args, sharedMemBytes, stream);
     }
-    
-    auto xqueue = HwQueueManager::GetXQueue(GetHwQueueHandle(stream));
+
+    auto xqueue = GetOrCreateXQueue(stream);
     if (xqueue == nullptr) {
         return Driver::LaunchKernel(f, numBlocks, dimBlocks, args, sharedMemBytes, stream);
     }
-    
+
     auto kernel = std::make_shared<HipKernelLaunchCommand>(
         f, numBlocks, dimBlocks, args, sharedMemBytes, xqueue != nullptr);
     xqueue->Submit(kernel);
@@ -60,11 +75,9 @@ hipError_t XModuleLaunchKernel(hipFunction_t function,
 {
     if (stream == nullptr) {
         HipSyncBlockingXQueues();
-        return Driver::ModuleLaunchKernel(function, gdx, gdy, gdz, bdx, bdy, bdz, shm,
-                                          stream, params, extra);
     }
 
-    auto xqueue = HwQueueManager::GetXQueue(GetHwQueueHandle(stream));
+    auto xqueue = GetOrCreateXQueue(stream);
     if (xqueue == nullptr) {
         return Driver::ModuleLaunchKernel(function, gdx, gdy, gdz, bdx, bdy, bdz, shm,
                                           stream, params, extra);
@@ -83,11 +96,9 @@ hipError_t XExtModuleLaunchKernel(hipFunction_t f, uint32_t gwx, uint32_t gwy, u
 {
     if (stream == nullptr) {
         HipSyncBlockingXQueues();
-        return Driver::ExtModuleLaunchKernel(f, gwx, gwy, gwz, lwx, lwy, lwz, shm, stream,
-                                             params, extra, start_event, stop_event, flags);
     }
 
-    auto xqueue = HwQueueManager::GetXQueue(GetHwQueueHandle(stream));
+    auto xqueue = GetOrCreateXQueue(stream);
     if (xqueue == nullptr) {
         return Driver::ExtModuleLaunchKernel(f, gwx, gwy, gwz, lwx, lwy, lwz, shm, stream,
                                              params, extra, start_event, stop_event, flags);
@@ -170,15 +181,14 @@ hipError_t XEventRecord(hipEvent_t event, hipStream_t stream)
 
     if (stream == nullptr) {
         HipSyncBlockingXQueues();
+    }
+
+    auto xq = GetOrCreateXQueue(stream);
+    if (xq == nullptr) {
         result = Driver::EventRecord(event, stream);
     } else {
-        auto xq = HwQueueManager::GetXQueue(GetHwQueueHandle(stream));
-        if (xq == nullptr) {
-            result = Driver::EventRecord(event, stream);
-        } else {
-            xq->Submit(command);
-            result = hipSuccess;
-        }
+        xq->Submit(command);
+        result = hipSuccess;
     }
 
     g_events.Add(event, command);
@@ -194,15 +204,14 @@ hipError_t XEventRecordWithFlags(hipEvent_t event, hipStream_t stream, unsigned 
 
     if (stream == nullptr) {
         HipSyncBlockingXQueues();
+    }
+
+    auto xq = GetOrCreateXQueue(stream);
+    if (xq == nullptr) {
         result = Driver::EventRecord(event, stream);
     } else {
-        auto xq = HwQueueManager::GetXQueue(GetHwQueueHandle(stream));
-        if (xq == nullptr) {
-            result = Driver::EventRecord(event, stream);
-        } else {
-            xq->Submit(command);
-            result = hipSuccess;
-        }
+        xq->Submit(command);
+        result = hipSuccess;
     }
 
     g_events.Add(event, command);
@@ -225,17 +234,14 @@ hipError_t XStreamWaitEvent(hipStream_t stream, hipEvent_t event, unsigned int f
     if (xevent == nullptr) return Driver::StreamWaitEvent(stream, event, flags);
 
     if (stream == nullptr) {
-        // sync a event on default stream
         HipSyncBlockingXQueues();
         xevent->Synchronize();
         return Driver::StreamWaitEvent(stream, event, flags);
     }
 
-    auto xqueue = HwQueueManager::GetXQueue(GetHwQueueHandle(stream));
+    auto xqueue = GetOrCreateXQueue(stream);
     if (xqueue == nullptr) {
-        // waiting stream is not a xqueue
         if (xevent->GetXQueueHandle() == 0) {
-            // the event is not recorded on a xqueue
             return Driver::StreamWaitEvent(stream, event, flags);
         }
         xevent->Synchronize();
