@@ -40,8 +40,12 @@ HipQueue::HipQueue(hipStream_t stream): kStream(stream)
     }
     device_ = MakeDevice(kDeviceTypeGPU, device_id);
 
-    // Get stream flags
-    HIP_ASSERT(Driver::StreamGetFlags(kStream, &stream_flags_));
+    // Get stream flags — default stream (nullptr) may not support this query
+    if (kStream != nullptr) {
+        HIP_ASSERT(Driver::StreamGetFlags(kStream, &stream_flags_));
+    } else {
+        stream_flags_ = 0;
+    }
 
     // Make sure no commands are running on stream_
     HIP_ASSERT(Driver::StreamSynchronize(kStream));
@@ -75,11 +79,7 @@ EXPORT_C_FUNC XResult HipQueueCreate(HwQueueHandle *hwq, hipStream_t stream)
         XWARN("HipQueueCreate failed: hwq is nullptr");
         return kXSchedErrorInvalidValue;
     }
-    if (stream == nullptr) {
-        XWARN("HipQueueCreate failed: does not support default stream");
-        return kXSchedErrorNotSupported;
-    }
-    
+
     HwQueueHandle hwq_h = GetHwQueueHandle(stream);
     auto res = HwQueueManager::Add(hwq_h, [&]() { return std::make_shared<HipQueue>(stream); });
     if (res == kXSchedSuccess) *hwq = hwq_h;
