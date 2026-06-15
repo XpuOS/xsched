@@ -1,3 +1,4 @@
+#include "xsched/utils/env.h"
 #include "xsched/protocol/def.h"
 #include "xsched/levelzero/hal/pool.h"
 #include "xsched/levelzero/shim/cmd_list.h"
@@ -99,13 +100,10 @@ ze_result_t CommandListManager::Append(ze_command_list_handle_t cmd_list, std::f
 uint64_t CommandListManager::GetSliceCmdCnt()
 {
     static uint64_t slice_cmd_cnt = []() -> uint64_t {
-        uint64_t val = 0;
-        char *env = std::getenv(XSCHED_AUTO_XQUEUE_ENV_NAME);
-        if (env == nullptr || strlen(env) == 0 || strcmp(env, "0") == 0 || strcasecmp(env, "off") == 0) return 0;
-        char *str = std::getenv(XSCHED_LEVELZERO_SLICE_CNT_ENV_NAME);
-        if (str == nullptr) return 0;
-        try { val = std::stoll(str); } catch (...) { return 0; }
-        return val;
+        int64_t val = 0;
+        if (!GetEnvOption(XSCHED_AUTO_XQUEUE_ENV_NAME, false)) return 0;
+        GetEnvInt64(XSCHED_LEVELZERO_SLICE_CNT_ENV_NAME, val);
+        return (uint64_t)val;
     }();
     return slice_cmd_cnt;
 }

@@ -83,6 +83,12 @@ function(add_hal_lib platform_name)
     foreach(HAL_HEADER ${HAL_HEADERS})
         install(FILES ${HAL_HEADER} DESTINATION include/xsched/${platform_name}/)
     endforeach()
+
+    # install platform Python subpackage if present
+    set(PLATFORM_PYTHON_DIR ${CMAKE_CURRENT_LIST_DIR}/python)
+    if(IS_DIRECTORY ${PLATFORM_PYTHON_DIR})
+        install(DIRECTORY ${PLATFORM_PYTHON_DIR}/ DESTINATION lib/python)
+    endif()
 endfunction()
 
 # adds a shared shim library named shim${platform_name} (on Linux) 

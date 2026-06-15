@@ -32,7 +32,9 @@ foreach(CUDART_MAIN_SRC ${CUDART_MAIN_SRCS})
         ${CUDART_MAIN_SRC}
         $<TARGET_OBJECTS:cudart_common>
     )
-    set_target_properties(${CUDART_TARGET} PROPERTIES CUDA_ARCHITECTURES "all")
+    # set CUDA_ARCHITECTURES needs cmake 3.23+, it's too high
+    # comment it to let nvcc use default architecture
+    # set_target_properties(${CUDART_TARGET} PROPERTIES CUDA_ARCHITECTURES "all")
     target_include_directories(${CUDART_TARGET} PRIVATE
         ${CUDA_INCLUDE_DIRS}
         ${XSCHED_INCLUDE_DIR}

@@ -18,6 +18,7 @@ class XResult(IntEnum):
     kXSchedErrorNotFound     = 3
     kXSchedErrorNotAllowed   = 4
     kXSchedErrorNotSupported = 5
+    kXSchedErrorBadResponse  = 6
     kXSchedErrorUnknown      = 999
 
 
@@ -76,6 +77,8 @@ class XQueueCreateFlag(IntEnum):
 class XQueueSuspendFlag(IntEnum):
     kQueueSuspendFlagNone        = 0x0000
     kQueueSuspendFlagSyncHwQueue = 0x0001
+    kQueueSuspendFlagWaitAll     = 0x0002
+    kQueueSuspendFlagWaitIdle    = 0x0004
     kQueueSuspendFlagMaskAll     = -1
 
 
@@ -83,6 +86,28 @@ class XQueueResumeFlag(IntEnum):
     kQueueResumeFlagNone         = 0x0000
     kQueueResumeFlagDropCommands = 0x0001
     kQueueResumeFlagMaskAll      = -1
+
+
+class XSchedulerType(IntEnum):
+    kSchedulerUnknown    = 0
+    kSchedulerAppManaged = 1
+    kSchedulerLocal      = 2
+    kSchedulerGlobal     = 3
+    kSchedulerMax        = 4
+
+
+class XPolicyType(IntEnum):
+    kPolicyUnknown                           = 0
+    kPolicyHighestPriorityFirst              = 1
+    kPolicyHeterogeneousHighestPriorityFirst = 2
+    kPolicyCPUHighestPriorityFirst           = 3
+    kPolicyUtilizationPartition              = 4
+    kPolicyProcessUtilizationPartition       = 5
+    kPolicyStrictProcessUtilizationPartition = 6
+    kPolicyKEarliestDeadlineFirst            = 7
+    kPolicyLaxity                            = 8
+    kPolicyActiveWindowFirst                 = 9
+    kPolicyMax                               = 10
 
 
 # Constants
@@ -98,9 +123,10 @@ UTILIZATION_DEFAULT = 100
 UTILIZATION_MAX     = 100
 
 Timeslice           = int
-TIMESLICE_MIN       = 100    # 0.1 ms
-TIMESLICE_DEFAULT   = 5000   # 5 ms
-TIMESLICE_MAX       = 100000 # 100 ms
+TIMESLICE_MIN       = 100                    # 0.1 ms
+TIMESLICE_DEFAULT   = 5000                   # 5 ms
+TIMESLICE_MAX       = 10000000               # 10 s
+TIMESLICE_UNLIMITED = 0xFFFFFFFFFFFFFFFF     # UINT64_MAX
 
 Laxity              = int
 NO_LAXITY           = -1
@@ -130,6 +156,9 @@ class XSched:
 
         __dll.XQueueDestroy.argtypes = [__xqh_ctype]
         __dll.XQueueDestroy.restype = __xres_ctype
+
+        __dll.XQueueGet.argtypes = [ctypes.POINTER(__xqh_ctype), __hwqh_ctype]
+        __dll.XQueueGet.restype = __xres_ctype
 
         __dll.XQueueSetPreemptLevel.argtypes = [__xqh_ctype, ctypes.c_int64]
         __dll.XQueueSetPreemptLevel.restype = __xres_ctype
@@ -172,6 +201,9 @@ class XSched:
         __dll.HwCommandDestroy.restype = __xres_ctype
 
         # Hint functions
+        __dll.XHintSetScheduler.argtypes = [ctypes.c_int32, ctypes.c_int32]
+        __dll.XHintSetScheduler.restype = __xres_ctype
+
         __dll.XHintPriority.argtypes = [__xqh_ctype, __prio_ctype]
         __dll.XHintPriority.restype = __xres_ctype
 
@@ -187,9 +219,11 @@ class XSched:
         __dll.XHintDeadline.argtypes = [__xqh_ctype, __ddl_ctype]
         __dll.XHintDeadline.restype = __xres_ctype
 
+        __dll.XHintKDeadline.argtypes = [ctypes.c_size_t]
+        __dll.XHintKDeadline.restype = __xres_ctype
+
     except Exception as e:
-        print(e)
-        exit(1)
+        raise RuntimeError(f"failed to load libpreempt.so bindings: {e}") from e
 
     @staticmethod
     def XQueueCreate(hwq: HwQueueHandle, level: XPreemptLevel, flags: int) -> Tuple[XResult, XQueueHandle]:
@@ -201,6 +235,12 @@ class XSched:
     def XQueueDestroy(xq: XQueueHandle) -> XResult:
         res = XSched.__dll.XQueueDestroy(xq)
         return XResult(res)
+    
+    @staticmethod
+    def XQueueGet(hwq: HwQueueHandle) -> Tuple[XResult, XQueueHandle]:
+        xq = XSched.__xqh_ctype()
+        res = XSched.__dll.XQueueGet(ctypes.byref(xq), hwq)
+        return XResult(res), xq.value
 
     @staticmethod
     def XQueueSetPreemptLevel(xq: XQueueHandle, level: int) -> XResult:
@@ -228,7 +268,7 @@ class XSched:
         return XResult(res)
 
     @staticmethod
-    def XQueueQuery(xq: XQueueHandle, state: int) -> Tuple[XResult, XQueueState]:
+    def XQueueQuery(xq: XQueueHandle) -> Tuple[XResult, XQueueState]:
         state = XSched.__xqs_ctype()
         res = XSched.__dll.XQueueQuery(xq, ctypes.byref(state))
         return XResult(res), XQueueState(state.value)
@@ -270,6 +310,11 @@ class XSched:
         return XResult(res)
 
     @staticmethod
+    def XHintSetScheduler(scheduler: XSchedulerType, policy: XPolicyType) -> XResult:
+        res = XSched.__dll.XHintSetScheduler(scheduler, policy)
+        return XResult(res)
+
+    @staticmethod
     def XHintPriority(xq: XQueueHandle, prio: Priority) -> XResult:
         res = XSched.__dll.XHintPriority(xq, prio)
         return XResult(res)
@@ -292,4 +337,9 @@ class XSched:
     @staticmethod
     def XHintDeadline(xq: XQueueHandle, ddl_us: Deadline) -> XResult:
         res = XSched.__dll.XHintDeadline(xq, ddl_us)
+        return XResult(res)
+
+    @staticmethod
+    def XHintKDeadline(k: int) -> XResult:
+        res = XSched.__dll.XHintKDeadline(k)
         return XResult(res)

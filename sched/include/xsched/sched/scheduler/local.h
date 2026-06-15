@@ -1,5 +1,6 @@
 #pragma once
 
+#include <map>
 #include <list>
 #include <deque>
 #include <mutex>
@@ -29,6 +30,10 @@ public:
     void SetPolicy(XPolicyType type);
     XPolicyType GetPolicy() const { return policy_type_; }
 
+    void WaitAllOperations();
+    void WaitOperations(PID pid);
+    OperationId NextOperationId(PID pid);
+
 private:
     void Worker();
     void ExecuteOperations();
@@ -40,15 +45,26 @@ private:
     void Resume(XQueueHandle handle);
     void AddTimer(const std::chrono::system_clock::time_point time_point);
 
+    Status status_;
+    std::deque<std::chrono::system_clock::time_point> timers_;
+
     XPolicyType policy_type_;
     std::unique_ptr<Policy> policy_ = nullptr;
     std::unique_ptr<std::thread> thread_ = nullptr;
 
-    Status status_;
     std::mutex event_mtx_;
     std::condition_variable event_cv_;
     std::unique_ptr<std::list<std::shared_ptr<const Event>>> event_queue_ = nullptr;
-    std::deque<std::chrono::system_clock::time_point> timers_;
+
+    struct OperationInfo
+    {
+        OperationId issued_id = 0;
+        OperationId completed_id = 0;
+    };
+
+    std::mutex op_mtx_;
+    std::condition_variable op_cv_;
+    std::map<PID, OperationInfo> ops_;
 };
 
 } // namespace xsched::sched

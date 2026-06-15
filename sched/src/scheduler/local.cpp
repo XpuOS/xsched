@@ -41,6 +41,52 @@ void LocalScheduler::Stop()
 
 void LocalScheduler::RecvEvent(std::shared_ptr<const Event> event)
 {
+    // Update all operation completion status in receiver thread, rather than the work thread,
+    // because the work thread will call WaitAllOperations() to wait for their completion.
+    switch (event->Type())
+    {
+    case kEventProcessCreate:
+    {
+        op_mtx_.lock();
+        auto op_it = ops_.find(event->Pid());
+        if (op_it == ops_.end()) {
+            ops_[event->Pid()] = OperationInfo{ .issued_id = 0, .completed_id = 0 };
+        }
+        op_mtx_.unlock();
+        op_cv_.notify_all();
+        break;
+    }
+    case kEventProcessDestroy:
+    {
+        op_mtx_.lock();
+        ops_.erase(event->Pid());
+        op_mtx_.unlock();
+        op_cv_.notify_all();
+        break;
+    }
+    case kEventOperationComplete:
+    {
+        auto ope = std::dynamic_pointer_cast<const OperationCompleteEvent>(event);
+        XASSERT(ope != nullptr, "event type not match");
+        PID pid = ope->Pid();
+        OperationId op_id = ope->OpId();
+
+        std::unique_lock<std::mutex> lock(op_mtx_);
+        auto it = ops_.find(pid);
+        if (it == ops_.end()) {
+            XWARN("operation %ld completed of unknown process %d", op_id, pid);
+            return;
+        }
+        XASSERT(op_id <= it->second.issued_id, "unknown operation %ld completed", op_id);
+        it->second.completed_id = std::max(it->second.completed_id, op_id);
+        lock.unlock();
+        op_cv_.notify_all();
+        return;
+    }
+    default:
+        break;
+    }
+
     event_mtx_.lock();
     event_queue_->emplace_back(event);
     event_mtx_.unlock();
@@ -60,6 +106,35 @@ void LocalScheduler::SetPolicy(XPolicyType type)
     for (auto &status : status_.xqueue_status) Resume(status.first);
     this->Run();
     XINFO("policy changed from %s to %s", old.c_str(), GetPolicyTypeName(policy_type_).c_str());
+}
+
+void LocalScheduler::WaitAllOperations()
+{
+    std::unique_lock<std::mutex> lock(op_mtx_);
+    op_cv_.wait(lock, [this]() {
+        for (auto &process : ops_) {
+            if (process.second.completed_id < process.second.issued_id) return false;
+        }
+        return true;
+    });
+}
+
+void LocalScheduler::WaitOperations(PID pid)
+{
+    std::unique_lock<std::mutex> lock(op_mtx_);
+    op_cv_.wait(lock, [this, pid]() {
+        auto it = ops_.find(pid);
+        if (it == ops_.end()) return true;
+        return it->second.completed_id >= it->second.issued_id;
+    });
+}
+
+OperationId LocalScheduler::NextOperationId(PID pid)
+{
+    std::lock_guard<std::mutex> lock(op_mtx_);
+    auto it = ops_.find(pid);
+    if (it == ops_.end()) return 0;
+    return ++(it->second.issued_id);
 }
 
 void LocalScheduler::Worker()
@@ -123,7 +198,8 @@ void LocalScheduler::ExecuteOperations()
     for (auto &status : status_.process_status) {
         if (status.second->running_xqueues.empty() &&
             status.second->suspended_xqueues.empty()) continue;
-        Execute(std::make_shared<SchedOperation>(*status.second));
+        Execute(std::make_shared<SchedOperation>(
+            NextOperationId(status.second->info.pid), *status.second));
     }
 }
 
@@ -332,6 +408,7 @@ void LocalScheduler::Suspend(XQueueHandle handle)
 {
     auto qit = status_.xqueue_status.find(handle);
     if (qit == status_.xqueue_status.end()) return;
+    if (qit->second->suspended) return; // already suspended
 
     qit->second->suspended = true;
     PID pid = qit->second->pid;
@@ -341,12 +418,14 @@ void LocalScheduler::Suspend(XQueueHandle handle)
     
     pit->second->running_xqueues.erase(handle);
     pit->second->suspended_xqueues.insert(handle);
+    pit->second->xqueues_to_suspend.insert(handle);
 }
 
 void LocalScheduler::Resume(XQueueHandle handle)
 {
     auto qit = status_.xqueue_status.find(handle);
     if (qit == status_.xqueue_status.end()) return;
+    if (!qit->second->suspended) return; // already resumed
 
     qit->second->suspended = false;
     PID pid = qit->second->pid;
@@ -356,6 +435,7 @@ void LocalScheduler::Resume(XQueueHandle handle)
     
     pit->second->running_xqueues.insert(handle);
     pit->second->suspended_xqueues.erase(handle);
+    pit->second->xqueues_to_resume.insert(handle);
 }
 
 void LocalScheduler::AddTimer(const std::chrono::system_clock::time_point time_point)

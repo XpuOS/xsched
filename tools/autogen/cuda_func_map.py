@@ -25,7 +25,7 @@ def preprocess_file(file_path, include_paths):
     if include_paths:
         for path in include_paths:
             cmd.append(f'-I{path}')
-    
+
     try:
         # Run clang preprocessor and capture output
         result = subprocess.run(cmd, capture_output=True, text=True, check=True)
@@ -51,7 +51,7 @@ def extract_function_names(file_path):
         pattern = r'\s*typedef\s+CUresult\s*\(__attribute__\(\(__stdcall__\)\) \*PFN_(\w+)_v(\d+)\)'
     else:
         # Matches patterns like: typedef CUresult ( *PFN_functionName_v####)
-        pattern = r'typedef\s+CUresult\s+\( \*PFN_(\w+)_v(\d+)\)'
+        pattern = r'typedef\s+CUresult\s*\( \*PFN_(\w+)_v(\d+)(_ptsz)?(_ptds)?\)'
     
     # Store function names and their versions
     function_versions = defaultdict(set)
@@ -63,7 +63,10 @@ def extract_function_names(file_path):
     for match in matches:
         function_name = match.group(1)
         version = match.group(2)
-        function_versions[function_name].add(version)
+        suffix = ""
+        suffix += "_ptsz" if match.group(3) is not None else ""
+        suffix += "_ptds" if match.group(4) is not None else ""
+        function_versions[function_name].add((version, suffix))
     
     # Print results sorted by function name
     for func_name in sorted(function_versions.keys()):
@@ -89,7 +92,7 @@ if __name__ == "__main__":
         tmp_path = tmp.name
     
     # Extract function names from the preprocessed file
-    function_versions = extract_function_names(tmp_path)
+    function_versions: dict[str, set[tuple[str, str]]] = extract_function_names(tmp_path)
     
     # Clean up temporary file
 
@@ -103,7 +106,7 @@ if __name__ == "__main__":
     max_func_name_len = max(len(func_name) for func_name in function_versions.keys())
     max_versions_len = [max_func_name_len]
     for func_name, versions in function_versions.items():
-        for i, v in enumerate(versions):
+        for i, (version, func_suffix) in enumerate(versions):
             if i == 0:
                 continue
             suffix = f"_v{i+1}"
@@ -117,18 +120,21 @@ if __name__ == "__main__":
 
     lines = []
     for func_name, versions in function_versions.items():
-        sorted_versions = sorted(versions)
+        sorted_versions = sorted(versions, key=lambda x: (int(x[0]), x[1]))
         version_str = []
-        for i, v in enumerate(sorted_versions):
+        version_id = -1
+        for i, (v, func_suffix) in enumerate(sorted_versions):
             if int(v) < 10000:
                 v = " " + v
-            suffix = f"_v{i+1}" if i > 0 else ""
-            func_name_with_suffix = f"{func_name}{suffix}"
-            version_str.append(f"{{ {v}, (void *){func_name_with_suffix:{max_versions_len[i]}}}}")
+            if func_suffix == "":
+                version_id += 1
+            suffix = f"_v{version_id+1}" if version_id > 0 else ""
+            func_name_with_suffix = f"{func_name}{suffix}{func_suffix}"
+            version_str.append(f"{{ {v}, {{ (void *){func_name_with_suffix:{max_versions_len[i]}}, {"false" if func_suffix == "" else "true "} }} }}")
         quoted_func_name = f"\"{func_name}\""
         lines.append(f"{{ {quoted_func_name:{max_func_name_len+2}}, {{{', '.join(version_str)}}}}},")
     
-    print("static const std::unordered_map<std::string, std::map<int, void *>> intercept_funcs = {")
+    print("static const std::unordered_map<std::string, std::vector<std::pair<int, std::pair<void *, bool>>>> intercept_funcs = {")
     for line in lines:
         print(f"    {line}")
     print("};")

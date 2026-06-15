@@ -1,22 +1,28 @@
 #pragma once
 
+#include <vector>
 #include <cstddef>
 #include <cstdint>
 
+#include "xsched/types.h"
 #include "xsched/sched/protocol/status.h"
 
 namespace xsched::sched
 {
 
+typedef uint64_t OperationId;
+
 enum OperationType
 {
-    kOperationTerminate = 0,
-    kOperationSched     = 1,
-    kOperationConfig    = 2,
+    kOperationNone      = 0,
+    kOperationTerminate = 1,
+    kOperationSched     = 2,
+    kOperationConfig    = 4,
 };
 
 struct OperationMeta
 {
+    OperationId   id;
     OperationType type;
     PID           pid;
 };
@@ -30,7 +36,9 @@ public:
     /// @brief Get the data of the operation. MUST start with OperationMeta.
     virtual const void *  Data() const = 0;
     virtual size_t        Size() const = 0;
+    virtual OperationId   Id()   const = 0;
     virtual OperationType Type() const = 0;
+    /// @brief Get the PID of the process who should execute the operation.
     virtual PID           Pid()  const = 0;
 
     static std::shared_ptr<const Operation> CopyConstructor(const void *data);
@@ -40,12 +48,13 @@ public:
 class TerminateOperation : public Operation
 {
 public:
-    TerminateOperation(): meta_{ .type = kOperationTerminate, .pid = GetProcessId() } {}
     TerminateOperation(const void *data): meta_(*(const OperationMeta *)data) {}
+    TerminateOperation(): meta_{ .id = 0, .type = kOperationTerminate, .pid = GetProcessId() } {}
     virtual ~TerminateOperation() = default;
 
     virtual const void *  Data() const override { return (void *)&meta_; }
     virtual size_t        Size() const override { return sizeof(meta_); }
+    virtual OperationId   Id()   const override { return meta_.id; }
     virtual OperationType Type() const override { return kOperationTerminate; }
     virtual PID           Pid()  const override { return meta_.pid; }
 
@@ -56,16 +65,24 @@ private:
 class SchedOperation : public Operation
 {
 public:
+    enum SchedType
+    {
+        kSchedTypeResumeAll  = 0,
+        kSchedTypeSuspendAll = 1,
+    };
+
     SchedOperation(const void *data);
-    SchedOperation(const ProcessStatus &status);
+    SchedOperation(OperationId id, const ProcessStatus &status);
+    SchedOperation(OperationId id, PID pid, SchedType type, const std::vector<XQueueHandle> &xqs);
     virtual ~SchedOperation();
 
     virtual const void *  Data() const override { return data_; }
     virtual size_t        Size() const override { return data_->size; }
+    virtual OperationId   Id()   const override { return data_->meta.id; }
     virtual OperationType Type() const override { return kOperationSched; }
     virtual PID           Pid()  const override { return data_->meta.pid; }
 
-    size_t RunningCnt() const { return data_->running_cnt; }
+    size_t RunningCnt()   const { return data_->running_cnt; }
     size_t SuspendedCnt() const { return data_->suspended_cnt; }
     const XQueueHandle *Handles() const { return data_->handles; }
 
@@ -91,12 +108,13 @@ class ConfigOperation : public Operation
 {
 public:
     ConfigOperation(const void *data);
-    ConfigOperation(PID pid, XQueueHandle handle, XPreemptLevel level,
-                    int64_t threshold, int64_t batch_size);
+    ConfigOperation(OperationId id, PID pid, XQueueHandle handle,
+                    XPreemptLevel level, int64_t threshold, int64_t batch_size);
     virtual ~ConfigOperation();
 
     virtual const void *  Data() const override { return data_; }
     virtual size_t        Size() const override { return sizeof(OperationData); }
+    virtual OperationId   Id()   const override { return data_->meta.id; }
     virtual OperationType Type() const override { return kOperationConfig; }
     virtual PID           Pid()  const override { return data_->meta.pid; }
 

@@ -48,7 +48,18 @@ void CudaQueueLv2::OnPreemptLevelChange(XPreemptLevel level)
 
 void CudaQueueLv2::OnHwCommandSubmit(std::shared_ptr<preempt::HwCommand> hw_cmd)
 {
+    this->CudaQueueLv1::OnHwCommandSubmit(hw_cmd);
     if (level_ < kPreemptLevelDeactivate) return;
+
+    if (std::dynamic_pointer_cast<CudaGraphCommand>(hw_cmd) != nullptr) {
+        // do nothing here, will automatically fallback to wait-based preemption
+        static bool warned = false;
+        if (!warned) {
+            warned = true;
+            XWARN("CUDA graph cannot support level-2 preemption, falling back to level-1");
+        }
+        return;
+    }
     auto kernel = std::dynamic_pointer_cast<CudaKernelCommand>(hw_cmd);
     if (kernel != nullptr) instrument_manager_->Instrument(kernel);
 }

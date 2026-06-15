@@ -1,20 +1,10 @@
+#include "xsched/utils/env.h"
 #include "xsched/utils/xassert.h"
 #include "xsched/cuda/hal/level3/cuda_queue.h"
 #include "xsched/cuda/hal/common/cuda_assert.h"
 
 using namespace xsched::cuda;
 using namespace xsched::preempt;
-
-CudaLv3Implementation xsched::cuda::GetCudaLv3Implementation()
-{
-    static CudaLv3Implementation impl = []()->CudaLv3Implementation {
-        char *str = std::getenv(XSCHED_CUDA_LV3_IMPL_ENV_NAME);
-        if (str == nullptr) return kCudaLv3ImplementationTrap;
-        if (strcmp(str, "TSG") == 0) return kCudaLv3ImplementationTsg;
-        return kCudaLv3ImplementationTrap;
-    }();
-    return impl;
-}
 
 CudaQueueLv3Trap::CudaQueueLv3Trap(CUstream stream): CudaQueueLv2(stream)
 {
@@ -45,14 +35,24 @@ void CudaQueueLv3Trap::OnPreemptLevelChange(XPreemptLevel level)
     level_ = level;
 }
 
-void CudaQueueLv3Trap::OnHwCommandSubmit(std::shared_ptr<preempt::HwCommand> cmd)
+void CudaQueueLv3Trap::OnHwCommandSubmit(std::shared_ptr<preempt::HwCommand> hw_cmd)
 {
-    if (level_ < kPreemptLevelDeactivate) return;
-    auto kernel = std::dynamic_pointer_cast<CudaKernelCommand>(cmd);
-    if (kernel == nullptr) return;
-    instrument_manager_->Instrument(kernel);
+    this->CudaQueueLv2::OnHwCommandSubmit(hw_cmd);
+    if (level_ < kPreemptLevelInterrupt) return;
+
+    if (std::dynamic_pointer_cast<CudaGraphCommand>(hw_cmd) != nullptr) {
+        // do nothing here, will automatically fallback to wait-based preemption
+        static bool warned = false;
+        if (!warned) {
+            warned = true;
+            XWARN("CUDA graph cannot support trap-based level-3 preemption, "
+                  "falling back to level-1");
+        }
+        return;
+    }
+    auto kernel = std::dynamic_pointer_cast<CudaKernelCommand>(hw_cmd);
     // TODO: assign kernel_command->killable
-    kernel->killable = true;
+    if (kernel != nullptr) kernel->killable = true;
 }
 
 CudaQueueLv3Tsg::CudaQueueLv3Tsg(CUstream stream): CudaQueueLv1(stream)

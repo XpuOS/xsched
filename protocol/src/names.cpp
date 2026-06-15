@@ -57,15 +57,16 @@ static const std::map<XPolicyType, std::string> &PolicyNames() {
         { kPolicyUnknown                          , XSCHED_UNKNOWN_NAME     },
         { kPolicyHighestPriorityFirst             , XSCHED_POLICY_NAME_HPF  },
         { kPolicyHeterogeneousHighestPriorityFirst, XSCHED_POLICY_NAME_HHPF },
+        { kPolicyCPUHighestPriorityFirst          , XSCHED_POLICY_NAME_CHPF },
         { kPolicyUtilizationPartition             , XSCHED_POLICY_NAME_UP   },
         { kPolicyProcessUtilizationPartition      , XSCHED_POLICY_NAME_PUP  },
+        { kPolicyStrictProcessUtilizationPartition, XSCHED_POLICY_NAME_SPUP },
         { kPolicyKEarliestDeadlineFirst           , XSCHED_POLICY_NAME_KEDF },
         { kPolicyLaxity                           , XSCHED_POLICY_NAME_LAX  },
         { kPolicyActiveWindowFirst                , XSCHED_POLICY_NAME_AWF  },
-        { kPolicyCPUHighestPriorityFirst          , XSCHED_POLICY_NAME_CHPF },
+        { kPolicyCompletelyFairScheduler          , XSCHED_POLICY_NAME_CFS  },
+        { kPolicyMultiLevelFeedbackQueue          , XSCHED_POLICY_NAME_MLFQ },
         // NEW_POLICY: New policy type names go here.
-        { kPolicyCompletelyFairScheduler          , XSCHED_POLICY_NAME_CFS},
-        { kPolicyMultiLevelFeedbackQueue          , XSCHED_POLICY_NAME_MLFQ},
     };
     return kPolicyNames;
 }

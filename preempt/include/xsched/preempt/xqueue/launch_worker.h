@@ -33,6 +33,7 @@ public:
     void ResumeAndDrop(int64_t drop_idx);
 
     const CommandLog &GetCommandLog() const { return cmd_log_; }
+    void ForEachCommand(std::function<bool (std::shared_ptr<HwCommand>)> func);
 
     /// @brief Synchronize the Worker, will return until
     /// ALL HwCommands submitted to Worker are completed.

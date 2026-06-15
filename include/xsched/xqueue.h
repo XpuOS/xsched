@@ -20,6 +20,13 @@ XResult XQueueCreate(XQueueHandle *xq, HwQueueHandle hwq, int64_t level, int64_t
 /// @return kXSchedSuccess if successful, otherwise an error code.
 XResult XQueueDestroy(XQueueHandle xq);
 
+/// @brief Get the XQueue handle created by the HwQueue handle.
+/// @param xq    [out] Handle to the XQueue.
+/// @param hwq   [in]  Handle to the HwQueue which has been created by
+/// the Hardware Abstraction Layer (HAL) of each platform, e.g., CudaQueueCreate().
+/// @return kXSchedSuccess if successful, otherwise an error code.
+XResult XQueueGet(XQueueHandle *xq, HwQueueHandle hwq);
+
 /// @brief Set the preemption level of an XQueue.
 /// @param xq    [in] Handle to the XQueue.
 /// @param level [in] Preemption level, see XPreemptLevel.

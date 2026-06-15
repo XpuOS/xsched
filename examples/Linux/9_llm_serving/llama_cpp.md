@@ -34,14 +34,14 @@ cd /xsched
 make cuda
 ```
 
-Then, build the modified Llama.cpp Server.
+Then, build the modified Llama.cpp Server. We should disable CUDA graphs in llama.cpp since XSched does not support it yet.
 
 ```bash
 cd /
 git clone [git@github.com:XpuOS/llama.cpp.git](https://github.com/XpuOS/llama.cpp.git)
 cd llama.cpp
 git checkout -b xsched origin/xsched
-cmake -B build -DGGML_CUDA=on -DCMAKE_PREFIX_PATH=/xsched/output/lib
+cmake -B build -DGGML_CUDA=on -DGGML_CUDA_GRAPHS=OFF -DGGML_CUDA_NO_VMM=ON -DCMAKE_PREFIX_PATH=/xsched/output/lib
 cmake --build build -- -j$(nproc)
 ```
 

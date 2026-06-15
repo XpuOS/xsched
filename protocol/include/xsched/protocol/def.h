@@ -16,7 +16,10 @@
 #define XSCHED_AUTO_XQUEUE_LAXITY_ENV_NAME        "XSCHED_AUTO_XQUEUE_LAXITY"      // = int[1, max_int64]
 
 #define XSCHED_ASCEND_LIB_ENV_NAME     "XSCHED_ASCEND_LIB"
+#define XSCHED_COREX_LIB_ENV_NAME      "XSCHED_COREX_LIB"
+#define XSCHED_COREX_RT_LIB_ENV_NAME   "XSCHED_COREX_RT_LIB"
 #define XSCHED_CUDA_LIB_ENV_NAME       "XSCHED_CUDA_LIB"
+#define XSCHED_CUPTI_LIB_ENV_NAME      "XSCHED_CUPTI_LIB"
 #define XSCHED_CUDART_LIB_ENV_NAME     "XSCHED_CUDART_LIB"
 #define XSCHED_CUDLA_LIB_ENV_NAME      "XSCHED_CUDLA_LIB"
 #define XSCHED_HIP_LIB_ENV_NAME        "XSCHED_HIP_LIB"
@@ -25,12 +28,14 @@
 #define XSCHED_VPI_LIB_ENV_NAME        "XSCHED_VPI_LIB"
 // NEW_PLATFORM: New platform lib env names go here.
 
-#define XSCHED_CUDA_LV3_IMPL_ENV_NAME       "XSCHED_CUDA_LV3_IMPL"       // = str[TSG/TRAP], default = TRAP
-#define XSCHED_LEVELZERO_SLICE_CNT_ENV_NAME "XSCHED_LEVELZERO_SLICE_CNT"
+#define XSCHED_CUDA_SINGLE_STREAM_PER_PROCESS_ENV_NAME "XSCHED_CUDA_SINGLE_STREAM_PER_PROCESS" // = str[ON/OFF], default = OFF, if set to ON, each stream will use one single cuda stream
+#define XSCHED_CUDA_LV3_IMPL_ENV_NAME                  "XSCHED_CUDA_LV3_IMPL"                  // = str[TSG/TRAP], default = TRAP
+#define XSCHED_LEVELZERO_SLICE_CNT_ENV_NAME            "XSCHED_LEVELZERO_SLICE_CNT"
 
+// For XSched server, the channel key is 1, which is often reserved for system process.
+// For clients, the channel key is their process ID.
+#define XSCHED_SERVER_CHANNEL_KEY    1
 #define XSCHED_SERVER_DEFAULT_PORT   50000
-#define XSCHED_SERVER_CHANNEL_NAME   "xsched-server"
-#define XSCHED_CLIENT_CHANNEL_PREFIX "xsched-client-"
 
 #define XSCHED_X11_MONITOR_DEFAULT_PORT     50001
 #define XSCHED_WAYLAND_MONITOR_DEFAULT_PORT 50002
@@ -44,17 +49,23 @@
 #define XSCHED_SCHEDULER_NAME_LCL  "LCL" // Local Scheduler
 #define XSCHED_SCHEDULER_NAME_GLB  "GLB" // Global Scheduler
 
+// XSched scheduler XQueue suspending behaviors.
+#define XSCHED_SCHEDULER_SUSPEND_SYNC_HWQ_ENV_NAME  "XSCHED_SCHEDULER_SUSPEND_SYNC_HWQ"  // = str[ON/OFF], default = OFF
+#define XSCHED_SCHEDULER_SUSPEND_WAIT_ALL_ENV_NAME  "XSCHED_SCHEDULER_SUSPEND_WAIT_ALL"  // = str[ON/OFF], default = OFF
+#define XSCHED_SCHEDULER_SUSPEND_WAIT_IDLE_ENV_NAME "XSCHED_SCHEDULER_SUSPEND_WAIT_IDLE" // = str[ON/OFF], default = OFF
+
 // Set XSched policy type, e.g., export XSCHED_POLICY=HPF
 // If set, scheduler type will be set to LCL and XSCHED_SCHEDULER will be ignored.
 #define XSCHED_POLICY_ENV_NAME  "XSCHED_POLICY" // e.g., export XSCHED_POLICY=HPF
 #define XSCHED_POLICY_NAME_HPF  "HPF"  // Highest Priority First
 #define XSCHED_POLICY_NAME_HHPF "HHPF" // Heterogeneous Highest Priority First
+#define XSCHED_POLICY_NAME_CHPF "CHPF" // CPU Highest Priority First
 #define XSCHED_POLICY_NAME_UP   "UP"   // Utilization Partition
 #define XSCHED_POLICY_NAME_PUP  "PUP"  // Process Utilization Partition
+#define XSCHED_POLICY_NAME_SPUP "SPUP" // Strict Process Utilization Partition
 #define XSCHED_POLICY_NAME_KEDF "KEDF" // K-Earliest Deadline First
 #define XSCHED_POLICY_NAME_LAX  "LAX"  // Laxity-based
 #define XSCHED_POLICY_NAME_AWF  "AWF"  // Active Window First
-#define XSCHED_POLICY_NAME_CHPF  "CHPF"  // CPU Highest Priority First
-#define XSCHED_POLICY_NAME_CFS  "CFS"  //Complete Fair Scheduler
-#define XSCHED_POLICY_NAME_MLFQ   "MLFQ"
+#define XSCHED_POLICY_NAME_CFS  "CFS"  // Complete Fair Scheduler
+#define XSCHED_POLICY_NAME_MLFQ "MLFQ" // Multi-Level Feedback Queue
 // NEW_POLICY: New policy type names go here.

@@ -3,6 +3,7 @@
 #include "xsched/cuda/hal/level3/cuda_queue.h"
 #include "xsched/cuda/hal/common/levels.h"
 #include "xsched/cuda/hal/common/driver.h"
+#include "xsched/cuda/hal/common/options.h"
 #include "xsched/cuda/hal/common/cuda_assert.h"
 #include "xsched/cuda/hal/arch/sm35.h"
 #include "xsched/cuda/hal/arch/sm70.h"

@@ -1,11 +1,14 @@
+#include "xsched/utils/log.h"
 #include "xsched/utils/pci.h"
 #include "xsched/utils/xassert.h"
 #include "xsched/protocol/device.h"
 #include "xsched/cuda/hal/common/levels.h"
-#include "xsched/cuda/hal/level1/cuda_queue.h"
 #include "xsched/cuda/hal/common/cuda_assert.h"
+#include "xsched/cuda/hal/common/cuda_command.h"
+#include "xsched/cuda/hal/level1/cuda_queue.h"
 
 using namespace xsched::cuda;
+using namespace xsched::utils;
 using namespace xsched::preempt;
 using namespace xsched::protocol;
 
@@ -57,6 +60,24 @@ void CudaQueueLv1::OnXQueueCreate()
 CUresult CudaQueueLv1::DirectLaunch(std::shared_ptr<CudaKernelCommand> kernel, CUstream stream)
 {
     return kernel->LaunchWrapper(stream);
+}
+
+EXPORT_C_FUNC XResult CudaQueueGet(HwQueueHandle *hwq, CUstream stream)
+{
+    if (hwq == nullptr) {
+        XWARN("CudaQueueGet failed: hwq is nullptr");
+        return kXSchedErrorInvalidValue;
+    }
+    if (stream == nullptr) {
+        XWARN("CudaQueueGet failed: does not support default stream");
+        return kXSchedErrorNotSupported;
+    }
+
+    HwQueueHandle hwq_h = GetHwQueueHandle(stream);
+    auto hwq_shptr = HwQueueManager::Get(hwq_h);
+    if (hwq_shptr == nullptr) return kXSchedErrorNotFound;
+    *hwq = hwq_h;
+    return kXSchedSuccess;
 }
 
 EXPORT_C_FUNC XResult CudaQueueCreate(HwQueueHandle *hwq, CUstream stream)

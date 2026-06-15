@@ -1,3 +1,5 @@
+#include <fstream>
+
 #include "xsched/types.h"
 #include "xsched/utils/log.h"
 #include "xsched/utils/str.h"
@@ -22,10 +24,10 @@ SchedAgent::SchedAgent()
 
     XSchedulerType scheduler_type = kSchedulerUnknown;
     XPolicyType policy_type = kPolicyUnknown;
-    char *scheduler_str = std::getenv(XSCHED_SCHEDULER_ENV_NAME);
-    char *policy_str = std::getenv(XSCHED_POLICY_ENV_NAME);
-    if (scheduler_str) scheduler_type = GetSchedulerType(scheduler_str);
-    if (policy_str) policy_type = GetPolicyType(policy_str);
+    const std::string scheduler_str = GetEnv(XSCHED_SCHEDULER_ENV_NAME);
+    const std::string policy_str = GetEnv(XSCHED_POLICY_ENV_NAME);
+    if (!scheduler_str.empty()) scheduler_type = GetSchedulerType(scheduler_str);
+    if (!policy_str.empty()) policy_type = GetPolicyType(policy_str);
 
     SchedExecutor::Start();
     InitScheduler(scheduler_type, policy_type);

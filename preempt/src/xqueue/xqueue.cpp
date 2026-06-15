@@ -112,9 +112,7 @@ XResult XQueueManager::ForEach(std::function<XResult(std::shared_ptr<XQueue>)> f
 
 XResult XQueueManager::AutoCreate(std::function<XResult(HwQueueHandle *)> create_hwq)
 {
-    static char *env = std::getenv(XSCHED_AUTO_XQUEUE_ENV_NAME);
-    if (env == nullptr || strlen(env) == 0 || strcmp(env, "0") == 0 ||
-        strcasecmp(env, "off") == 0) {
+    if (!GetEnvOption(XSCHED_AUTO_XQUEUE_ENV_NAME, false)) {
         XDEBG("XQueue auto-create is disabled");
         return kXSchedSuccess;
     }
@@ -228,9 +226,7 @@ XResult XQueueManager::AutoCreate(std::function<XResult(HwQueueHandle *)> create
 
 XResult XQueueManager::AutoDestroy(HwQueueHandle hwq_h)
 {
-    static char *env = std::getenv(XSCHED_AUTO_XQUEUE_ENV_NAME);
-    if (env == nullptr || strlen(env) == 0 || strcmp(env, "0") == 0 ||
-        strcasecmp(env, "off") == 0) {
+    if (!GetEnvOption(XSCHED_AUTO_XQUEUE_ENV_NAME, false)) {
         XDEBG("XQueue auto-destroy is disabled");
         return kXSchedSuccess;
     }
@@ -264,6 +260,15 @@ EXPORT_C_FUNC XResult XQueueCreate(XQueueHandle *xq, HwQueueHandle hwq, int64_t 
 EXPORT_C_FUNC XResult XQueueDestroy(XQueueHandle xq)
 {
     return XQueueManager::Del(xq);
+}
+
+EXPORT_C_FUNC XResult XQueueGet(XQueueHandle *xq, HwQueueHandle hwq)
+{
+    if (xq == nullptr) return kXSchedErrorInvalidValue;
+    auto xq_shptr = HwQueueManager::GetXQueue(hwq);
+    if (xq_shptr == nullptr) return kXSchedErrorNotFound;
+    *xq = xq_shptr->GetHandle();
+    return kXSchedSuccess;
 }
 
 EXPORT_C_FUNC XResult XQueueSetPreemptLevel(XQueueHandle xq, int64_t level)

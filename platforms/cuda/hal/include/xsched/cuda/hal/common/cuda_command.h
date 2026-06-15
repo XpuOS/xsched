@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstring>
+
 #include "xsched/preempt/hal/hw_command.h"
 #include "xsched/cuda/hal/common/cuda.h"
 #include "xsched/cuda/hal/common/driver.h"
@@ -29,7 +31,8 @@ public:
     virtual void Synchronize() override;
     virtual bool Synchronizable() override;
     virtual bool EnableSynchronization() override;
-    CUresult LaunchWrapper(CUstream stream);
+    virtual CUresult LaunchWrapper(CUstream stream);
+    CUcontext GetContext() const { return ctx_; }
 
 private:
     CUcontext ctx_ = nullptr;
@@ -45,7 +48,11 @@ public:
     virtual ~CudaKernelCommand();
     virtual unsigned int BlockCnt() const = 0;
 
+    // After CUDA 12, kFunc could be a CUkernel. We convert CUkernel to CUfunction
+    // by calling cuKernelGetFunction, the actual CUfunction is stored in kFuncHandle.
     const CUfunction kFunc;
+    const CUfunction kFuncHandle;
+
     bool killable = false;
     CUdeviceptr preempt_buffer = 0;
     CUdeviceptr entry_point_original = 0;
@@ -53,12 +60,16 @@ public:
 
 protected:
     bool deep_copy_ = false;
+    // If extra is passed, its param ptrs will also be filled into params_ during deep-copy.
+    // When launching the kernel, if extra_ is not nullptr, use extra_ instead of params_.
     void **params_ = nullptr;
-    void ** const extra_;
+    void **extra_ = nullptr;
 
 private:
     size_t param_cnt_ = 0;
     char *param_data_ = nullptr;
+    char *extra_data_ = nullptr;
+    size_t extra_buffer_size_ = 0;
 };
 
 class CudaKernelLaunchCommand : public CudaKernelCommand
@@ -79,8 +90,10 @@ private:
     const unsigned int shm_; // shared memory byte size
     virtual CUresult Launch(CUstream stream) override
     {
+        void **params = params_;
+        if (deep_copy_ && extra_ != nullptr) params = nullptr;
         return Driver::LaunchKernel(kFunc, gdx_, gdy_, gdz_, bdx_, bdy_, bdz_,
-                                    shm_, stream, params_, extra_);
+                                    shm_, stream, params, extra_);
     }
 };
 
@@ -113,6 +126,44 @@ private:
     { return Driver::LaunchHostFunc(stream, fn_, data_); }
 };
 
+// cuda graphs
+class CudaGraphCommand : public CudaCommand
+{
+public:
+    /// @note We assue applications will not modify a CUDA graph before
+    /// after submission and before waiting for its completion.
+    /// Otherwise, we should do deep copy of the graph exec here,
+    /// or set kCommandPropertyBlockingSubmit in the command properties.
+    CudaGraphCommand(CUgraphExec graph_exec)
+        : CudaCommand(preempt::kCommandPropertyNone), graph_exec_(graph_exec) {}
+    virtual ~CudaGraphCommand() = default;
+
+protected:
+    CUgraphExec graph_exec_;
+};
+
+class CudaGraphUploadCommand : public CudaGraphCommand
+{
+public:
+    CudaGraphUploadCommand(CUgraphExec graph_exec): CudaGraphCommand(graph_exec) {}
+    virtual ~CudaGraphUploadCommand() = default;
+
+private:
+    virtual CUresult Launch(CUstream stream) override
+    { return Driver::GraphUpload(graph_exec_, stream); }
+};
+
+class CudaGraphLaunchCommand : public CudaGraphCommand
+{
+public:
+    CudaGraphLaunchCommand(CUgraphExec graph_exec): CudaGraphCommand(graph_exec) {}
+    virtual ~CudaGraphLaunchCommand() = default;
+
+private:
+    virtual CUresult Launch(CUstream stream) override
+    { return Driver::GraphLaunch(graph_exec_, stream); }
+};
+
 // memory commands
 class CudaMemoryCommand : public CudaCommand
 {
@@ -121,7 +172,44 @@ public:
     virtual ~CudaMemoryCommand() = default;
 };
 
-CUDA_COMMAND(CudaMemcpyHtoDV2Command, CudaMemoryCommand, Driver::MemcpyHtoDAsync_v2, CUdeviceptr, dstDevice, const void *, srcHost, size_t, ByteCount);
+class CudaMemcpyHtoDV2Command : public CudaMemoryCommand
+{
+public:
+    CudaMemcpyHtoDV2Command(CUdeviceptr dstDevice, const void *srcHost, size_t ByteCount)
+        : CudaMemoryCommand(), dstDevice_(dstDevice), srcHost_(srcHost), ByteCount_(ByteCount)
+    {
+        if (srcHost == nullptr || ByteCount == 0) return;
+        // check if srcHost is pinned
+        uint32_t type = 0;
+        CUresult res = Driver::PointerGetAttribute(
+            &type, CU_POINTER_ATTRIBUTE_MEMORY_TYPE, (CUdeviceptr)srcHost
+        );
+        if (res == CUDA_SUCCESS && type == CU_MEMORYTYPE_HOST) return; // pinned host memory
+        /// FIXME: Do not copy DEVICE/ARRAY/UNIFIED memory
+        void *pinned_host = nullptr;
+        CUDA_ASSERT(Driver::MemAllocHost_v2(&pinned_host, ByteCount));
+        srcHost_ = pinned_host;
+        src_host_allocated_ = true;
+        memcpy(pinned_host, srcHost, ByteCount);
+    }
+    virtual ~CudaMemcpyHtoDV2Command()
+    {
+        if (!src_host_allocated_) return;
+        CUDA_ASSERT(Driver::MemFreeHost((void *)srcHost_));
+    };
+
+private:
+    CUdeviceptr dstDevice_;
+    const void *srcHost_;
+    size_t ByteCount_;
+    bool src_host_allocated_ = false;
+
+    virtual CUresult Launch(CUstream stream) override
+    {
+        return Driver::MemcpyHtoDAsync_v2(dstDevice_, srcHost_, ByteCount_, stream);
+    }
+};
+// CUDA_COMMAND(CudaMemcpyHtoDV2Command, CudaMemoryCommand, Driver::MemcpyHtoDAsync_v2, CUdeviceptr, dstDevice, const void *, srcHost, size_t, ByteCount);
 CUDA_COMMAND(CudaMemcpyDtoHV2Command, CudaMemoryCommand, Driver::MemcpyDtoHAsync_v2, void *, dstHost, CUdeviceptr, srcDevice, size_t, ByteCount);
 CUDA_COMMAND(CudaMemcpyDtoDV2Command, CudaMemoryCommand, Driver::MemcpyDtoDAsync_v2, CUdeviceptr, dstDevice, CUdeviceptr, srcDevice, size_t, ByteCount);
 CUDA_COMMAND(CudaMemsetD8Command, CudaMemoryCommand, Driver::MemsetD8Async, CUdeviceptr, dstDevice, unsigned char, uc, size_t, N);
@@ -164,6 +252,7 @@ public:
     virtual void Synchronize() override { CUDA_ASSERT(Driver::EventSynchronize(event_)); }
     virtual bool Synchronizable() override { return true; }
     virtual bool EnableSynchronization() override { return true; }
+    virtual CUresult LaunchWrapper(CUstream stream) override { return Launch(stream); }
     // Mark the event_ as destroyed, so that the event_ will be destroyed in the destructor.
     void DestroyEvent() { destroy_event_ = true; }
 

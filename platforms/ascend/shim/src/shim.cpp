@@ -1,3 +1,6 @@
+#include <mutex>
+#include <unordered_map>
+
 #include "xsched/xqueue.h"
 #include "xsched/utils/map.h"
 #include "xsched/protocol/def.h"
@@ -14,33 +17,12 @@ namespace xsched::ascend
 
 static utils::ObjectMap<aclrtEvent, std::shared_ptr<AclEventRecordCommand>> g_events;
 
-aclError XopCompileAndExecute(const char * opType, int numInputs, aclopCompileAndExecute_arg2_t inputDesc, aclopCompileAndExecute_arg3_t inputs, int numOutputs, aclopCompileAndExecute_arg5_t outputDesc, aclopCompileAndExecute_arg6_t outputs, const aclopAttr * attr, aclopEngineType engineType, aclopCompileType compileFlag, const char * opPath , aclrtStream stream)
+aclError XopCompileAndExecute(const char * opType, int numInputs, aclopCompileAndExecute_arg2_t inputDesc, aclopCompileAndExecute_arg3_t inputs, int numOutputs, aclopCompileAndExecute_arg5_t outputDesc, aclopCompileAndExecute_arg6_t outputs, const aclopAttr * attr, aclopEngineType engineType, aclopCompileType compileFlag, const char * opPath, aclrtStream stream)
 {
+    XDEBG("XopCompileAndExecute(stream: %p, opType: %s, numInputs: %d, numOutputs: %d, engineType: %d, compileFlag: %d, opPath: %s)", stream, opType, numInputs, numOutputs, engineType, compileFlag, opPath);
     auto xq = HwQueueManager::GetXQueue(GetHwQueueHandle(stream));
     if (xq == nullptr) return OpCompiler::opCompileAndExecute(opType, numInputs, inputDesc, inputs, numOutputs, outputDesc, outputs, attr, engineType, compileFlag, opPath, stream);
-    
-    auto input_descs = std::make_shared<std::vector<std::shared_ptr<TensorDesc>>>();
-    auto input_buffers = std::make_shared<std::vector<std::shared_ptr<DataBuffer>>>();
-    auto output_descs = std::make_shared<std::vector<std::shared_ptr<TensorDesc>>>();
-    auto output_buffers = std::make_shared<std::vector<std::shared_ptr<DataBuffer>>>();
-    input_descs->reserve(numInputs);
-    input_buffers->reserve(numInputs);
-    output_descs->reserve(numOutputs);
-    output_buffers->reserve(numOutputs);
-    for (int i = 0; i < numInputs; ++i) {
-        input_descs->push_back(TensorDesc::Create(inputDesc[i]));
-        input_buffers->push_back(DataBuffer::Create(inputs[i]));
-    }
-    for (int i = 0; i < numOutputs; ++i) {
-        output_descs->push_back(TensorDesc::Create(outputDesc[i]));
-        output_buffers->push_back(DataBuffer::Create(outputs[i]));
-    }
-    
-    auto hw_cmd = std::make_shared<AclOpCompileAndExecuteCommand>(opType,
-                                                                  input_descs, input_buffers,
-                                                                  output_descs, output_buffers,
-                                                                  OpAttr::Create(attr),
-                                                                  engineType, compileFlag, opPath);
+    auto hw_cmd = std::make_shared<AclOpCompileAndExecuteCommand>(opType, numInputs, inputDesc, inputs, numOutputs, outputDesc, outputs, attr, engineType, compileFlag, opPath, true);
     xq->Submit(hw_cmd);
     return ACL_SUCCESS;
 }
@@ -122,19 +104,19 @@ aclError XrtCreateStreamWithConfig(aclrtStream *stream, uint32_t priority, uint3
 
 void XopDestroyAttr(const aclopAttr *attr)
 {
-    if (OpAttr::Destroy(attr)) return;
+    if (OpAttr::Destroy(attr) != nullptr) return;
     Driver::opDestroyAttr(attr);
 }
 
 void XDestroyTensorDesc(const aclTensorDesc *desc)
 {
-    if (TensorDesc::Destroy(desc)) return;
+    if (TensorDesc::Destroy(desc) != nullptr) return;
     Driver::DestroyTensorDesc(desc);
 }
 
 aclError XDestroyDataBuffer(const aclDataBuffer *dataBuffer)
 {
-    if (DataBuffer::Destroy(dataBuffer)) return ACL_SUCCESS;
+    if (DataBuffer::Destroy(dataBuffer) != nullptr) return ACL_SUCCESS;
     return Driver::DestroyDataBuffer(dataBuffer);
 }
 

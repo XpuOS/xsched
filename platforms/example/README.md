@@ -2,7 +2,7 @@
 
 ## Step 1: Implement interception code
 
-We support automatical generation tools, developers can follow the steps below (taking `opencl` as an example) to use them.
+XSched provides code generation tools for interception boilerplate. The steps below use `opencl` as an example.
 
 ### 1. Setup directory structure
 
@@ -14,8 +14,10 @@ python3 tools/autogen/setup_template.py ./platforms/example --platform opencl
 
 ### 2. Gather platform headers
 
-For single-header platform, just copy the header to `platforms/example/hal/include/xsched/opencl/hal`
-For platform with multiple headers, use `tools/autogen/merge_headers.py` to merge them into a single header.
+For single-header platforms, copy the header to
+`platforms/example/hal/include/xsched/opencl/hal`.
+
+For platforms with multiple headers, use `tools/autogen/merge_headers.py` to merge them into a single header.
 
 ```shell
 python3 tools/autogen/merge_headers.py \
@@ -51,7 +53,8 @@ python3 tools/autogen/gen.py \
 
 ## Step 2: Define HwQueue & HwCommand abstraction
 
-For `HwQueue`, we have implemented its parent class - `preempt::HwQueue`(refer to [hw_queue.h](../../preempt/include/xsched/preempt/hal/hw_queue.h)). What you need is to inherit this parent class, and finish interfaces in the table below.
+XSched provides the base `preempt::HwQueue` class in [hw_queue.h](../../preempt/include/xsched/preempt/hal/hw_queue.h).
+A new platform queue should inherit from it and implement the interfaces below.
 
 <table>
   <tr>
@@ -106,11 +109,12 @@ For `HwQueue`, we have implemented its parent class - `preempt::HwQueue`(refer t
 
 Note that only the Level-1 interfaces are mandatory for supporting a new XPU, while the Level-2 and Level-3 interfaces are optional since they necessitate additional hardware capabilities.
 
-For `HwCommand`, we have also implemented its parent class - `preempt::HwCommand`. The meaning of interfaces have been explain in detail in [hw_command.h](../../preempt/include/xsched/preempt/hal/hw_command.h), you can implement these interfaces by your need.
+XSched also provides the base `preempt::HwCommand` class. See [hw_command.h](../../preempt/include/xsched/preempt/hal/hw_command.h) for the interface details.
 
 ## Step 3: Finish XShim Lib
 
-Finish functions which need extral handling in `platforms/example/shim/src/xshim.cpp`, such as `XCreateCommandQueueWithProperties()`, `XCreateKernel()`, `XEnqueueNativeKernel()`, etc. The main objectives of these additional treatments are as follows:
+Finish functions that need extra handling in `platforms/example/shim/src/shim.cpp`, such as `XCreateCommandQueueWithProperties()`, `XCreateKernel()`, `XEnqueueNativeKernel()`, etc.
+The main objectives are:
 
 1. Create `XQueue` synchronously when creating hardware queue.
 2. Encapsulate the launch kernel as `HwCommand` and submit it to `XQueue`.

@@ -21,10 +21,10 @@ InstrumentContext::InstrumentContext(CUcontext ctx): kCtx(ctx)
             "create InstrumentContext failed: current context (%p) does not match context (%p)",
             current_ctx, ctx);
 
-    // create operation stream with highest priority
+    // create a non-blocking operation stream with highest priority
     int lp, hp;
     CUDA_ASSERT(Driver::CtxGetStreamPriorityRange(&lp, &hp));
-    CUDA_ASSERT(Driver::StreamCreateWithPriority(&op_stream_, 0, hp));
+    CUDA_ASSERT(Driver::StreamCreateWithPriority(&op_stream_, CU_STREAM_NON_BLOCKING, hp));
 
     CUdevice dev;
     CUDA_ASSERT(Driver::CtxGetDevice(&dev));
@@ -76,7 +76,7 @@ CUresult InstrumentContext::Launch(std::shared_ptr<CudaKernelCommand> kernel,
         *preempt_buf = preempt_buf_->Ptr(); // use default (empty) preempt buffer
 
         launch_mtx_.lock();
-        cuXtraSetDebuggerParams(kernel->kFunc, args_buf, sizeof(args_buf));
+        cuXtraSetDebuggerParams(kernel->kFuncHandle, args_buf, sizeof(args_buf));
         CUresult ret = kernel->LaunchWrapper(stream);
         launch_mtx_.unlock();
         return ret;
@@ -91,10 +91,10 @@ CUresult InstrumentContext::Launch(std::shared_ptr<CudaKernelCommand> kernel,
                             : kernel->entry_point_guardian;
     
     launch_mtx_.lock();
-    cuXtraSetDebuggerParams(kernel->kFunc, args_buf, sizeof(args_buf));
-    cuXtraSetEntryPoint(kernel->kFunc, entry_point);
+    cuXtraSetDebuggerParams(kernel->kFuncHandle, args_buf, sizeof(args_buf));
+    cuXtraSetEntryPoint(kernel->kFuncHandle, entry_point);
     CUresult ret = kernel->LaunchWrapper(stream);
-    cuXtraSetEntryPoint(kernel->kFunc, kernel->entry_point_original);
+    cuXtraSetEntryPoint(kernel->kFuncHandle, kernel->entry_point_original);
     launch_mtx_.unlock();
 
     return ret;
@@ -108,7 +108,7 @@ void InstrumentContext::NotifyTrapInstrumented()
 
 void InstrumentContext::Instrument(std::shared_ptr<CudaKernelCommand> kernel)
 {
-    CUfunction func = kernel->kFunc;
+    CUfunction func = kernel->kFuncHandle;
 
     {
         std::lock_guard<std::mutex> lock(instrument_mtx_);

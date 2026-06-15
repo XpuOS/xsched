@@ -37,7 +37,7 @@ We fully recognize the significant and evolving differences in hardware capabili
 
 
 ## XSched's Recent Advancement
-Currently, XSched has supported over ten mas-production XPU devices from NVIDIA, AMD, Intel, Ascend and Xilinx. It is the first time to achieve multi-task preemptive scheduling on NPU and ASIC computing platforms and is also the first time to achieve the highest level of preemptive scheduling on closed-sourced GPU platforms. The open-sourced XSched is compatible with mainstream heterogeneous computing platforms including CUDA, HIP, OneAPI, AscendCL, OpenCL (see [XPU Support Matrix](https://github.com/XpuOS/xsched/blob/main/README.md)), which means you can directly deploy XSched on laptops, PCs and servers to experience the improvements brought by multi-task scheduling.
+Currently, XSched has supported over ten mass-production XPU devices from NVIDIA, AMD, Intel, Ascend and Xilinx. It is the first time to achieve multi-task preemptive scheduling on NPU and ASIC computing platforms and is also the first time to achieve the highest level of preemptive scheduling on closed-sourced GPU platforms. The open-sourced XSched is compatible with mainstream heterogeneous computing platforms including CUDA, HIP, OneAPI, AscendCL, OpenCL (see [XPU Support Matrix](https://github.com/XpuOS/xsched/blob/main/README.md)), which means you can directly deploy XSched on laptops, PCs and servers to experience the improvements brought by multi-task scheduling.
 
 #### Not only an academic prototype XSched is, it has also demonstrated application potential in many real-world scenarios.
 

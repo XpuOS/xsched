@@ -1,5 +1,6 @@
 #include <cstring>
 
+#include "xsched/utils/log.h"
 #include "xsched/utils/xassert.h"
 #include "xsched/sched/protocol/event.h"
 
@@ -32,8 +33,10 @@ std::shared_ptr<const Event> Event::CopyConstructor(const void *data)
         return std::make_shared<XQueueQueryEvent>(data);
     case kEventXQueueQueryAll:
         return std::make_shared<XQueueQueryAllEvent>(data);
+    case kEventOperationComplete:
+        return std::make_shared<OperationCompleteEvent>(data);
     default:
-        XASSERT(false, "unknown event type: %d", meta->type);
+        XERRO("unknown event type: %d", meta->type);
         return nullptr;
     }
 }

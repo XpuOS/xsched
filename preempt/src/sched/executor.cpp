@@ -1,7 +1,9 @@
 #include <memory>
 
 #include "xsched/xqueue.h"
+#include "xsched/utils/env.h"
 #include "xsched/utils/xassert.h"
+#include "xsched/protocol/def.h"
 #include "xsched/preempt/sched/agent.h"
 #include "xsched/preempt/sched/executor.h"
 #include "xsched/preempt/xqueue/xqueue.h"
@@ -23,10 +25,16 @@ void SchedExecutor::Stop()
 
 void SchedExecutor::Execute(std::shared_ptr<const sched::Operation> op)
 {
-    if (!executing_.load()) return;
+    OperationType type = op->Type();
+    XASSERT(op->Pid() == GetProcessId(),
+            "operation %ld sent to the wrong process, target: %d, receiver %d",
+            op->Id(), op->Pid(), GetProcessId());
+    if (!executing_.load()) type = kOperationNone;
 
-    switch (op->Type())
+    switch (type)
     {
+    case kOperationNone:
+        break;
     case kOperationSched:
         ExecuteSchedOperation(std::dynamic_pointer_cast<const sched::SchedOperation>(op));
         break;
@@ -34,9 +42,12 @@ void SchedExecutor::Execute(std::shared_ptr<const sched::Operation> op)
         ExecuteConfigOperation(std::dynamic_pointer_cast<const sched::ConfigOperation>(op));
         break;
     default:
-        XASSERT(false, "unknown operation type: %d", op->Type());
+        XERRO("unsupported operation type: %d", type);
         break;
     }
+
+    // report operation complete event to scheduler
+    SchedAgent::SendEvent(std::make_shared<OperationCompleteEvent>(op->Id()));
 }
 
 void SchedExecutor::ExecuteSchedOperation(std::shared_ptr<const sched::SchedOperation> op)
@@ -45,6 +56,13 @@ void SchedExecutor::ExecuteSchedOperation(std::shared_ptr<const sched::SchedOper
     size_t running_cnt = op->RunningCnt();
     size_t suspended_cnt = op->SuspendedCnt();
     const XQueueHandle *handles = op->Handles();
+    static const int64_t suspend_flags = 
+        (GetEnvOption(XSCHED_SCHEDULER_SUSPEND_SYNC_HWQ_ENV_NAME, false)
+            ? kQueueSuspendFlagSyncHwQueue : kQueueSuspendFlagNone)
+      | (GetEnvOption(XSCHED_SCHEDULER_SUSPEND_WAIT_ALL_ENV_NAME, false)
+            ? kQueueSuspendFlagWaitAll     : kQueueSuspendFlagNone)
+      | (GetEnvOption(XSCHED_SCHEDULER_SUSPEND_WAIT_IDLE_ENV_NAME, false)
+            ? kQueueSuspendFlagWaitIdle    : kQueueSuspendFlagNone);
 
     for (size_t i = 0; i < running_cnt; ++i) {
         std::shared_ptr<XQueue> xq_shptr = XQueueManager::Get(handles[i]);
@@ -53,7 +71,7 @@ void SchedExecutor::ExecuteSchedOperation(std::shared_ptr<const sched::SchedOper
     }
     for (size_t i = 0; i < suspended_cnt; ++i) {
         std::shared_ptr<XQueue> xq_shptr = XQueueManager::Get(handles[running_cnt + i]);
-        if (xq_shptr != nullptr) xq_shptr->Suspend(kQueueSuspendFlagNone);
+        if (xq_shptr != nullptr) xq_shptr->Suspend(suspend_flags);
     }
 }
 
