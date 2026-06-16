@@ -34,7 +34,9 @@ cd /xsched
 make cuda
 ```
 
-Then, build the modified Llama.cpp Server. We should disable CUDA graphs in llama.cpp since XSched does not support it yet.
+Then, build the modified Llama.cpp Server.
+In XSched, a CUDA Graph is treated as a single command and therefore requires Level-3 TSG-based preemption, which is unsuitable for fine-grained scheduling control within a single process (see [vllm.md](vllm.md) for more details).
+Consequently, in this example, we disable CUDA Graphs in Llama.cpp.
 
 ```bash
 cd /
