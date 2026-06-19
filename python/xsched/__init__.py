@@ -107,7 +107,9 @@ class XPolicyType(IntEnum):
     kPolicyKEarliestDeadlineFirst            = 7
     kPolicyLaxity                            = 8
     kPolicyActiveWindowFirst                 = 9
-    kPolicyMax                               = 10
+    kPolicyCompletelyFairScheduler           = 10
+    kPolicyMultiLevelFeedbackQueue           = 11
+    kPolicyMax                               = 12
 
 
 # Constants
@@ -141,6 +143,7 @@ class XSched:
     __xqs_ctype    = ctypes.c_int32
     __hwqh_ctype   = ctypes.c_uint64
     __hwcmdh_ctype = ctypes.c_uint64
+    __preempt_ctype = ctypes.c_int32
     __prio_ctype   = ctypes.c_int32
     __util_ctype   = ctypes.c_int32
     __ts_ctype     = ctypes.c_int64
@@ -160,7 +163,7 @@ class XSched:
         __dll.XQueueGet.argtypes = [ctypes.POINTER(__xqh_ctype), __hwqh_ctype]
         __dll.XQueueGet.restype = __xres_ctype
 
-        __dll.XQueueSetPreemptLevel.argtypes = [__xqh_ctype, ctypes.c_int64]
+        __dll.XQueueSetPreemptLevel.argtypes = [__xqh_ctype, __preempt_ctype]
         __dll.XQueueSetPreemptLevel.restype = __xres_ctype
 
         __dll.XQueueSetLaunchConfig.argtypes = [__xqh_ctype, ctypes.c_int64, ctypes.c_int64]
@@ -243,7 +246,7 @@ class XSched:
         return XResult(res), xq.value
 
     @staticmethod
-    def XQueueSetPreemptLevel(xq: XQueueHandle, level: int) -> XResult:
+    def XQueueSetPreemptLevel(xq: XQueueHandle, level: XPreemptLevel) -> XResult:
         res = XSched.__dll.XQueueSetPreemptLevel(xq, level)
         return XResult(res)
 

@@ -3,6 +3,7 @@
 #include "client.h"
 #include "convert.h"
 #include "xsched/utils/log.h"
+#include "xsched/utils/str.h"
 #include "xsched/sched/protocol/hint.h"
 
 using namespace xsched::sched;

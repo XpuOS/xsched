@@ -127,9 +127,9 @@ XResult XQueueManager::AutoCreate(std::function<XResult(HwQueueHandle *)> create
     XPreemptLevel level = XSCHED_DEFAULT_PREEMPT_LEVEL;
 
     // set level by env
-    int64_t env_int64 = 0;
-    bool env_set_level = GetEnvInt64(XSCHED_AUTO_XQUEUE_LEVEL_ENV_NAME, env_int64);
-    if (env_set_level) level = (XPreemptLevel)env_int64;
+    int64_t env_level = 0;
+    bool env_set_level = GetEnvInt64(XSCHED_AUTO_XQUEUE_LEVEL_ENV_NAME, env_level);
+    if (env_set_level) level = (XPreemptLevel)env_level;
 
     res = XQueueCreate(&xq, hwq, level, kQueueCreateFlagNone);
     if (res != kXSchedSuccess) {
@@ -271,8 +271,11 @@ EXPORT_C_FUNC XResult XQueueGet(XQueueHandle *xq, HwQueueHandle hwq)
     return kXSchedSuccess;
 }
 
-EXPORT_C_FUNC XResult XQueueSetPreemptLevel(XQueueHandle xq, int64_t level)
+EXPORT_C_FUNC XResult XQueueSetPreemptLevel(XQueueHandle xq, XPreemptLevel level)
 {
+    if (level <= kPreemptLevelUnknown || level >= kPreemptLevelMax) {
+        return kXSchedErrorInvalidValue;
+    }
     std::shared_ptr<XQueue> xq_shptr = XQueueManager::Get(xq);
     if (xq_shptr == nullptr) {
         XWARN("XQueue with handle 0x" FMT_64X " does not exist", xq);
@@ -282,7 +285,7 @@ EXPORT_C_FUNC XResult XQueueSetPreemptLevel(XQueueHandle xq, int64_t level)
         XWARN("XQueue with handle 0x" FMT_64X " does not support dynamic level", xq);
         return kXSchedErrorNotSupported;
     }
-    xq_shptr->SetPreemptLevel((XPreemptLevel)level);
+    xq_shptr->SetPreemptLevel(level);
     return kXSchedSuccess;
 }
 

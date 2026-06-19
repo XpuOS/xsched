@@ -2,7 +2,7 @@
 
 #define XSCHED_DEFAULT_PREEMPT_LEVEL              kPreemptLevelBlock
 #define XSCHED_DEFAULT_COMMAND_THRESHOLD          16
-#define XSCHED_DEFAULT_COMMAND_BATCH_SZIE         8
+#define XSCHED_DEFAULT_COMMAND_BATCH_SIZE         8
 
 #define XSCHED_AUTO_XQUEUE_ENV_NAME               "XSCHED_AUTO_XQUEUE"             // = str[ON/OFF]      , default = OFF
 #define XSCHED_AUTO_XQUEUE_LEVEL_ENV_NAME         "XSCHED_AUTO_XQUEUE_LEVEL"       // = int[1, 3]        , default = 1

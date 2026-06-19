@@ -55,11 +55,10 @@ CudaKernelCommand::CudaKernelCommand(CUfunction func, void **params, void **extr
     : CudaCommand(preempt::kCommandPropertyDeactivatable)
     // cuXtraKernelGetFunction() will convert func to CUfunction if func is a CUkernel.
     , kFunc(func), kFuncHandle(cuXtraKernelGetFunction((CUkernel)func))
-    , params_(params), extra_(extra)
+    , params_(params), extra_(extra), param_cnt_(cuXtraGetParamCount(kFuncHandle))
 {
     if (!deep_copy) return;
 
-    param_cnt_ = cuXtraGetParamCount(kFuncHandle);
     /// @FIXME: even if param_cnt_ == 0, params or extra can be non-nullptr.
     if (param_cnt_ == 0) return;
     if (params == nullptr && extra == nullptr) {
@@ -112,6 +111,9 @@ CudaKernelCommand::CudaKernelCommand(CUfunction func, void **params, void **extr
         for (size_t i = 0; i < param_cnt_; ++i) {
             size_t offset, size;
             cuXtraGetParamInfo(kFuncHandle, i, &offset, &size, nullptr);
+            XASSERT(offset + size <= extra_buffer_size_,
+                    "extra[%zu] out of range: offset (%zu) + size (%zu) > buffer size (%zu)",
+                    i, offset, size, extra_buffer_size_);
             params_[i] = (void*)&extra_data_[offset];
         }
     }

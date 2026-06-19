@@ -14,6 +14,7 @@
 #include "convert.h"
 #include "xsched_assert.h"
 #include "xsched/utils/log.h"
+#include "xsched/utils/str.h"
 #include "xsched/protocol/names.h"
 #include "xsched/protocol/device.h"
 

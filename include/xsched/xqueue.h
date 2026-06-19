@@ -31,7 +31,7 @@ XResult XQueueGet(XQueueHandle *xq, HwQueueHandle hwq);
 /// @param xq    [in] Handle to the XQueue.
 /// @param level [in] Preemption level, see XPreemptLevel.
 /// @return kXSchedSuccess if successful, otherwise an error code.
-XResult XQueueSetPreemptLevel(XQueueHandle xq, int64_t level);
+XResult XQueueSetPreemptLevel(XQueueHandle xq, XPreemptLevel level);
 
 /// @brief Set the launch threshold and command batch size of an XQueue.
 /// @param xq         [in] Handle to the XQueue.

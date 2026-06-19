@@ -1,4 +1,6 @@
 #include <map>
+
+#include "xsched/utils/str.h"
 #include "xsched/protocol/def.h"
 #include "xsched/protocol/names.h"
 
@@ -73,14 +75,15 @@ static const std::map<XPolicyType, std::string> &PolicyNames() {
 
 #define SEARCH_NAME(map, key) \
     static const std::string unk = XSCHED_UNKNOWN_NAME; \
-    auto it = map.find(key);                  \
-    if (it != map.end()) return it->second;   \
+    auto it = map.find(key); \
+    if (it != map.end()) return it->second; \
     return unk;
 
 #define SEARCH_KEY(map, val, unk) \
+    const std::string lower_val = ToLower(val); \
     for (auto it = map.begin(); it != map.end(); ++it) { \
-        if (it->second == val) return it->first;         \
-    }                                                    \
+        if (ToLower(it->second) == lower_val) return it->first; \
+    } \
     return unk;
 
 XPlatform GetPlatform(const std::string &name)

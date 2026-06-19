@@ -16,7 +16,7 @@ class AsyncXQueue : public XQueue
 public:
     AsyncXQueue(std::shared_ptr<HwQueue> hwq, XPreemptLevel level,
                 int64_t threshold  = XSCHED_DEFAULT_COMMAND_THRESHOLD,
-                int64_t batch_size = XSCHED_DEFAULT_COMMAND_BATCH_SZIE);
+                int64_t batch_size = XSCHED_DEFAULT_COMMAND_BATCH_SIZE);
     virtual ~AsyncXQueue();
 
     virtual void Submit(std::shared_ptr<HwCommand> hw_cmd) override;
