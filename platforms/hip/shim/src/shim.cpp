@@ -226,23 +226,19 @@ hipError_t XCtxSynchronize()
 
 hipError_t XStreamCreate(hipStream_t *stream)
 {
-    int64_t prio = PRIORITY_DEFAULT;
-    GetEnvInt64(XSCHED_AUTO_XQUEUE_PRIORITY_ENV_NAME, prio);
-    hipError_t res = Driver::StreamCreateWithPriority(stream, 0, (int)prio);
+    hipError_t res = Driver::StreamCreate(stream);
     if (res != hipSuccess) return res;
     XQueueManager::AutoCreate([&](HwQueueHandle *hwq) { return HipQueueCreate(hwq, *stream); });
-    XDEBG("XStreamCreate(stream: %p, prio: " FMT_64D ")", *stream, prio);
+    XDEBG("XStreamCreate(stream: %p)", *stream);
     return res;
 }
 
 hipError_t XStreamCreateWithFlags(hipStream_t *stream, unsigned int flags)
 {
-    int64_t prio = PRIORITY_DEFAULT;
-    GetEnvInt64(XSCHED_AUTO_XQUEUE_PRIORITY_ENV_NAME, prio);
-    hipError_t res = Driver::StreamCreateWithPriority(stream, flags, (int)prio);
+    hipError_t res = Driver::StreamCreateWithFlags(stream, flags);
     if (res != hipSuccess) return res;
     XQueueManager::AutoCreate([&](HwQueueHandle *hwq) { return HipQueueCreate(hwq, *stream); });
-    XDEBG("XStreamCreateWithFlags(stream: %p, flags: 0x%x, prio: " FMT_64D ")", *stream, flags, prio);
+    XDEBG("XStreamCreateWithFlags(stream: %p, flags: 0x%x)", *stream, flags);
     return res;
 }
 
