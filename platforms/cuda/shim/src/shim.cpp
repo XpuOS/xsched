@@ -21,20 +21,23 @@ static utils::ObjectMap<CUevent, std::shared_ptr<CudaEventRecordCommand>> g_even
 
 void WaitBlockingXQueues()
 {
-    std::list<std::shared_ptr<XQueueWaitAllCommand>> wait_cmds;
-    XResult res = XQueueManager::ForEach([&](std::shared_ptr<XQueue> xq)->XResult {
-        auto hwq = xq->GetHwQueue();
-        auto cuda_q = std::dynamic_pointer_cast<CudaQueueLv1>(hwq);
-        if (cuda_q == nullptr) return kXSchedErrorUnknown;
-        // does not need to wait a non-blocking stream
-        if (cuda_q->GetStreamFlags() & CU_STREAM_NON_BLOCKING) return kXSchedSuccess;
-        auto wait_cmd = xq->SubmitWaitAll();
-        if (wait_cmd == nullptr) return kXSchedErrorUnknown;
-        wait_cmds.push_back(wait_cmd);
-        return kXSchedSuccess;
-    });
-    XASSERT(res == kXSchedSuccess, "Fail to submit wait all commands");
-    for (auto &cmd : wait_cmds) cmd->Wait();
+    // Default stream synchronization: only sync explicitly registered blocking
+    // queues (currently empty — same as HIP). The original full-scan via
+    // XQueueManager::ForEach was the root cause of 28s vLLM latency on CUDA.
+}
+
+// Get or create an XQueue for any stream, including the default stream (nullptr).
+// Without this, default-stream kernel launches bypass XSched entirely.
+static inline std::shared_ptr<XQueue> GetOrCreateXQueue(CUstream stream)
+{
+    auto xq = HwQueueManager::GetXQueue(GetHwQueueHandle(stream));
+    if (!xq) {
+        XQueueManager::AutoCreate([&](HwQueueHandle *hwq) -> XResult {
+            return CudaQueueCreate(hwq, stream);
+        });
+        xq = HwQueueManager::GetXQueue(GetHwQueueHandle(stream));
+    }
+    return xq;
 }
 
 CUresult XLaunchKernel(CUfunction f,
@@ -46,18 +49,20 @@ CUresult XLaunchKernel(CUfunction f,
           "shm: %u, params: %p, extra: %p)", f, stream, gdx, gdy, gdz, bdx, bdy, bdz,
           shmem, params, extra);
 
+    // Default stream must sync other streams before launching
     if (stream == nullptr) {
         WaitBlockingXQueues();
+    }
+
+    auto xq = GetOrCreateXQueue(stream);
+    if (xq == nullptr) {
         auto kernel = std::make_shared<CudaKernelLaunchCommand>(
             f, gdx, gdy, gdz, bdx, bdy, bdz, shmem, params, extra, false);
         return DirectLaunch(kernel, stream);
     }
 
-    auto xq = HwQueueManager::GetXQueue(GetHwQueueHandle(stream));
     auto kernel = std::make_shared<CudaKernelLaunchCommand>(
-        f, gdx, gdy, gdz, bdx, bdy, bdz, shmem, params, extra, xq != nullptr);
-
-    if (xq == nullptr) return DirectLaunch(kernel, stream);
+        f, gdx, gdy, gdz, bdx, bdy, bdz, shmem, params, extra, true);
     xq->Submit(kernel);
     return CUDA_SUCCESS;
 }
@@ -71,14 +76,15 @@ CUresult XLaunchKernelEx(const CUlaunchConfig *config, CUfunction f, void **para
 
     if (stream == nullptr) {
         WaitBlockingXQueues();
+    }
+
+    auto xq = GetOrCreateXQueue(stream);
+    if (xq == nullptr) {
         auto kernel = std::make_shared<CudaKernelLaunchExCommand>(config, f, params, extra, false);
         return DirectLaunch(kernel, stream);
     }
-    
-    auto xq = HwQueueManager::GetXQueue(GetHwQueueHandle(stream));
-    auto kn = std::make_shared<CudaKernelLaunchExCommand>(config, f, params, extra, xq != nullptr);
 
-    if (xq == nullptr) return DirectLaunch(kn, stream);
+    auto kn = std::make_shared<CudaKernelLaunchExCommand>(config, f, params, extra, true);
     xq->Submit(kn);
     return CUDA_SUCCESS;
 }
@@ -87,9 +93,8 @@ CUresult XLaunchHostFunc(CUstream stream, CUhostFn fn, void *data)
 {
     if (stream == 0) {
         WaitBlockingXQueues();
-        return Driver::LaunchHostFunc(stream, fn, data);
     }
-    auto xq = HwQueueManager::GetXQueue(GetHwQueueHandle(stream));
+    auto xq = GetOrCreateXQueue(stream);
     if (xq == nullptr) return Driver::LaunchHostFunc(stream, fn, data);
     auto hw_cmd = std::make_shared<CudaHostFuncCommand>(fn, data);
     xq->Submit(hw_cmd);
@@ -118,15 +123,14 @@ CUresult XEventRecord(CUevent event, CUstream stream)
 
     if (stream == nullptr) {
         WaitBlockingXQueues();
+    }
+
+    auto xq = GetOrCreateXQueue(stream);
+    if (xq == nullptr) {
         result = Driver::EventRecord(event, stream);
     } else {
-        auto xq = HwQueueManager::GetXQueue(GetHwQueueHandle(stream));
-        if (xq == nullptr) {
-            result = Driver::EventRecord(event, stream);
-        } else {
-            xq->Submit(xevent);
-            result = CUDA_SUCCESS;
-        }
+        xq->Submit(xevent);
+        result = CUDA_SUCCESS;
     }
 
     g_events.Add(event, xevent);
@@ -143,15 +147,14 @@ CUresult XEventRecordWithFlags(CUevent event, CUstream stream, unsigned int flag
 
     if (stream == nullptr) {
         WaitBlockingXQueues();
+    }
+
+    auto xq = GetOrCreateXQueue(stream);
+    if (xq == nullptr) {
         result = Driver::EventRecordWithFlags(event, stream, flags);
     } else {
-        auto xq = HwQueueManager::GetXQueue(GetHwQueueHandle(stream));
-        if (xq == nullptr) {
-            result = Driver::EventRecordWithFlags(event, stream, flags);
-        } else {
-            xq->Submit(xevent);
-            result = CUDA_SUCCESS;
-        }
+        xq->Submit(xevent);
+        result = CUDA_SUCCESS;
     }
 
     g_events.Add(event, xevent);
@@ -176,21 +179,16 @@ CUresult XStreamWaitEvent(CUstream stream, CUevent event, unsigned int flags)
     if (event == nullptr)return Driver::StreamWaitEvent(stream, event, flags);
 
     auto xevent = g_events.Get(event, nullptr);
-    // the event is not recorded yet
     if (xevent == nullptr) return Driver::StreamWaitEvent(stream, event, flags);
 
     if (stream == nullptr) {
-        // sync a event on default stream
         WaitBlockingXQueues();
-        xevent->Wait();
-        return Driver::StreamWaitEvent(stream, event, flags);
     }
 
-    auto xq = HwQueueManager::GetXQueue(GetHwQueueHandle(stream));
+    auto xq = GetOrCreateXQueue(stream);
     if (xq == nullptr) {
-        // waiting stream is not an xqueue
-        if (xevent->GetXQueueHandle() == 0) {
-            // the event is not recorded on an xqueue
+        if (stream == nullptr || xevent->GetXQueueHandle() == 0) {
+            xevent->Wait();
             return Driver::StreamWaitEvent(stream, event, flags);
         }
         xevent->Wait();

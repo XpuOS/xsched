@@ -781,6 +781,10 @@ static const std::unordered_map<std::string, std::map<int, void *>> intercept_fu
     { "cuPointerGetAttributes"                              , {{  7000, (void *)cuPointerGetAttributes                              }}},
     { "cuStreamCreate"                                      , {{  2000, (void *)cuStreamCreate                                      }}},
     { "cuStreamCreateWithPriority"                          , {{  5050, (void *)cuStreamCreateWithPriority                          }}},
+    { "cudaStreamCreate"                                    , {{  2000, (void *)cudaStreamCreate                                    }}},
+    { "cudaLaunchKernel"                                    , {{  2000, (void *)cudaLaunchKernel                                    }}},
+    { "cudaMalloc"                                          , {{  2000, (void *)cudaMalloc                                          }}},
+    { "cudaSetDevice"                                       , {{  2000, (void *)cudaSetDevice                                       }}},
     { "cuStreamGetId"                                       , {{ 12000, (void *)cuStreamGetId                                       }}},
     { "cuThreadExchangeStreamCaptureMode"                   , {{ 10010, (void *)cuThreadExchangeStreamCaptureMode                   }}},
     { "cuStreamDestroy"                                     , {{  2000, (void *)cuStreamDestroy                                     }, {  4000, (void *)cuStreamDestroy_v2                   }}},
@@ -1134,4 +1138,56 @@ EXPORT_C_FUNC CUresult XGetProcAddress_v2(const char *symbol, void **pfn, int cu
     if (res != CUDA_SUCCESS) return res;
     GetInterceptAddr(symbol, pfn, cudaVersion);
     return res;
+}
+
+// ============================================================================
+// Runtime API symbol exports — required because libcudart.so uses RTLD_NEXT
+// to find Driver API functions, which skips the LD_PRELOAD shim. By exporting
+// cuda* symbols directly, vLLM's Runtime API calls route to the shim.
+// ============================================================================
+
+#include <dlfcn.h>
+
+typedef int x_cudaError_t;
+typedef unsigned long long x_cudaStream_t;
+
+extern "C" __attribute__((visibility("default")))
+x_cudaError_t cudaLaunchKernel(const void *func, unsigned int gdx, unsigned int gdy,
+                               unsigned int gdz, unsigned int bdx, unsigned int bdy,
+                               unsigned int bdz, unsigned int shm, void **args,
+                               x_cudaStream_t stream)
+{
+    using pfn_t = int (*)(const void *, unsigned int, unsigned int, unsigned int,
+                          unsigned int, unsigned int, unsigned int, unsigned int,
+                          void **, x_cudaStream_t);
+    static pfn_t p_real = nullptr;
+    if (!p_real) {
+        p_real = (pfn_t)dlsym(RTLD_NEXT, "cudaLaunchKernel");
+    }
+    if (p_real) {
+        return p_real(func, gdx, gdy, gdz, bdx, bdy, bdz, shm, args, stream);
+    }
+    return 1;
+}
+
+extern "C" __attribute__((visibility("default")))
+x_cudaError_t cudaStreamCreate(x_cudaStream_t *pStream)
+{
+    return (x_cudaError_t)xsched::cuda::XStreamCreate((CUstream *)pStream, 0);
+}
+
+extern "C" __attribute__((visibility("default")))
+x_cudaError_t cudaMalloc(void **ptr, size_t size)
+{
+    using pfn_t = x_cudaError_t (*)(void **, size_t);
+    static pfn_t p_real = (pfn_t)dlsym(RTLD_NEXT, "cudaMalloc");
+    return p_real ? p_real(ptr, size) : (x_cudaError_t)1;
+}
+
+extern "C" __attribute__((visibility("default")))
+x_cudaError_t cudaSetDevice(int device)
+{
+    using pfn_t = x_cudaError_t (*)(int);
+    static pfn_t p_real = (pfn_t)dlsym(RTLD_NEXT, "cudaSetDevice");
+    return p_real ? p_real(device) : (x_cudaError_t)1;
 }
