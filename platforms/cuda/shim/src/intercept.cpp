@@ -11,6 +11,14 @@ using namespace xsched::cuda;
 EXPORT_C_FUNC CUresult XGetProcAddress(const char *symbol, void **pfn, int cudaVersion, cuuint64_t flags);
 EXPORT_C_FUNC CUresult XGetProcAddress_v2(const char *symbol, void **pfn, int cudaVersion, cuuint64_t flags, CUdriverProcAddressQueryResult *symbolStatus);
 
+// Runtime API forward declarations (defined at end of file)
+extern "C" int cudaLaunchKernel(const void *, unsigned int, unsigned int, unsigned int,
+                                unsigned int, unsigned int, unsigned int, unsigned int,
+                                void **, unsigned long long);
+extern "C" int cudaStreamCreate(unsigned long long *);
+extern "C" int cudaMalloc(void **, size_t);
+extern "C" int cudaSetDevice(int);
+
 DEFINE_EXPORT_C_REDIRECT_CALL(Driver::GetErrorString, CUresult, cuGetErrorString, CUresult, error, const char **, pStr);
 DEFINE_EXPORT_C_REDIRECT_CALL(Driver::GetErrorName, CUresult, cuGetErrorName, CUresult, error, const char **, pStr);
 DEFINE_EXPORT_C_REDIRECT_CALL(Driver::Init, CUresult, cuInit, unsigned int, Flags);
