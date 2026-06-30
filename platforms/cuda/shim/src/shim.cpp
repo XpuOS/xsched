@@ -55,16 +55,10 @@ CUresult XLaunchKernel(CUfunction f,
     }
 
     auto xq = GetOrCreateXQueue(stream);
-    if (xq == nullptr) {
-        auto kernel = std::make_shared<CudaKernelLaunchCommand>(
-            f, gdx, gdy, gdz, bdx, bdy, bdz, shmem, params, extra, false);
-        return DirectLaunch(kernel, stream);
-    }
-
     auto kernel = std::make_shared<CudaKernelLaunchCommand>(
-        f, gdx, gdy, gdz, bdx, bdy, bdz, shmem, params, extra, true);
-    xq->Submit(kernel);
-    return CUDA_SUCCESS;
+        f, gdx, gdy, gdz, bdx, bdy, bdz, shmem, params, extra, xq != nullptr);
+
+    return DirectLaunch(kernel, stream);
 }
 
 CUresult XLaunchKernelEx(const CUlaunchConfig *config, CUfunction f, void **params, void **extra)
@@ -79,14 +73,8 @@ CUresult XLaunchKernelEx(const CUlaunchConfig *config, CUfunction f, void **para
     }
 
     auto xq = GetOrCreateXQueue(stream);
-    if (xq == nullptr) {
-        auto kernel = std::make_shared<CudaKernelLaunchExCommand>(config, f, params, extra, false);
-        return DirectLaunch(kernel, stream);
-    }
-
-    auto kn = std::make_shared<CudaKernelLaunchExCommand>(config, f, params, extra, true);
-    xq->Submit(kn);
-    return CUDA_SUCCESS;
+    auto kn = std::make_shared<CudaKernelLaunchExCommand>(config, f, params, extra, xq != nullptr);
+    return DirectLaunch(kn, stream);
 }
 
 CUresult XLaunchHostFunc(CUstream stream, CUhostFn fn, void *data)

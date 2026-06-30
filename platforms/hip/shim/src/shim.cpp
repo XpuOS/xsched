@@ -179,16 +179,20 @@ hipError_t XEventRecord(hipEvent_t event, hipStream_t stream)
     hipError_t result;
     auto command = std::make_shared<HipEventRecordCommand>(event);
 
+    // Default-stream events must be dispatched directly to the driver.
+    // Routing them through XQueue (CommandBuffer → LaunchWorker thread)
+    // breaks event-based stream synchronization that vLLM relies on.
     if (stream == nullptr) {
         HipSyncBlockingXQueues();
-    }
-
-    auto xq = GetOrCreateXQueue(stream);
-    if (xq == nullptr) {
         result = Driver::EventRecord(event, stream);
     } else {
-        xq->Submit(command);
-        result = hipSuccess;
+        auto xq = GetOrCreateXQueue(stream);
+        if (xq == nullptr) {
+            result = Driver::EventRecord(event, stream);
+        } else {
+            xq->Submit(command);
+            result = hipSuccess;
+        }
     }
 
     g_events.Add(event, command);
@@ -204,14 +208,15 @@ hipError_t XEventRecordWithFlags(hipEvent_t event, hipStream_t stream, unsigned 
 
     if (stream == nullptr) {
         HipSyncBlockingXQueues();
-    }
-
-    auto xq = GetOrCreateXQueue(stream);
-    if (xq == nullptr) {
         result = Driver::EventRecord(event, stream);
     } else {
-        xq->Submit(command);
-        result = hipSuccess;
+        auto xq = GetOrCreateXQueue(stream);
+        if (xq == nullptr) {
+            result = Driver::EventRecord(event, stream);
+        } else {
+            xq->Submit(command);
+            result = hipSuccess;
+        }
     }
 
     g_events.Add(event, command);
@@ -233,14 +238,17 @@ hipError_t XStreamWaitEvent(hipStream_t stream, hipEvent_t event, unsigned int f
     auto xevent = g_events.Get(event, nullptr);
     if (xevent == nullptr) return Driver::StreamWaitEvent(stream, event, flags);
 
+    // Default-stream event wait must be dispatched directly.
+    // Routing through XQueue breaks event-based synchronization.
     if (stream == nullptr) {
         HipSyncBlockingXQueues();
+        xevent->Synchronize();
+        return Driver::StreamWaitEvent(stream, event, flags);
     }
 
     auto xqueue = GetOrCreateXQueue(stream);
     if (xqueue == nullptr) {
-        if (stream == nullptr || xevent->GetXQueueHandle() == 0) {
-            xevent->Synchronize();
+        if (xevent->GetXQueueHandle() == 0) {
             return Driver::StreamWaitEvent(stream, event, flags);
         }
         xevent->Synchronize();
