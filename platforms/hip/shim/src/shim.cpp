@@ -245,8 +245,7 @@ hipError_t XStreamCreateWithFlags(hipStream_t *stream, unsigned int flags)
 hipError_t XStreamCreateWithPriority(hipStream_t *stream, unsigned int flags, int priority)
 {
     hipError_t res = Driver::StreamCreateWithPriority(stream, flags, priority);
-    if (res != hipSuccess) return res;
-    XQueueManager::AutoCreate([&](HwQueueHandle *hwq) { return HipQueueCreate(hwq, *stream); });
+    // TEMP: disable XQueue auto-create to isolate root cause
     XDEBG("XStreamCreateWithPriority(stream: %p, flags: 0x%x, priority: %d)", *stream, flags, priority);
     return res;
 }
