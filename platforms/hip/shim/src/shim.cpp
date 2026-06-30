@@ -179,26 +179,9 @@ hipError_t XStreamWaitEvent(hipStream_t stream, hipEvent_t event, unsigned int f
     auto xevent = g_events.Get(event, nullptr);
     if (xevent == nullptr) return Driver::StreamWaitEvent(stream, event, flags);
 
-    // Default-stream event wait must be dispatched directly.
-    // Routing through XQueue breaks event-based synchronization.
-    if (stream == nullptr) {
-        HipSyncBlockingXQueues();
-        xevent->Synchronize();
-        return Driver::StreamWaitEvent(stream, event, flags);
-    }
-
-    auto xqueue = GetOrCreateXQueue(stream);
-    if (xqueue == nullptr) {
-        if (xevent->GetXQueueHandle() == 0) {
-            return Driver::StreamWaitEvent(stream, event, flags);
-        }
-        xevent->Synchronize();
-        return hipSuccess;
-    }
-
-    auto command = std::make_shared<HipEventWaitCommand>(xevent, flags);
-    xqueue->Submit(command);
-    return hipSuccess;
+    if (stream == nullptr) HipSyncBlockingXQueues();
+    xevent->Synchronize();
+    return Driver::StreamWaitEvent(stream, event, flags);
 }
 
 hipError_t XEventDestroy(hipEvent_t event)

@@ -13,15 +13,8 @@ namespace xsched::hip
 #define HIP_SHIM_FUNC(name, cmd, ...) \
 inline hipError_t X##name(FOR_EACH_PAIR_COMMA(DECLARE_PARAM, __VA_ARGS__), hipStream_t stream) \
 { \
-    if (stream == 0) { \
-        HipSyncBlockingXQueues(); \
-        return Driver::name(FOR_EACH_PAIR_COMMA(DECLARE_ARG, __VA_ARGS__), stream); \
-    } \
-    auto xq = xsched::preempt::HwQueueManager::GetXQueue(GetHwQueueHandle(stream)); \
-    if (xq == nullptr) return Driver::name(FOR_EACH_PAIR_COMMA(DECLARE_ARG, __VA_ARGS__), stream); \
-    auto hw_cmd = std::make_shared<cmd>(FOR_EACH_PAIR_COMMA(DECLARE_ARG, __VA_ARGS__)); \
-    xq->Submit(hw_cmd); \
-    return hipSuccess; \
+    if (stream == 0) HipSyncBlockingXQueues(); \
+    return Driver::name(FOR_EACH_PAIR_COMMA(DECLARE_ARG, __VA_ARGS__), stream); \
 }
 
 void HipSyncBlockingXQueues();
