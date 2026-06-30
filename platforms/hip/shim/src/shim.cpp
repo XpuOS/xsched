@@ -147,52 +147,21 @@ hipError_t XEventQuery(hipEvent_t event)
 hipError_t XEventRecord(hipEvent_t event, hipStream_t stream)
 {
     if (event == nullptr) return Driver::EventRecord(event, stream);
+    if (stream == nullptr) HipSyncBlockingXQueues();
 
-    hipError_t result;
-    auto command = std::make_shared<HipEventRecordCommand>(event);
-
-    // Default-stream events must be dispatched directly to the driver.
-    // Routing them through XQueue (CommandBuffer → LaunchWorker thread)
-    // breaks event-based stream synchronization that vLLM relies on.
-    if (stream == nullptr) {
-        HipSyncBlockingXQueues();
-        result = Driver::EventRecord(event, stream);
-    } else {
-        auto xq = GetOrCreateXQueue(stream);
-        if (xq == nullptr) {
-            result = Driver::EventRecord(event, stream);
-        } else {
-            xq->Submit(command);
-            result = hipSuccess;
-        }
-    }
-
-    g_events.Add(event, command);
-    return result;
+    // Always dispatch directly to GPU — routing events through XQueue
+    // breaks cross-stream event sync that PyTorch/vLLM rely on.
+    g_events.Add(event, std::make_shared<HipEventRecordCommand>(event));
+    return Driver::EventRecord(event, stream);
 }
 
 hipError_t XEventRecordWithFlags(hipEvent_t event, hipStream_t stream, unsigned int flags)
 {
     if (event == nullptr) return Driver::EventRecord(event, stream);
+    if (stream == nullptr) HipSyncBlockingXQueues();
 
-    hipError_t result;
-    auto command = std::make_shared<HipEventRecordWithFlagsCommand>(event, flags);
-
-    if (stream == nullptr) {
-        HipSyncBlockingXQueues();
-        result = Driver::EventRecord(event, stream);
-    } else {
-        auto xq = GetOrCreateXQueue(stream);
-        if (xq == nullptr) {
-            result = Driver::EventRecord(event, stream);
-        } else {
-            xq->Submit(command);
-            result = hipSuccess;
-        }
-    }
-
-    g_events.Add(event, command);
-    return result;
+    g_events.Add(event, std::make_shared<HipEventRecordWithFlagsCommand>(event, flags));
+    return Driver::EventRecord(event, stream);
 }
 
 hipError_t XEventSynchronize(hipEvent_t event)
