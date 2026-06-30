@@ -15,15 +15,13 @@ inline hipError_t X##name(FOR_EACH_PAIR_COMMA(DECLARE_PARAM, __VA_ARGS__), hipSt
 { \
     if (stream == 0) { \
         HipSyncBlockingXQueues(); \
+        return Driver::name(FOR_EACH_PAIR_COMMA(DECLARE_ARG, __VA_ARGS__), stream); \
     } \
-    /* Ensure XQueue exists for scheduling visibility, but execute directly */ \
     auto xq = xsched::preempt::HwQueueManager::GetXQueue(GetHwQueueHandle(stream)); \
-    if (xq == nullptr) { \
-        xsched::preempt::XQueueManager::AutoCreate([&](HwQueueHandle *hwq) -> XResult { \
-            return HipQueueCreate(hwq, stream); \
-        }); \
-    } \
-    return Driver::name(FOR_EACH_PAIR_COMMA(DECLARE_ARG, __VA_ARGS__), stream); \
+    if (xq == nullptr) return Driver::name(FOR_EACH_PAIR_COMMA(DECLARE_ARG, __VA_ARGS__), stream); \
+    auto hw_cmd = std::make_shared<cmd>(FOR_EACH_PAIR_COMMA(DECLARE_ARG, __VA_ARGS__)); \
+    xq->Submit(hw_cmd); \
+    return hipSuccess; \
 }
 
 void HipSyncBlockingXQueues();

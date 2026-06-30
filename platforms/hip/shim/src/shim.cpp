@@ -54,11 +54,6 @@ hipError_t XLaunchKernel(const void *f, dim3 numBlocks, dim3 dimBlocks, void **a
     if (stream == nullptr) {
         HipSyncBlockingXQueues();
     }
-
-    // Ensure XQueue exists for scheduling visibility, but launch the kernel
-    // directly to avoid LaunchWorker thread interference with HIP execution
-    // timing (same pattern as vllm_xsched's CALL_REAL).
-    GetOrCreateXQueue(stream);
     return Driver::LaunchKernel(f, numBlocks, dimBlocks, args, sharedMemBytes, stream);
 }
 
@@ -71,8 +66,6 @@ hipError_t XModuleLaunchKernel(hipFunction_t function,
     if (stream == nullptr) {
         HipSyncBlockingXQueues();
     }
-
-    GetOrCreateXQueue(stream);
     return Driver::ModuleLaunchKernel(function, gdx, gdy, gdz, bdx, bdy, bdz, shm,
                                       stream, params, extra);
 }
@@ -85,8 +78,6 @@ hipError_t XExtModuleLaunchKernel(hipFunction_t f, uint32_t gwx, uint32_t gwy, u
     if (stream == nullptr) {
         HipSyncBlockingXQueues();
     }
-
-    GetOrCreateXQueue(stream);
     return Driver::ExtModuleLaunchKernel(f, gwx, gwy, gwz, lwx, lwy, lwz, shm, stream,
                                          params, extra, start_event, stop_event, flags);
 }
