@@ -6,6 +6,7 @@
 #include "xsched/cuda/hal/common/driver.h"
 #include "xsched/cuda/hal/common/handle.h"
 #include "xsched/cuda/hal/common/cuda_command.h"
+#include "xsched/cuda/hal.h"
 
 namespace xsched::cuda
 {
