@@ -64,10 +64,16 @@ hipError_t XLaunchKernel(const void *f, dim3 numBlocks, dim3 dimBlocks, void **a
         }
     }
 
-    // Submit lightweight no-op token to keep XQueue RDY for scheduler.
-    // Real kernel launches via DirectLaunch — LaunchWorker thread never calls HIP API.
+    // Sparse token submission: only submit every N kernel launches to keep
+    // XQueue RDY without overwhelming the CommandBuffer / XServer IPC.
+    // vLLM fires thousands of kernels per second — per-kernel submission
+    // would add >30% overhead.
     if (xqueue) {
-        xqueue->Submit(std::make_shared<HipRuntimeLaunchCommand>());
+        static thread_local int64_t token_counter = 0;
+        if (++token_counter >= 100) {
+            xqueue->Submit(std::make_shared<HipRuntimeLaunchCommand>());
+            token_counter = 0;
+        }
     }
 
     return Driver::LaunchKernel(f, numBlocks, dimBlocks, args, sharedMemBytes, stream);
@@ -90,7 +96,11 @@ hipError_t XModuleLaunchKernel(hipFunction_t function,
     }
 
     if (xqueue) {
-        xqueue->Submit(std::make_shared<HipRuntimeLaunchCommand>());
+        static thread_local int64_t token_counter = 0;
+        if (++token_counter >= 100) {
+            xqueue->Submit(std::make_shared<HipRuntimeLaunchCommand>());
+            token_counter = 0;
+        }
     }
 
     return Driver::ModuleLaunchKernel(function, gdx, gdy, gdz, bdx, bdy, bdz, shm,
@@ -113,7 +123,11 @@ hipError_t XExtModuleLaunchKernel(hipFunction_t f, uint32_t gwx, uint32_t gwy, u
     }
 
     if (xqueue) {
-        xqueue->Submit(std::make_shared<HipRuntimeLaunchCommand>());
+        static thread_local int64_t token_counter = 0;
+        if (++token_counter >= 100) {
+            xqueue->Submit(std::make_shared<HipRuntimeLaunchCommand>());
+            token_counter = 0;
+        }
     }
 
     return Driver::ExtModuleLaunchKernel(f, gwx, gwy, gwz, lwx, lwy, lwz, shm, stream,

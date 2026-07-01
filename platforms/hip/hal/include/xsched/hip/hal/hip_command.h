@@ -33,6 +33,8 @@ public:
     virtual bool Synchronizable() override;
     virtual bool EnableSynchronization() override;
     hipError_t LaunchWrapper(hipStream_t stream);
+protected:
+    HipCommand(preempt::XCommandProperties props): HwCommand(props) {}
 
 private:
     virtual hipError_t Launch(hipStream_t stream) = 0;
@@ -45,7 +47,7 @@ class HipRuntimeLaunchCommand : public HipCommand
 {
 public:
     HipRuntimeLaunchCommand()
-        : HipCommand() { props_ = preempt::kCommandPropertyDeactivatable; }
+        : HipCommand(preempt::kCommandPropertyDeactivatable) {}
     virtual ~HipRuntimeLaunchCommand() = default;
 private:
     virtual hipError_t Launch(hipStream_t) override { return hipSuccess; }
