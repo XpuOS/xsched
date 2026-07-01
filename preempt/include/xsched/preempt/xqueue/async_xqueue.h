@@ -28,6 +28,7 @@ public:
 
     virtual void Suspend(int64_t flags) override;
     virtual void Resume(int64_t flags) override;
+    virtual bool IsSuspended() const override { return suspended_.load(); }
 
     virtual void SetPreemptLevel(XPreemptLevel level) override;
     virtual void SetLaunchConfig(int64_t threshold, int64_t batch_size) override;

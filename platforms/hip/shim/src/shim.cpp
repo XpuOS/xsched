@@ -1,6 +1,8 @@
 #include <list>
 #include <mutex>
 #include <memory>
+#include <thread>
+#include <chrono>
 #include <unordered_map>
 
 #include "xsched/utils/map.h"
@@ -54,14 +56,17 @@ hipError_t XLaunchKernel(const void *f, dim3 numBlocks, dim3 dimBlocks, void **a
     if (stream == nullptr) HipSyncBlockingXQueues();
 
     auto xqueue = GetOrCreateXQueue(stream);
-    if (xqueue == nullptr) {
-        return Driver::LaunchKernel(f, numBlocks, dimBlocks, args, sharedMemBytes, stream);
+
+    // Suspend gate: if XServer has suspended this XQueue, block here until resumed.
+    // Kernel execution stays on calling thread (DirectLaunch) to avoid HIP context
+    // issues on 海光 DTK, but we respect the scheduler's Suspend/Resume commands.
+    if (xqueue && xqueue->IsSuspended()) {
+        while (xqueue->IsSuspended()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
     }
 
-    auto kernel = std::make_shared<HipKernelLaunchCommand>(
-        f, numBlocks, dimBlocks, args, sharedMemBytes, xqueue != nullptr);
-    xqueue->Submit(kernel);
-    return hipSuccess;
+    return Driver::LaunchKernel(f, numBlocks, dimBlocks, args, sharedMemBytes, stream);
 }
 
 hipError_t XModuleLaunchKernel(hipFunction_t function,
@@ -73,15 +78,15 @@ hipError_t XModuleLaunchKernel(hipFunction_t function,
     if (stream == nullptr) HipSyncBlockingXQueues();
 
     auto xqueue = GetOrCreateXQueue(stream);
-    if (xqueue == nullptr) {
-        return Driver::ModuleLaunchKernel(function, gdx, gdy, gdz, bdx, bdy, bdz, shm,
-                                          stream, params, extra);
+
+    if (xqueue && xqueue->IsSuspended()) {
+        while (xqueue->IsSuspended()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
     }
 
-    auto kernel = std::make_shared<HipModuleKernelLaunchCommand>(function, gdx, gdy, gdz, bdx, bdy, bdz, shm,
-                                                                 params, extra, xqueue != nullptr);
-    xqueue->Submit(kernel);
-    return hipSuccess;
+    return Driver::ModuleLaunchKernel(function, gdx, gdy, gdz, bdx, bdy, bdz, shm,
+                                      stream, params, extra);
 }
 
 hipError_t XExtModuleLaunchKernel(hipFunction_t f, uint32_t gwx, uint32_t gwy, uint32_t gwz,
@@ -92,15 +97,15 @@ hipError_t XExtModuleLaunchKernel(hipFunction_t f, uint32_t gwx, uint32_t gwy, u
     if (stream == nullptr) HipSyncBlockingXQueues();
 
     auto xqueue = GetOrCreateXQueue(stream);
-    if (xqueue == nullptr) {
-        return Driver::ExtModuleLaunchKernel(f, gwx, gwy, gwz, lwx, lwy, lwz, shm, stream,
-                                             params, extra, start_event, stop_event, flags);
+
+    if (xqueue && xqueue->IsSuspended()) {
+        while (xqueue->IsSuspended()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
     }
 
-    auto kernel = std::make_shared<HipExtModuleKernelLaunchCommand>(
-        f, gwx, gwy, gwz, lwx, lwy, lwz, shm, params, extra, start_event, stop_event, flags, xqueue != nullptr);
-    xqueue->Submit(kernel);
-    return hipSuccess;
+    return Driver::ExtModuleLaunchKernel(f, gwx, gwy, gwz, lwx, lwy, lwz, shm, stream,
+                                         params, extra, start_event, stop_event, flags);
 }
 
 void** XRegisterFatBinary(const void* data)
