@@ -58,24 +58,23 @@ hipError_t XLaunchKernel(const void *f, dim3 numBlocks, dim3 dimBlocks, void **a
 
     auto xqueue = GetOrCreateXQueue(stream);
 
-    // Suspend gate: if XServer has suspended this XQueue, block here until resumed.
-    if (xqueue && xqueue->IsSuspended()) {
-        while (xqueue->IsSuspended()) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        }
-    }
-
-    // Send XQueueReadyEvent directly to scheduler every ~100ms, bypassing
-    // CommandBuffer/LaunchWorker entirely. This keeps the XQueue RDY without
-    // the per-submission mutex+IPC overhead that kills vLLM performance.
+    // Send periodic ready heartbeat BEFORE suspend gate — so a suspended
+    // process can still inform the scheduler it is alive and waiting.
     if (xqueue) {
         static thread_local auto last_ready = std::chrono::steady_clock::now();
         auto now = std::chrono::steady_clock::now();
-        if (now - last_ready > std::chrono::milliseconds(100)) {
-            xsched::sched::SchedAgent::SendEvent(
+        if (now - last_ready > std::chrono::seconds(1)) {
+            xsched::preempt::SchedAgent::SendEvent(
                 std::make_shared<xsched::sched::XQueueReadyEvent>(
                     xqueue->GetHandle(), std::chrono::system_clock::now()));
             last_ready = now;
+        }
+    }
+
+    // Suspend gate: if XServer has suspended this XQueue, block until resumed.
+    if (xqueue && xqueue->IsSuspended()) {
+        while (xqueue->IsSuspended()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
     }
 
@@ -92,20 +91,20 @@ hipError_t XModuleLaunchKernel(hipFunction_t function,
 
     auto xqueue = GetOrCreateXQueue(stream);
 
-    if (xqueue && xqueue->IsSuspended()) {
-        while (xqueue->IsSuspended()) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        }
-    }
-
     if (xqueue) {
         static thread_local auto last_ready = std::chrono::steady_clock::now();
         auto now = std::chrono::steady_clock::now();
-        if (now - last_ready > std::chrono::milliseconds(100)) {
-            xsched::sched::SchedAgent::SendEvent(
+        if (now - last_ready > std::chrono::seconds(1)) {
+            xsched::preempt::SchedAgent::SendEvent(
                 std::make_shared<xsched::sched::XQueueReadyEvent>(
                     xqueue->GetHandle(), std::chrono::system_clock::now()));
             last_ready = now;
+        }
+    }
+
+    if (xqueue && xqueue->IsSuspended()) {
+        while (xqueue->IsSuspended()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
     }
 
@@ -122,20 +121,20 @@ hipError_t XExtModuleLaunchKernel(hipFunction_t f, uint32_t gwx, uint32_t gwy, u
 
     auto xqueue = GetOrCreateXQueue(stream);
 
-    if (xqueue && xqueue->IsSuspended()) {
-        while (xqueue->IsSuspended()) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        }
-    }
-
     if (xqueue) {
         static thread_local auto last_ready = std::chrono::steady_clock::now();
         auto now = std::chrono::steady_clock::now();
-        if (now - last_ready > std::chrono::milliseconds(100)) {
-            xsched::sched::SchedAgent::SendEvent(
+        if (now - last_ready > std::chrono::seconds(1)) {
+            xsched::preempt::SchedAgent::SendEvent(
                 std::make_shared<xsched::sched::XQueueReadyEvent>(
                     xqueue->GetHandle(), std::chrono::system_clock::now()));
             last_ready = now;
+        }
+    }
+
+    if (xqueue && xqueue->IsSuspended()) {
+        while (xqueue->IsSuspended()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
     }
 
