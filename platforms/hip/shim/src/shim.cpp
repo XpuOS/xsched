@@ -58,8 +58,8 @@ hipError_t XLaunchKernel(const void *f, dim3 numBlocks, dim3 dimBlocks, void **a
 
     auto xqueue = GetOrCreateXQueue(stream);
 
-    // Send periodic ready heartbeat BEFORE suspend gate — so a suspended
-    // process can still inform the scheduler it is alive and waiting.
+    // Activity-aware ready heartbeat: only report RDY when kernels are actually
+    // launching. If >3s gap between launches, process is idle — send Idle first.
     if (xqueue) {
         static thread_local auto last_ready = std::chrono::steady_clock::now();
         auto now = std::chrono::steady_clock::now();

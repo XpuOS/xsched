@@ -7,10 +7,13 @@ using namespace xsched::sched;
 
 void HighestPriorityFirstPolicy::Sched(const Status &status)
 {
-    // find the running highest priority task of each device
+    // find the running highest priority task of each device.
+    // Skip XQueues whose ready heartbeat has expired (no Ready event for >5s).
+    auto now = std::chrono::system_clock::now();
     std::map<XDevice, Priority> running_prio_max;
     for (auto &status : status.xqueue_status) {
         if (!status.second->ready) continue;
+        if (now - status.second->ready_time > std::chrono::seconds(5)) continue;
         XQueueHandle handle = status.second->handle;
         Priority priority = GetPriority(handle);
 
@@ -27,6 +30,13 @@ void HighestPriorityFirstPolicy::Sched(const Status &status)
     for (auto &status : status.xqueue_status) {
         XQueueHandle handle = status.second->handle;
         Priority priority = GetPriority(handle);
+
+        // Stale ready → suspend it
+        if (status.second->ready &&
+            now - status.second->ready_time > std::chrono::seconds(5)) {
+            this->Suspend(handle);
+            continue;
+        }
 
         // get the running highest priority task of the device
         Priority prio_max = PRIORITY_MIN;
