@@ -49,6 +49,10 @@ void HighestPriorityFirstPolicy::Sched(const Status &status)
             this->Resume(handle);
         }
     }
+
+    // Periodic re-check: keep Sched running even without external events
+    // so stale XQueues get cleaned up and waiting ones get resumed.
+    this->AddTimer(std::chrono::system_clock::now() + std::chrono::seconds(3));
 }
 
 void HighestPriorityFirstPolicy::RecvHint(std::shared_ptr<const Hint> hint)
