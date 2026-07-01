@@ -58,12 +58,16 @@ hipError_t XLaunchKernel(const void *f, dim3 numBlocks, dim3 dimBlocks, void **a
     auto xqueue = GetOrCreateXQueue(stream);
 
     // Suspend gate: if XServer has suspended this XQueue, block here until resumed.
-    // Kernel execution stays on calling thread (DirectLaunch) to avoid HIP context
-    // issues on 海光 DTK, but we respect the scheduler's Suspend/Resume commands.
     if (xqueue && xqueue->IsSuspended()) {
         while (xqueue->IsSuspended()) {
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
+    }
+
+    // Submit lightweight no-op token to keep XQueue RDY for scheduler.
+    // Real kernel launches via DirectLaunch — LaunchWorker thread never calls HIP API.
+    if (xqueue) {
+        xqueue->Submit(std::make_shared<HipRuntimeLaunchCommand>());
     }
 
     return Driver::LaunchKernel(f, numBlocks, dimBlocks, args, sharedMemBytes, stream);
@@ -85,6 +89,10 @@ hipError_t XModuleLaunchKernel(hipFunction_t function,
         }
     }
 
+    if (xqueue) {
+        xqueue->Submit(std::make_shared<HipRuntimeLaunchCommand>());
+    }
+
     return Driver::ModuleLaunchKernel(function, gdx, gdy, gdz, bdx, bdy, bdz, shm,
                                       stream, params, extra);
 }
@@ -102,6 +110,10 @@ hipError_t XExtModuleLaunchKernel(hipFunction_t f, uint32_t gwx, uint32_t gwy, u
         while (xqueue->IsSuspended()) {
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
+    }
+
+    if (xqueue) {
+        xqueue->Submit(std::make_shared<HipRuntimeLaunchCommand>());
     }
 
     return Driver::ExtModuleLaunchKernel(f, gwx, gwy, gwz, lwx, lwy, lwz, shm, stream,

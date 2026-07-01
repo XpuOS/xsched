@@ -39,6 +39,18 @@ private:
     hipEvent_t following_event_ = nullptr;
 };
 
+// Lightweight no-op command — keeps the XQueue in RDY state for the
+// scheduler without calling any HIP API from the LaunchWorker thread.
+class HipRuntimeLaunchCommand : public HipCommand
+{
+public:
+    HipRuntimeLaunchCommand()
+        : HipCommand() { props_ = preempt::kCommandPropertyDeactivatable; }
+    virtual ~HipRuntimeLaunchCommand() = default;
+private:
+    virtual hipError_t Launch(hipStream_t) override { return hipSuccess; }
+};
+
 // HIP has many kernel launch commands, including 
 // 1. hipLaunchKernel
 // 2. hipLaunchKernelEx
