@@ -51,9 +51,8 @@ static inline std::shared_ptr<XQueue> GetOrCreateXQueue(hipStream_t stream)
 hipError_t XLaunchKernel(const void *f, dim3 numBlocks, dim3 dimBlocks, void **args,
                          size_t sharedMemBytes, hipStream_t stream)
 {
-    if (stream == nullptr) {
-        HipSyncBlockingXQueues();
-    }
+    if (stream == nullptr) HipSyncBlockingXQueues();
+    GetOrCreateXQueue(stream);
     return Driver::LaunchKernel(f, numBlocks, dimBlocks, args, sharedMemBytes, stream);
 }
 
@@ -63,9 +62,8 @@ hipError_t XModuleLaunchKernel(hipFunction_t function,
                               unsigned int shm, hipStream_t stream,
                               void **params, void **extra)
 {
-    if (stream == nullptr) {
-        HipSyncBlockingXQueues();
-    }
+    if (stream == nullptr) HipSyncBlockingXQueues();
+    GetOrCreateXQueue(stream);
     return Driver::ModuleLaunchKernel(function, gdx, gdy, gdz, bdx, bdy, bdz, shm,
                                       stream, params, extra);
 }
@@ -75,9 +73,8 @@ hipError_t XExtModuleLaunchKernel(hipFunction_t f, uint32_t gwx, uint32_t gwy, u
                                   hipStream_t stream, void** params, void** extra,
                                   hipEvent_t start_event, hipEvent_t stop_event, uint32_t flags)
 {
-    if (stream == nullptr) {
-        HipSyncBlockingXQueues();
-    }
+    if (stream == nullptr) HipSyncBlockingXQueues();
+    GetOrCreateXQueue(stream);
     return Driver::ExtModuleLaunchKernel(f, gwx, gwy, gwz, lwx, lwy, lwz, shm, stream,
                                          params, extra, start_event, stop_event, flags);
 }
