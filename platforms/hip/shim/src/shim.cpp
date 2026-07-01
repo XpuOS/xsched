@@ -228,7 +228,7 @@ hipError_t XStreamCreate(hipStream_t *stream)
 {
     hipError_t res = Driver::StreamCreate(stream);
     if (res != hipSuccess) return res;
-    // TEMP: disable XQueue auto-create to isolate root cause
+    XQueueManager::AutoCreate([&](HwQueueHandle *hwq) { return HipQueueCreate(hwq, *stream); });
     XDEBG("XStreamCreate(stream: %p)", *stream);
     return res;
 }
@@ -237,7 +237,7 @@ hipError_t XStreamCreateWithFlags(hipStream_t *stream, unsigned int flags)
 {
     hipError_t res = Driver::StreamCreateWithFlags(stream, flags);
     if (res != hipSuccess) return res;
-    // TEMP: disable XQueue auto-create to isolate root cause
+    XQueueManager::AutoCreate([&](HwQueueHandle *hwq) { return HipQueueCreate(hwq, *stream); });
     XDEBG("XStreamCreateWithFlags(stream: %p, flags: 0x%x)", *stream, flags);
     return res;
 }
@@ -245,7 +245,8 @@ hipError_t XStreamCreateWithFlags(hipStream_t *stream, unsigned int flags)
 hipError_t XStreamCreateWithPriority(hipStream_t *stream, unsigned int flags, int priority)
 {
     hipError_t res = Driver::StreamCreateWithPriority(stream, flags, priority);
-    // TEMP: disable XQueue auto-create to isolate root cause
+    if (res != hipSuccess) return res;
+    XQueueManager::AutoCreate([&](HwQueueHandle *hwq) { return HipQueueCreate(hwq, *stream); });
     XDEBG("XStreamCreateWithPriority(stream: %p, flags: 0x%x, priority: %d)", *stream, flags, priority);
     return res;
 }
@@ -253,7 +254,9 @@ hipError_t XStreamCreateWithPriority(hipStream_t *stream, unsigned int flags, in
 hipError_t XStreamDestroy(hipStream_t stream)
 {
     XDEBG("XStreamDestroy(stream: %p)", stream);
+    XQueueManager::AutoDestroy(GetHwQueueHandle(stream));
     return Driver::StreamDestroy(stream);
+}
 }
 
 } // namespace xsched::shim::hip
