@@ -129,6 +129,7 @@ function(add_shim_lib platform_name)
             PRIVATE protocol
             PRIVATE ${HAL_TARGET_NAME}
             PUBLIC  preempt
+            PUBLIC  sched
             PRIVATE ${SHIM_LINK_LIBRARIES}
         )
         # create softlinks

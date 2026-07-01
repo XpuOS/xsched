@@ -14,6 +14,7 @@
 #include "xsched/hip/hal/hip_command.h"
 #include "xsched/hip/hal/kernel_param.h"
 #include "xsched/preempt/xqueue/xqueue.h"
+#include "xsched/preempt/sched/agent.h"
 #include "xsched/protocol/def.h"
 #include "xsched/utils/env.h"
 
@@ -64,15 +65,17 @@ hipError_t XLaunchKernel(const void *f, dim3 numBlocks, dim3 dimBlocks, void **a
         }
     }
 
-    // Sparse token submission: only submit every N kernel launches to keep
-    // XQueue RDY without overwhelming the CommandBuffer / XServer IPC.
-    // vLLM fires thousands of kernels per second — per-kernel submission
-    // would add >30% overhead.
+    // Send XQueueReadyEvent directly to scheduler every ~100ms, bypassing
+    // CommandBuffer/LaunchWorker entirely. This keeps the XQueue RDY without
+    // the per-submission mutex+IPC overhead that kills vLLM performance.
     if (xqueue) {
-        static thread_local int64_t token_counter = 0;
-        if (++token_counter >= 100) {
-            xqueue->Submit(std::make_shared<HipRuntimeLaunchCommand>());
-            token_counter = 0;
+        static thread_local auto last_ready = std::chrono::steady_clock::now();
+        auto now = std::chrono::steady_clock::now();
+        if (now - last_ready > std::chrono::milliseconds(100)) {
+            xsched::sched::SchedAgent::SendEvent(
+                std::make_shared<xsched::sched::XQueueReadyEvent>(
+                    xqueue->GetHandle(), std::chrono::system_clock::now()));
+            last_ready = now;
         }
     }
 
@@ -96,10 +99,13 @@ hipError_t XModuleLaunchKernel(hipFunction_t function,
     }
 
     if (xqueue) {
-        static thread_local int64_t token_counter = 0;
-        if (++token_counter >= 100) {
-            xqueue->Submit(std::make_shared<HipRuntimeLaunchCommand>());
-            token_counter = 0;
+        static thread_local auto last_ready = std::chrono::steady_clock::now();
+        auto now = std::chrono::steady_clock::now();
+        if (now - last_ready > std::chrono::milliseconds(100)) {
+            xsched::sched::SchedAgent::SendEvent(
+                std::make_shared<xsched::sched::XQueueReadyEvent>(
+                    xqueue->GetHandle(), std::chrono::system_clock::now()));
+            last_ready = now;
         }
     }
 
@@ -123,10 +129,13 @@ hipError_t XExtModuleLaunchKernel(hipFunction_t f, uint32_t gwx, uint32_t gwy, u
     }
 
     if (xqueue) {
-        static thread_local int64_t token_counter = 0;
-        if (++token_counter >= 100) {
-            xqueue->Submit(std::make_shared<HipRuntimeLaunchCommand>());
-            token_counter = 0;
+        static thread_local auto last_ready = std::chrono::steady_clock::now();
+        auto now = std::chrono::steady_clock::now();
+        if (now - last_ready > std::chrono::milliseconds(100)) {
+            xsched::sched::SchedAgent::SendEvent(
+                std::make_shared<xsched::sched::XQueueReadyEvent>(
+                    xqueue->GetHandle(), std::chrono::system_clock::now()));
+            last_ready = now;
         }
     }
 
