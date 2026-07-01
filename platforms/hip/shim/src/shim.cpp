@@ -52,8 +52,16 @@ hipError_t XLaunchKernel(const void *f, dim3 numBlocks, dim3 dimBlocks, void **a
                          size_t sharedMemBytes, hipStream_t stream)
 {
     if (stream == nullptr) HipSyncBlockingXQueues();
-    GetOrCreateXQueue(stream);
-    return Driver::LaunchKernel(f, numBlocks, dimBlocks, args, sharedMemBytes, stream);
+
+    auto xqueue = GetOrCreateXQueue(stream);
+    if (xqueue == nullptr) {
+        return Driver::LaunchKernel(f, numBlocks, dimBlocks, args, sharedMemBytes, stream);
+    }
+
+    auto kernel = std::make_shared<HipKernelLaunchCommand>(
+        f, numBlocks, dimBlocks, args, sharedMemBytes, xqueue != nullptr);
+    xqueue->Submit(kernel);
+    return hipSuccess;
 }
 
 hipError_t XModuleLaunchKernel(hipFunction_t function,
@@ -63,9 +71,17 @@ hipError_t XModuleLaunchKernel(hipFunction_t function,
                               void **params, void **extra)
 {
     if (stream == nullptr) HipSyncBlockingXQueues();
-    GetOrCreateXQueue(stream);
-    return Driver::ModuleLaunchKernel(function, gdx, gdy, gdz, bdx, bdy, bdz, shm,
-                                      stream, params, extra);
+
+    auto xqueue = GetOrCreateXQueue(stream);
+    if (xqueue == nullptr) {
+        return Driver::ModuleLaunchKernel(function, gdx, gdy, gdz, bdx, bdy, bdz, shm,
+                                          stream, params, extra);
+    }
+
+    auto kernel = std::make_shared<HipModuleKernelLaunchCommand>(function, gdx, gdy, gdz, bdx, bdy, bdz, shm,
+                                                                 params, extra, xqueue != nullptr);
+    xqueue->Submit(kernel);
+    return hipSuccess;
 }
 
 hipError_t XExtModuleLaunchKernel(hipFunction_t f, uint32_t gwx, uint32_t gwy, uint32_t gwz,
@@ -74,9 +90,17 @@ hipError_t XExtModuleLaunchKernel(hipFunction_t f, uint32_t gwx, uint32_t gwy, u
                                   hipEvent_t start_event, hipEvent_t stop_event, uint32_t flags)
 {
     if (stream == nullptr) HipSyncBlockingXQueues();
-    GetOrCreateXQueue(stream);
-    return Driver::ExtModuleLaunchKernel(f, gwx, gwy, gwz, lwx, lwy, lwz, shm, stream,
-                                         params, extra, start_event, stop_event, flags);
+
+    auto xqueue = GetOrCreateXQueue(stream);
+    if (xqueue == nullptr) {
+        return Driver::ExtModuleLaunchKernel(f, gwx, gwy, gwz, lwx, lwy, lwz, shm, stream,
+                                             params, extra, start_event, stop_event, flags);
+    }
+
+    auto kernel = std::make_shared<HipExtModuleKernelLaunchCommand>(
+        f, gwx, gwy, gwz, lwx, lwy, lwz, shm, params, extra, start_event, stop_event, flags, xqueue != nullptr);
+    xqueue->Submit(kernel);
+    return hipSuccess;
 }
 
 void** XRegisterFatBinary(const void* data)
