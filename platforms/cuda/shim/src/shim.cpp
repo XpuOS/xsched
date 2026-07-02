@@ -296,11 +296,9 @@ CUresult XCtxSynchronize()
 
 CUresult XStreamCreate(CUstream *stream, unsigned int flags)
 {
-    int64_t prio = PRIORITY_DEFAULT;
-    GetEnvInt64(XSCHED_AUTO_XQUEUE_PRIORITY_ENV_NAME, prio);
-    CUresult res = Driver::StreamCreateWithPriority(stream, flags, (int)prio);
+    CUresult res = Driver::StreamCreate(stream, flags);
     if (res != CUDA_SUCCESS) return res;
-    // XQueueManager::AutoCreate([&](HwQueueHandle *hwq) { return CudaQueueCreate(hwq, *stream); });
+    XQueueManager::AutoCreate([&](HwQueueHandle *hwq) { return CudaQueueCreate(hwq, *stream); });
     XDEBG("XStreamCreate(stream: %p, flags: 0x%x)", *stream, flags);
     return res;
 }
@@ -309,7 +307,7 @@ CUresult XStreamCreateWithPriority(CUstream *stream, unsigned int flags, int pri
 {
     CUresult res = Driver::StreamCreateWithPriority(stream, flags, priority);
     if (res != CUDA_SUCCESS) return res;
-    // XQueueManager::AutoCreate([&](HwQueueHandle *hwq) { return CudaQueueCreate(hwq, *stream); });
+    XQueueManager::AutoCreate([&](HwQueueHandle *hwq) { return CudaQueueCreate(hwq, *stream); });
     XDEBG("XStreamCreateWithPriority(stream: %p, flags: 0x%x, priority: %d)",
           *stream, flags, priority);
     return res;

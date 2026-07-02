@@ -11,10 +11,15 @@ using namespace xsched::protocol;
 
 CudaQueueLv1::CudaQueueLv1(CUstream stream): kStream(stream)
 {
-    // get cuda context — for default stream (nullptr), use current context
+    // get cuda context
+    CUcontext stream_context = nullptr;
     CUcontext current_context = nullptr;
     CUDA_ASSERT(Driver::CtxGetCurrent(&current_context));
-    context_ = current_context;
+    CUDA_ASSERT(Driver::StreamGetCtx(stream, &stream_context));
+    XASSERT(current_context == stream_context,
+            "create CudaQueueLv1 failed: current context (%p) does not match stream context (%p)",
+            current_context, stream_context);
+    context_ = stream_context;
 
     // get cuda device
     CUDA_ASSERT(Driver::CtxGetDevice(&cudevice_));
@@ -25,12 +30,8 @@ CudaQueueLv1::CudaQueueLv1(CUstream stream): kStream(stream)
     CUDA_ASSERT(Driver::DeviceGetAttribute(&dev, CU_DEVICE_ATTRIBUTE_PCI_DEVICE_ID, cudevice_));
     xdevice_ = MakeDevice(kDeviceTypeGPU, XDeviceId(MakePciId(dom, bus, dev, 0)));
 
-    // get stream flags — default stream (nullptr) may not support this query
-    if (kStream != nullptr) {
-        CUDA_ASSERT(Driver::StreamGetFlags(stream, &stream_flags_));
-    } else {
-        stream_flags_ = 0;
-    }
+    // get stream flags
+    CUDA_ASSERT(Driver::StreamGetFlags(stream, &stream_flags_));
 
     // make sure no commands are running on stream_
     CUDA_ASSERT(Driver::StreamSynchronize(kStream));
@@ -63,6 +64,10 @@ EXPORT_C_FUNC XResult CudaQueueCreate(HwQueueHandle *hwq, CUstream stream)
     if (hwq == nullptr) {
         XWARN("CudaQueueCreate failed: hwq is nullptr");
         return kXSchedErrorInvalidValue;
+    }
+    if (stream == nullptr) {
+        XWARN("CudaQueueCreate failed: does not support default stream");
+        return kXSchedErrorNotSupported;
     }
 
     HwQueueHandle hwq_h = GetHwQueueHandle(stream);
