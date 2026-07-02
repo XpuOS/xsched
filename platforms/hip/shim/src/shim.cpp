@@ -61,7 +61,7 @@ hipError_t XLaunchKernel(const void *f, dim3 numBlocks, dim3 dimBlocks, void **a
     // Activity-aware ready heartbeat: only report RDY when kernels are actually
     // launching. If >3s gap between launches, process is idle — send Idle first.
     if (xqueue) {
-        static thread_local auto last_ready = std::chrono::steady_clock::now();
+        static thread_local auto last_ready = std::chrono::steady_clock::time_point();
         auto now = std::chrono::steady_clock::now();
         if (now - last_ready > std::chrono::seconds(1)) {
             xsched::preempt::SchedAgent::SendEvent(
@@ -92,7 +92,7 @@ hipError_t XModuleLaunchKernel(hipFunction_t function,
     auto xqueue = GetOrCreateXQueue(stream);
 
     if (xqueue) {
-        static thread_local auto last_ready = std::chrono::steady_clock::now();
+        static thread_local auto last_ready = std::chrono::steady_clock::time_point();
         auto now = std::chrono::steady_clock::now();
         if (now - last_ready > std::chrono::seconds(1)) {
             xsched::preempt::SchedAgent::SendEvent(
@@ -122,7 +122,7 @@ hipError_t XExtModuleLaunchKernel(hipFunction_t f, uint32_t gwx, uint32_t gwy, u
     auto xqueue = GetOrCreateXQueue(stream);
 
     if (xqueue) {
-        static thread_local auto last_ready = std::chrono::steady_clock::now();
+        static thread_local auto last_ready = std::chrono::steady_clock::time_point();
         auto now = std::chrono::steady_clock::now();
         if (now - last_ready > std::chrono::seconds(1)) {
             xsched::preempt::SchedAgent::SendEvent(
