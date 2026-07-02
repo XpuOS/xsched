@@ -11,6 +11,12 @@ using namespace xsched::cuda;
 EXPORT_C_FUNC CUresult XGetProcAddress(const char *symbol, void **pfn, int cudaVersion, cuuint64_t flags);
 EXPORT_C_FUNC CUresult XGetProcAddress_v2(const char *symbol, void **pfn, int cudaVersion, cuuint64_t flags, CUdriverProcAddressQueryResult *symbolStatus);
 
+// Runtime API forward declarations (defined at end of file)
+extern "C" int cudaLaunchKernel(const void *, unsigned int, unsigned int, unsigned int,
+                                unsigned int, unsigned int, unsigned int, unsigned int,
+                                void **, unsigned long long);
+extern "C" int cudaStreamCreate(unsigned long long *);
+
 DEFINE_EXPORT_C_REDIRECT_CALL(Driver::GetErrorString, CUresult, cuGetErrorString, CUresult, error, const char **, pStr);
 DEFINE_EXPORT_C_REDIRECT_CALL(Driver::GetErrorName, CUresult, cuGetErrorName, CUresult, error, const char **, pStr);
 DEFINE_EXPORT_C_REDIRECT_CALL(Driver::Init, CUresult, cuInit, unsigned int, Flags);
@@ -764,6 +770,8 @@ static const std::unordered_map<std::string, std::map<int, void *>> intercept_fu
     { "cuPointerGetAttributes"                              , {{  7000, (void *)cuPointerGetAttributes                              }}},
     { "cuStreamCreate"                                      , {{  2000, (void *)cuStreamCreate                                      }}},
     { "cuStreamCreateWithPriority"                          , {{  5050, (void *)cuStreamCreateWithPriority                          }}},
+    { "cudaStreamCreate"                                    , {{  2000, (void *)cudaStreamCreate                                    }}},
+    { "cudaLaunchKernel"                                    , {{  2000, (void *)cudaLaunchKernel                                    }}},
     { "cuStreamGetId"                                       , {{ 12000, (void *)cuStreamGetId                                       }}},
     { "cuThreadExchangeStreamCaptureMode"                   , {{ 10010, (void *)cuThreadExchangeStreamCaptureMode                   }}},
     { "cuStreamDestroy"                                     , {{  2000, (void *)cuStreamDestroy                                     }, {  4000, (void *)cuStreamDestroy_v2                   }}},
@@ -1099,4 +1107,36 @@ EXPORT_C_FUNC CUresult XGetProcAddress_v2(const char *symbol, void **pfn, int cu
     if (res != CUDA_SUCCESS) return res;
     GetInterceptAddr(symbol, pfn, cudaVersion);
     return res;
+}
+
+// ============================================================================
+// Runtime API symbol exports — libcudart.so uses RTLD_NEXT to find Driver API
+// functions, which skips the LD_PRELOAD shim. Export cuda* symbols directly.
+// ============================================================================
+
+#include <dlfcn.h>
+
+extern "C" __attribute__((visibility("default")))
+int cudaLaunchKernel(const void *func, unsigned int gdx, unsigned int gdy,
+                     unsigned int gdz, unsigned int bdx, unsigned int bdy,
+                     unsigned int bdz, unsigned int shm, void **args,
+                     unsigned long long stream)
+{
+    using pfn_t = int (*)(const void *, unsigned int, unsigned int, unsigned int,
+                          unsigned int, unsigned int, unsigned int, unsigned int,
+                          void **, unsigned long long);
+    static pfn_t p_real = nullptr;
+    if (!p_real) {
+        p_real = (pfn_t)dlsym(RTLD_NEXT, "cudaLaunchKernel");
+    }
+    if (p_real) {
+        return p_real(func, gdx, gdy, gdz, bdx, bdy, bdz, shm, args, stream);
+    }
+    return 1;
+}
+
+extern "C" __attribute__((visibility("default")))
+int cudaStreamCreate(unsigned long long *pStream)
+{
+    return (int)xsched::cuda::XStreamCreate((CUstream *)pStream, 0);
 }
