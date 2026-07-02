@@ -56,9 +56,11 @@ CUresult XLaunchKernel(CUfunction f,
         WaitBlockingXQueues();
     }
 
-    auto xq = GetOrCreateXQueue(stream);
+    // Only lookup existing XQueue — don't create one. XQueue creation on CUDA
+    // happens in XStreamCreate/XStreamCreateWithPriority to avoid interfering
+    // with CUDA context during PyTorch initialization.
+    auto xq = HwQueueManager::GetXQueue(GetHwQueueHandle(stream));
 
-    // Ready heartbeat: keep XQueue RDY for scheduler
     if (xq) {
         static thread_local auto last_ready = std::chrono::steady_clock::time_point();
         auto now = std::chrono::steady_clock::now();
@@ -68,12 +70,10 @@ CUresult XLaunchKernel(CUfunction f,
                     xq->GetHandle(), std::chrono::system_clock::now()));
             last_ready = now;
         }
-    }
-
-    // Suspend gate: block until scheduler resumes us
-    if (xq && xq->IsSuspended()) {
-        while (xq->IsSuspended()) {
-            std::this_thread::sleep_for(std::chrono::microseconds(100));
+        if (xq->IsSuspended()) {
+            while (xq->IsSuspended()) {
+                std::this_thread::sleep_for(std::chrono::microseconds(100));
+            }
         }
     }
 
@@ -93,7 +93,7 @@ CUresult XLaunchKernelEx(const CUlaunchConfig *config, CUfunction f, void **para
         WaitBlockingXQueues();
     }
 
-    auto xq = GetOrCreateXQueue(stream);
+    auto xq = HwQueueManager::GetXQueue(GetHwQueueHandle(stream));
 
     if (xq) {
         static thread_local auto last_ready = std::chrono::steady_clock::time_point();
@@ -104,11 +104,10 @@ CUresult XLaunchKernelEx(const CUlaunchConfig *config, CUfunction f, void **para
                     xq->GetHandle(), std::chrono::system_clock::now()));
             last_ready = now;
         }
-    }
-
-    if (xq && xq->IsSuspended()) {
-        while (xq->IsSuspended()) {
-            std::this_thread::sleep_for(std::chrono::microseconds(100));
+        if (xq->IsSuspended()) {
+            while (xq->IsSuspended()) {
+                std::this_thread::sleep_for(std::chrono::microseconds(100));
+            }
         }
     }
 
@@ -121,7 +120,7 @@ CUresult XLaunchHostFunc(CUstream stream, CUhostFn fn, void *data)
     if (stream == 0) {
         WaitBlockingXQueues();
     }
-    auto xq = GetOrCreateXQueue(stream);
+    auto xq = HwQueueManager::GetXQueue(GetHwQueueHandle(stream));
 
     if (xq && xq->IsSuspended()) {
         while (xq->IsSuspended()) {
@@ -301,8 +300,8 @@ CUresult XStreamCreate(CUstream *stream, unsigned int flags)
     GetEnvInt64(XSCHED_AUTO_XQUEUE_PRIORITY_ENV_NAME, prio);
     CUresult res = Driver::StreamCreateWithPriority(stream, flags, (int)prio);
     if (res != CUDA_SUCCESS) return res;
-    XQueueManager::AutoCreate([&](HwQueueHandle *hwq) { return CudaQueueCreate(hwq, *stream); });
-    XDEBG("XStreamCreate(stream: %p, flags: 0x%x, prio: " FMT_64D ")", *stream, flags, prio);
+    // XQueueManager::AutoCreate([&](HwQueueHandle *hwq) { return CudaQueueCreate(hwq, *stream); });
+    XDEBG("XStreamCreate(stream: %p, flags: 0x%x)", *stream, flags);
     return res;
 }
 
@@ -310,7 +309,7 @@ CUresult XStreamCreateWithPriority(CUstream *stream, unsigned int flags, int pri
 {
     CUresult res = Driver::StreamCreateWithPriority(stream, flags, priority);
     if (res != CUDA_SUCCESS) return res;
-    XQueueManager::AutoCreate([&](HwQueueHandle *hwq) { return CudaQueueCreate(hwq, *stream); });
+    // XQueueManager::AutoCreate([&](HwQueueHandle *hwq) { return CudaQueueCreate(hwq, *stream); });
     XDEBG("XStreamCreateWithPriority(stream: %p, flags: 0x%x, priority: %d)",
           *stream, flags, priority);
     return res;
