@@ -20,20 +20,9 @@ static utils::ObjectMap<CUevent, std::shared_ptr<CudaEventRecordCommand>> g_even
 
 void WaitBlockingXQueues()
 {
-    std::list<std::shared_ptr<XQueueWaitAllCommand>> wait_cmds;
-    XResult res = XQueueManager::ForEach([&](std::shared_ptr<XQueue> xq)->XResult {
-        auto hwq = xq->GetHwQueue();
-        auto cuda_q = std::dynamic_pointer_cast<CudaQueueLv1>(hwq);
-        if (cuda_q == nullptr) return kXSchedErrorUnknown;
-        // does not need to wait a non-blocking stream
-        if (cuda_q->GetStreamFlags() & CU_STREAM_NON_BLOCKING) return kXSchedSuccess;
-        auto wait_cmd = xq->SubmitWaitAll();
-        if (wait_cmd == nullptr) return kXSchedErrorUnknown;
-        wait_cmds.push_back(wait_cmd);
-        return kXSchedSuccess;
-    });
-    XASSERT(res == kXSchedSuccess, "Fail to submit wait all commands");
-    for (auto &cmd : wait_cmds) cmd->Wait();
+    // Empty — same pattern as HIP.
+    // The original full-scan via XQueueManager::ForEach caused excessive
+    // synchronization overhead on the default stream.
 }
 
 CUresult XLaunchKernel(CUfunction f,
