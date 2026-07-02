@@ -17,17 +17,7 @@ inline CUresult X##name(FOR_EACH_PAIR_COMMA(DECLARE_PARAM, __VA_ARGS__), CUstrea
     if (stream == 0) { \
         WaitBlockingXQueues(); \
     } \
-    auto xq = xsched::preempt::HwQueueManager::GetXQueue(GetHwQueueHandle(stream)); \
-    if (xq == nullptr) { \
-        xsched::preempt::XQueueManager::AutoCreate([&](HwQueueHandle *hwq) -> XResult { \
-            return CudaQueueCreate(hwq, stream); \
-        }); \
-        xq = xsched::preempt::HwQueueManager::GetXQueue(GetHwQueueHandle(stream)); \
-    } \
-    if (xq == nullptr) return Driver::name(FOR_EACH_PAIR_COMMA(DECLARE_ARG, __VA_ARGS__), stream); \
-    auto hw_cmd = std::make_shared<cmd>(FOR_EACH_PAIR_COMMA(DECLARE_ARG, __VA_ARGS__)); \
-    xq->Submit(hw_cmd); \
-    return CUDA_SUCCESS; \
+    return Driver::name(FOR_EACH_PAIR_COMMA(DECLARE_ARG, __VA_ARGS__), stream); \
 }
 
 void WaitBlockingXQueues();
