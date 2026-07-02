@@ -25,6 +25,26 @@ void HighestPriorityFirstPolicy::Sched(const Status &status)
         }
     }
 
+    // Deadlock breaker: when ALL XQueues are stale (running_prio_max empty),
+    // resume the highest-priority stale XQueue to let it send fresh Ready.
+    if (running_prio_max.empty()) {
+        Priority best_prio = PRIORITY_MIN;
+        XQueueHandle best_handle = 0;
+        for (auto &s : status.xqueue_status) {
+            if (!s.second->ready) continue;
+            Priority p = GetPriority(s.first);
+            if (p > best_prio) { best_prio = p; best_handle = s.first; }
+        }
+        if (best_handle != 0) {
+            this->Resume(best_handle);
+            for (auto &s : status.xqueue_status) {
+                if (s.first != best_handle) this->Suspend(s.first);
+            }
+        }
+        this->AddTimer(now + std::chrono::seconds(3));
+        return;
+    }
+
     // suspend all xqueues with lower priority
     // and resume all xqueues with higher priority
     for (auto &status : status.xqueue_status) {
@@ -38,7 +58,6 @@ void HighestPriorityFirstPolicy::Sched(const Status &status)
             continue;
         }
 
-        // get the running highest priority task of the device
         Priority prio_max = PRIORITY_MIN;
         auto prio_it = running_prio_max.find(status.second->device);
         if (prio_it != running_prio_max.end()) prio_max = prio_it->second;
@@ -50,9 +69,7 @@ void HighestPriorityFirstPolicy::Sched(const Status &status)
         }
     }
 
-    // Periodic re-check: keep Sched running even without external events
-    // so stale XQueues get cleaned up and waiting ones get resumed.
-    this->AddTimer(std::chrono::system_clock::now() + std::chrono::seconds(3));
+    this->AddTimer(now + std::chrono::seconds(3));
 }
 
 void HighestPriorityFirstPolicy::RecvHint(std::shared_ptr<const Hint> hint)
