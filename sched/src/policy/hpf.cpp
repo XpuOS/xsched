@@ -27,19 +27,13 @@ void HighestPriorityFirstPolicy::Sched(const Status &status)
 
     // Deadlock breaker: when ALL XQueues are stale (running_prio_max empty),
     // resume the highest-priority stale XQueue to let it send fresh Ready.
+    // Deadlock breaker: when all XQueues are stale, release every suspended
+    // and ready XQueue. The first one to send a fresh Ready heartbeat becomes
+    // the winner in the next normal HPF round.
     if (running_prio_max.empty()) {
-        Priority best_prio = PRIORITY_MIN;
-        XQueueHandle best_handle = 0;
         for (auto &s : status.xqueue_status) {
-            if (!s.second->ready) continue;
-            Priority p = GetPriority(s.first);
-            if (p > best_prio) { best_prio = p; best_handle = s.first; }
-        }
-        if (best_handle != 0) {
-            this->Resume(best_handle);
-            for (auto &s : status.xqueue_status) {
-                if (s.first != best_handle) this->Suspend(s.first);
-            }
+            if (s.second->ready && s.second->suspended)
+                this->Resume(s.first);
         }
         this->AddTimer(now + std::chrono::seconds(3));
         return;
