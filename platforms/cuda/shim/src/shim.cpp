@@ -1,10 +1,13 @@
 #include <list>
+#include <thread>
+#include <chrono>
 
 #include "xsched/xqueue.h"
 #include "xsched/utils/map.h"
 #include "xsched/protocol/def.h"
 #include "xsched/preempt/hal/hw_queue.h"
 #include "xsched/preempt/xqueue/xqueue.h"
+#include "xsched/preempt/sched/agent.h"
 #include "xsched/cuda/hal.h"
 #include "xsched/cuda/shim/shim.h"
 #include "xsched/cuda/hal/common/levels.h"
@@ -49,15 +52,33 @@ CUresult XLaunchKernel(CUfunction f,
           "shm: %u, params: %p, extra: %p)", f, stream, gdx, gdy, gdz, bdx, bdy, bdz,
           shmem, params, extra);
 
-    // Default stream must sync other streams before launching
     if (stream == nullptr) {
         WaitBlockingXQueues();
     }
 
     auto xq = GetOrCreateXQueue(stream);
+
+    // Ready heartbeat: keep XQueue RDY for scheduler
+    if (xq) {
+        static thread_local auto last_ready = std::chrono::steady_clock::time_point();
+        auto now = std::chrono::steady_clock::now();
+        if (now - last_ready > std::chrono::seconds(1)) {
+            xsched::preempt::SchedAgent::SendEvent(
+                std::make_shared<xsched::sched::XQueueReadyEvent>(
+                    xq->GetHandle(), std::chrono::system_clock::now()));
+            last_ready = now;
+        }
+    }
+
+    // Suspend gate: block until scheduler resumes us
+    if (xq && xq->IsSuspended()) {
+        while (xq->IsSuspended()) {
+            std::this_thread::sleep_for(std::chrono::microseconds(100));
+        }
+    }
+
     auto kernel = std::make_shared<CudaKernelLaunchCommand>(
         f, gdx, gdy, gdz, bdx, bdy, bdz, shmem, params, extra, xq != nullptr);
-
     return DirectLaunch(kernel, stream);
 }
 
@@ -73,6 +94,24 @@ CUresult XLaunchKernelEx(const CUlaunchConfig *config, CUfunction f, void **para
     }
 
     auto xq = GetOrCreateXQueue(stream);
+
+    if (xq) {
+        static thread_local auto last_ready = std::chrono::steady_clock::time_point();
+        auto now = std::chrono::steady_clock::now();
+        if (now - last_ready > std::chrono::seconds(1)) {
+            xsched::preempt::SchedAgent::SendEvent(
+                std::make_shared<xsched::sched::XQueueReadyEvent>(
+                    xq->GetHandle(), std::chrono::system_clock::now()));
+            last_ready = now;
+        }
+    }
+
+    if (xq && xq->IsSuspended()) {
+        while (xq->IsSuspended()) {
+            std::this_thread::sleep_for(std::chrono::microseconds(100));
+        }
+    }
+
     auto kn = std::make_shared<CudaKernelLaunchExCommand>(config, f, params, extra, xq != nullptr);
     return DirectLaunch(kn, stream);
 }
@@ -83,6 +122,13 @@ CUresult XLaunchHostFunc(CUstream stream, CUhostFn fn, void *data)
         WaitBlockingXQueues();
     }
     auto xq = GetOrCreateXQueue(stream);
+
+    if (xq && xq->IsSuspended()) {
+        while (xq->IsSuspended()) {
+            std::this_thread::sleep_for(std::chrono::microseconds(100));
+        }
+    }
+
     if (xq == nullptr) return Driver::LaunchHostFunc(stream, fn, data);
     auto hw_cmd = std::make_shared<CudaHostFuncCommand>(fn, data);
     xq->Submit(hw_cmd);
