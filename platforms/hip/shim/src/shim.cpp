@@ -74,7 +74,7 @@ hipError_t XLaunchKernel(const void *f, dim3 numBlocks, dim3 dimBlocks, void **a
     // Suspend gate: if XServer has suspended this XQueue, block until resumed.
     if (xqueue && xqueue->IsSuspended()) {
         while (xqueue->IsSuspended()) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            std::this_thread::sleep_for(std::chrono::microseconds(100));
         }
     }
 
@@ -104,7 +104,7 @@ hipError_t XModuleLaunchKernel(hipFunction_t function,
 
     if (xqueue && xqueue->IsSuspended()) {
         while (xqueue->IsSuspended()) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            std::this_thread::sleep_for(std::chrono::microseconds(100));
         }
     }
 
@@ -134,7 +134,7 @@ hipError_t XExtModuleLaunchKernel(hipFunction_t f, uint32_t gwx, uint32_t gwy, u
 
     if (xqueue && xqueue->IsSuspended()) {
         while (xqueue->IsSuspended()) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            std::this_thread::sleep_for(std::chrono::microseconds(100));
         }
     }
 
