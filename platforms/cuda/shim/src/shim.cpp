@@ -158,7 +158,7 @@ CUresult XEventRecord(CUevent event, CUstream stream)
         WaitBlockingXQueues();
     }
 
-    auto xq = GetOrCreateXQueue(stream);
+    auto xq = HwQueueManager::GetXQueue(GetHwQueueHandle(stream));
     if (xq == nullptr) {
         result = Driver::EventRecord(event, stream);
     } else {
@@ -182,7 +182,7 @@ CUresult XEventRecordWithFlags(CUevent event, CUstream stream, unsigned int flag
         WaitBlockingXQueues();
     }
 
-    auto xq = GetOrCreateXQueue(stream);
+    auto xq = HwQueueManager::GetXQueue(GetHwQueueHandle(stream));
     if (xq == nullptr) {
         result = Driver::EventRecordWithFlags(event, stream, flags);
     } else {
@@ -218,7 +218,7 @@ CUresult XStreamWaitEvent(CUstream stream, CUevent event, unsigned int flags)
         WaitBlockingXQueues();
     }
 
-    auto xq = GetOrCreateXQueue(stream);
+    auto xq = HwQueueManager::GetXQueue(GetHwQueueHandle(stream));
     if (xq == nullptr) {
         if (stream == nullptr || xevent->GetXQueueHandle() == 0) {
             xevent->Wait();
