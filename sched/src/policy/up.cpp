@@ -85,6 +85,7 @@ void UtilizationPartitionPolicy::Sched(const Status &status)
 
     // checked a round, no xqueue to run
     cur_running_ = 0;
+    this->AddTimer(std::chrono::system_clock::now() + std::chrono::seconds(3));
 }
 
 void UtilizationPartitionPolicy::RecvHint(std::shared_ptr<const Hint> hint)
@@ -127,10 +128,17 @@ std::chrono::microseconds UtilizationPartitionPolicy::GetBudget(Utilization util
 
 void UtilizationPartitionPolicy::SwitchToAny(const Status &status)
 {
+    auto now = std::chrono::system_clock::now();
     cur_running_ = 0;
     bool selected = false;
     for (const auto &xqueue : status.xqueue_status) {
         if (selected || !xqueue.second->ready) {
+            this->Suspend(xqueue.first);
+            continue;
+        }
+
+        // Stale ready → skip
+        if (now - xqueue.second->ready_time > std::chrono::seconds(5)) {
             this->Suspend(xqueue.first);
             continue;
         }
@@ -144,8 +152,17 @@ void UtilizationPartitionPolicy::SwitchToAny(const Status &status)
         selected = true;
         this->Resume(xqueue.first);
         cur_running_ = xqueue.first;
-        cur_end_ = std::chrono::system_clock::now() + GetBudget(it->second);
+        cur_end_ = now + GetBudget(it->second);
         this->AddTimer(cur_end_);
+    }
+
+    // Deadlock breaker: all stale, release every suspended-and-ready XQueue
+    if (!selected) {
+        for (const auto &xqueue : status.xqueue_status) {
+            if (xqueue.second->ready && xqueue.second->suspended)
+                this->Resume(xqueue.first);
+        }
+        this->AddTimer(now + std::chrono::seconds(3));
     }
 }
 
