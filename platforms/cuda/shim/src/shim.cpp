@@ -1,10 +1,13 @@
 #include <list>
+#include <thread>
+#include <chrono>
 
 #include "xsched/xqueue.h"
 #include "xsched/utils/map.h"
 #include "xsched/protocol/def.h"
 #include "xsched/preempt/hal/hw_queue.h"
 #include "xsched/preempt/xqueue/xqueue.h"
+#include "xsched/preempt/sched/agent.h"
 #include "xsched/cuda/hal.h"
 #include "xsched/cuda/shim/shim.h"
 #include "xsched/cuda/hal/common/levels.h"
@@ -21,8 +24,19 @@ static utils::ObjectMap<CUevent, std::shared_ptr<CudaEventRecordCommand>> g_even
 void WaitBlockingXQueues()
 {
     // Empty — same pattern as HIP.
-    // The original full-scan via XQueueManager::ForEach caused excessive
-    // synchronization overhead on the default stream.
+}
+
+// Get or create an XQueue for any stream, including the default stream.
+static inline std::shared_ptr<XQueue> GetOrCreateXQueue(CUstream stream)
+{
+    auto xq = HwQueueManager::GetXQueue(GetHwQueueHandle(stream));
+    if (!xq) {
+        XQueueManager::AutoCreate([&](HwQueueHandle *hwq) -> XResult {
+            return CudaQueueCreate(hwq, stream);
+        });
+        xq = HwQueueManager::GetXQueue(GetHwQueueHandle(stream));
+    }
+    return xq;
 }
 
 CUresult XLaunchKernel(CUfunction f,
@@ -36,18 +50,32 @@ CUresult XLaunchKernel(CUfunction f,
 
     if (stream == nullptr) {
         WaitBlockingXQueues();
-        auto kernel = std::make_shared<CudaKernelLaunchCommand>(
-            f, gdx, gdy, gdz, bdx, bdy, bdz, shmem, params, extra, false);
-        return DirectLaunch(kernel, stream);
     }
 
-    auto xq = HwQueueManager::GetXQueue(GetHwQueueHandle(stream));
+    auto xq = GetOrCreateXQueue(stream);
+
+    // Ready heartbeat
+    if (xq) {
+        static thread_local auto last_ready = std::chrono::steady_clock::time_point();
+        auto now = std::chrono::steady_clock::now();
+        if (now - last_ready > std::chrono::seconds(1)) {
+            xsched::preempt::SchedAgent::SendEvent(
+                std::make_shared<xsched::sched::XQueueReadyEvent>(
+                    xq->GetHandle(), std::chrono::system_clock::now()));
+            last_ready = now;
+        }
+    }
+
+    // Suspend gate
+    if (xq && xq->IsSuspended()) {
+        while (xq->IsSuspended()) {
+            std::this_thread::sleep_for(std::chrono::microseconds(100));
+        }
+    }
+
     auto kernel = std::make_shared<CudaKernelLaunchCommand>(
         f, gdx, gdy, gdz, bdx, bdy, bdz, shmem, params, extra, xq != nullptr);
-
-    if (xq == nullptr) return DirectLaunch(kernel, stream);
-    xq->Submit(kernel);
-    return CUDA_SUCCESS;
+    return DirectLaunch(kernel, stream);
 }
 
 CUresult XLaunchKernelEx(const CUlaunchConfig *config, CUfunction f, void **params, void **extra)
@@ -59,16 +87,28 @@ CUresult XLaunchKernelEx(const CUlaunchConfig *config, CUfunction f, void **para
 
     if (stream == nullptr) {
         WaitBlockingXQueues();
-        auto kernel = std::make_shared<CudaKernelLaunchExCommand>(config, f, params, extra, false);
-        return DirectLaunch(kernel, stream);
     }
-    
-    auto xq = HwQueueManager::GetXQueue(GetHwQueueHandle(stream));
-    auto kn = std::make_shared<CudaKernelLaunchExCommand>(config, f, params, extra, xq != nullptr);
 
-    if (xq == nullptr) return DirectLaunch(kn, stream);
-    xq->Submit(kn);
-    return CUDA_SUCCESS;
+    auto xq = GetOrCreateXQueue(stream);
+
+    if (xq) {
+        static thread_local auto last_ready = std::chrono::steady_clock::time_point();
+        auto now = std::chrono::steady_clock::now();
+        if (now - last_ready > std::chrono::seconds(1)) {
+            xsched::preempt::SchedAgent::SendEvent(
+                std::make_shared<xsched::sched::XQueueReadyEvent>(
+                    xq->GetHandle(), std::chrono::system_clock::now()));
+            last_ready = now;
+        }
+        if (xq->IsSuspended()) {
+            while (xq->IsSuspended()) {
+                std::this_thread::sleep_for(std::chrono::microseconds(100));
+            }
+        }
+    }
+
+    auto kn = std::make_shared<CudaKernelLaunchExCommand>(config, f, params, extra, xq != nullptr);
+    return DirectLaunch(kn, stream);
 }
 
 CUresult XLaunchHostFunc(CUstream stream, CUhostFn fn, void *data)
