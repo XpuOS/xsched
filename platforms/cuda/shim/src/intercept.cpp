@@ -15,7 +15,6 @@ EXPORT_C_FUNC CUresult XGetProcAddress_v2(const char *symbol, void **pfn, int cu
 extern "C" int cudaLaunchKernel(const void *, unsigned int, unsigned int, unsigned int,
                                 unsigned int, unsigned int, unsigned int, unsigned int,
                                 void **, unsigned long long);
-extern "C" int cudaStreamCreate(unsigned long long *);
 extern "C" int cudaMalloc(void **, size_t);
 extern "C" int cudaSetDevice(int);
 
@@ -785,7 +784,6 @@ static const std::unordered_map<std::string, std::map<int, void *>> intercept_fu
     { "cuPointerGetAttributes"                              , {{  7000, (void *)cuPointerGetAttributes                              }}},
     { "cuStreamCreate"                                      , {{  2000, (void *)cuStreamCreate                                      }}},
     { "cuStreamCreateWithPriority"                          , {{  5050, (void *)cuStreamCreateWithPriority                          }}},
-    { "cudaStreamCreate"                                    , {{  2000, (void *)cudaStreamCreate                                    }}},
     { "cudaLaunchKernel"                                    , {{  2000, (void *)cudaLaunchKernel                                    }}},
     { "cudaMalloc"                                          , {{  2000, (void *)cudaMalloc                                          }}},
     { "cudaSetDevice"                                       , {{  2000, (void *)cudaSetDevice                                       }}},
@@ -1153,11 +1151,12 @@ int cudaMalloc(void **ptr, size_t size)
     return p_real ? p_real(ptr, size) : 1;
 }
 
-extern "C" __attribute__((visibility("default")))
-int cudaStreamCreate(unsigned long long *pStream)
-{
-    return (int)xsched::cuda::XStreamCreate((CUstream *)pStream, 0);
-}
+// NOTE: cudaStreamCreate is NOT exported — PyTorch init creates many internal
+// streams, and routing each through XStreamCreate→AutoCreate would spawn a
+// LaunchWorker per stream, causing CUDA context interference (same root cause
+// as HIP's HIP_SHIM_FUNC creating too many LaunchWorkers).
+// Streams are tracked through the existing cuStreamCreate interception in
+// XStreamCreate (which is already hooked via LD_PRELOAD).
 
 extern "C" __attribute__((visibility("default")))
 int cudaLaunchKernel(const void *func, unsigned int gdx, unsigned int gdy,
