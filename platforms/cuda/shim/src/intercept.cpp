@@ -1164,15 +1164,41 @@ int cudaLaunchKernel(const void *func, unsigned int gdx, unsigned int gdy,
                      unsigned int bdz, unsigned int shm, void **args,
                      unsigned long long stream)
 {
+    CUstream cu_stream = (CUstream)stream;
+
+    // Create XQueue for default stream on first call. Safe here because
+    // cudaSetDevice already ran and ForceRegister warmed up the context.
+    if (cu_stream == nullptr) {
+        static bool xq_created = false;
+        if (!xq_created) {
+            xsched::preempt::XQueueManager::AutoCreate([&](HwQueueHandle *hwq) -> XResult {
+                return xsched::cuda::CudaQueueCreate(hwq, cu_stream);
+            });
+            xq_created = true;
+        }
+    }
+
+    auto xq = xsched::preempt::HwQueueManager::GetXQueue(GetHwQueueHandle(cu_stream));
+    if (xq) {
+        static thread_local auto last_ready = std::chrono::steady_clock::time_point();
+        auto now = std::chrono::steady_clock::now();
+        if (now - last_ready > std::chrono::seconds(1)) {
+            xsched::preempt::SchedAgent::SendEvent(
+                std::make_shared<xsched::sched::XQueueReadyEvent>(
+                    xq->GetHandle(), std::chrono::system_clock::now()));
+            last_ready = now;
+        }
+        if (xq->IsSuspended()) {
+            while (xq->IsSuspended()) {
+                std::this_thread::sleep_for(std::chrono::microseconds(100));
+            }
+        }
+    }
+
+    // Call real cudaLaunchKernel — internally it converts func to CUfunction
     using pfn_t = int (*)(const void *, unsigned int, unsigned int, unsigned int,
                           unsigned int, unsigned int, unsigned int, unsigned int,
                           void **, unsigned long long);
-    static pfn_t p_real = nullptr;
-    if (!p_real) {
-        p_real = (pfn_t)dlsym(RTLD_NEXT, "cudaLaunchKernel");
-    }
-    if (p_real) {
-        return p_real(func, gdx, gdy, gdz, bdx, bdy, bdz, shm, args, stream);
-    }
-    return 1;
+    static pfn_t p_real = (pfn_t)dlsym(RTLD_NEXT, "cudaLaunchKernel");
+    return p_real ? p_real(func, gdx, gdy, gdz, bdx, bdy, bdz, shm, args, stream) : 1;
 }
