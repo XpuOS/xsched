@@ -16,6 +16,21 @@ extern "C" int cudaLaunchKernel(const void *, unsigned int, unsigned int, unsign
                                 unsigned int, unsigned int, unsigned int, unsigned int,
                                 void **, unsigned long long);
 extern "C" int cudaStreamCreate(unsigned long long *);
+extern "C" int cudaMalloc(void **, size_t);
+extern "C" int cudaSetDevice(int);
+
+// ForceRegister — warm up CUDA context with a dummy XQueue before PyTorch
+// init triggers stream creation that would spawn LaunchWorker threads and
+// interfere with CUDA context binding on the main thread.
+static void ForceRegister()
+{
+    static bool done = false;
+    if (done) return;
+    CUstream dummy;
+    if (xsched::cuda::XStreamCreate(&dummy, 0) == 0) {
+        done = true;
+    }
+}
 
 DEFINE_EXPORT_C_REDIRECT_CALL(Driver::GetErrorString, CUresult, cuGetErrorString, CUresult, error, const char **, pStr);
 DEFINE_EXPORT_C_REDIRECT_CALL(Driver::GetErrorName, CUresult, cuGetErrorName, CUresult, error, const char **, pStr);
@@ -772,6 +787,8 @@ static const std::unordered_map<std::string, std::map<int, void *>> intercept_fu
     { "cuStreamCreateWithPriority"                          , {{  5050, (void *)cuStreamCreateWithPriority                          }}},
     { "cudaStreamCreate"                                    , {{  2000, (void *)cudaStreamCreate                                    }}},
     { "cudaLaunchKernel"                                    , {{  2000, (void *)cudaLaunchKernel                                    }}},
+    { "cudaMalloc"                                          , {{  2000, (void *)cudaMalloc                                          }}},
+    { "cudaSetDevice"                                       , {{  2000, (void *)cudaSetDevice                                       }}},
     { "cuStreamGetId"                                       , {{ 12000, (void *)cuStreamGetId                                       }}},
     { "cuThreadExchangeStreamCaptureMode"                   , {{ 10010, (void *)cuThreadExchangeStreamCaptureMode                   }}},
     { "cuStreamDestroy"                                     , {{  2000, (void *)cuStreamDestroy                                     }, {  4000, (void *)cuStreamDestroy_v2                   }}},
@@ -1110,11 +1127,37 @@ EXPORT_C_FUNC CUresult XGetProcAddress_v2(const char *symbol, void **pfn, int cu
 }
 
 // ============================================================================
-// Runtime API symbol exports — libcudart.so uses RTLD_NEXT to find Driver API
-// functions, which skips the LD_PRELOAD shim. Export cuda* symbols directly.
+// Runtime API exports — vllm_xsched pattern.
+// ForceRegister warms up CUDA context with a dummy XQueue so that subsequent
+// XQueue creation during PyTorch init does not interfere with CUDA context.
 // ============================================================================
 
 #include <dlfcn.h>
+
+extern "C" __attribute__((visibility("default")))
+int cudaSetDevice(int device)
+{
+    ForceRegister();
+    using pfn_t = int (*)(int);
+    static pfn_t p_real = (pfn_t)dlsym(RTLD_NEXT, "cudaSetDevice");
+    return p_real ? p_real(device) : 1;
+}
+
+extern "C" __attribute__((visibility("default")))
+int cudaMalloc(void **ptr, size_t size)
+{
+    static bool first = true;
+    if (first) { ForceRegister(); first = false; }
+    using pfn_t = int (*)(void **, size_t);
+    static pfn_t p_real = (pfn_t)dlsym(RTLD_NEXT, "cudaMalloc");
+    return p_real ? p_real(ptr, size) : 1;
+}
+
+extern "C" __attribute__((visibility("default")))
+int cudaStreamCreate(unsigned long long *pStream)
+{
+    return (int)xsched::cuda::XStreamCreate((CUstream *)pStream, 0);
+}
 
 extern "C" __attribute__((visibility("default")))
 int cudaLaunchKernel(const void *func, unsigned int gdx, unsigned int gdy,
@@ -1133,10 +1176,4 @@ int cudaLaunchKernel(const void *func, unsigned int gdx, unsigned int gdy,
         return p_real(func, gdx, gdy, gdz, bdx, bdy, bdz, shm, args, stream);
     }
     return 1;
-}
-
-extern "C" __attribute__((visibility("default")))
-int cudaStreamCreate(unsigned long long *pStream)
-{
-    return (int)xsched::cuda::XStreamCreate((CUstream *)pStream, 0);
 }
