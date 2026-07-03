@@ -16,9 +16,9 @@ EXPORT_C_FUNC CUresult XGetProcAddress(const char *symbol, void **pfn, int cudaV
 EXPORT_C_FUNC CUresult XGetProcAddress_v2(const char *symbol, void **pfn, int cudaVersion, cuuint64_t flags, CUdriverProcAddressQueryResult *symbolStatus);
 
 // Runtime API forward declarations (defined at end of file)
-extern "C" int cudaLaunchKernel(const void *, unsigned int, unsigned int, unsigned int,
-                                unsigned int, unsigned int, unsigned int, unsigned int,
-                                void **, unsigned long long);
+struct x_dim3 { unsigned int x, y, z; };
+extern "C" int cudaLaunchKernel(const void *, x_dim3, x_dim3, void **, size_t,
+                                unsigned long long);
 extern "C" int cudaMalloc(void **, size_t);
 extern "C" int cudaSetDevice(int);
 
@@ -1162,17 +1162,18 @@ int cudaMalloc(void **ptr, size_t size)
 // Streams are tracked through the existing cuStreamCreate interception in
 // XStreamCreate (which is already hooked via LD_PRELOAD).
 
+// dim3 struct must match the CUDA Runtime API ABI — structs are passed
+// differently from scalars on x86-64. Using scalars in the function signature
+// would cause the parameters to be read from wrong registers.
+struct x_dim3 { unsigned int x, y, z; };
+
 extern "C" __attribute__((visibility("default")))
-int cudaLaunchKernel(const void *func, unsigned int gdx, unsigned int gdy,
-                     unsigned int gdz, unsigned int bdx, unsigned int bdy,
-                     unsigned int bdz, unsigned int shm, void **args,
-                     unsigned long long stream)
+int cudaLaunchKernel(const void *func, x_dim3 gridDim, x_dim3 blockDim,
+                     void **args, size_t sharedMem, unsigned long long stream)
 {
     CUstream cu_stream = (CUstream)stream;
 
     // Lookup only — XQueue is created by GetOrCreateXQueue in XLaunchKernel
-    // (Driver API path). Creating it here on the Runtime API path would spawn
-    // a LaunchWorker that interferes with CUDA context on the main thread.
     auto xq = xsched::preempt::HwQueueManager::GetXQueue(GetHwQueueHandle(cu_stream));
     if (xq) {
         static thread_local auto last_ready = std::chrono::steady_clock::time_point();
@@ -1190,10 +1191,8 @@ int cudaLaunchKernel(const void *func, unsigned int gdx, unsigned int gdy,
         }
     }
 
-    // Call real cudaLaunchKernel — internally it converts func to CUfunction
-    using pfn_t = int (*)(const void *, unsigned int, unsigned int, unsigned int,
-                          unsigned int, unsigned int, unsigned int, unsigned int,
-                          void **, unsigned long long);
+    // Call real cudaLaunchKernel with matching ABI
+    using pfn_t = int (*)(const void *, x_dim3, x_dim3, void **, size_t, unsigned long long);
     static pfn_t p_real = (pfn_t)dlsym(RTLD_NEXT, "cudaLaunchKernel");
-    return p_real ? p_real(func, gdx, gdy, gdz, bdx, bdy, bdz, shm, args, stream) : 1;
+    return p_real ? p_real(func, gridDim, blockDim, args, sharedMem, stream) : 1;
 }
