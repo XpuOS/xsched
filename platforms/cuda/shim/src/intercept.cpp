@@ -1173,7 +1173,17 @@ int cudaLaunchKernel(const void *func, x_dim3 gridDim, x_dim3 blockDim,
 {
     CUstream cu_stream = (CUstream)stream;
 
-    // Lookup only — XQueue is created by GetOrCreateXQueue in XLaunchKernel
+    // Create XQueue for default stream on first call.
+    if (cu_stream == nullptr) {
+        static bool xq_created = false;
+        if (!xq_created) {
+            xsched::preempt::XQueueManager::AutoCreate([&](HwQueueHandle *hwq) -> XResult {
+                return CudaQueueCreate(hwq, cu_stream);
+            });
+            xq_created = true;
+        }
+    }
+
     auto xq = xsched::preempt::HwQueueManager::GetXQueue(GetHwQueueHandle(cu_stream));
     if (xq) {
         static thread_local auto last_ready = std::chrono::steady_clock::time_point();
