@@ -140,50 +140,22 @@ CUresult XEventRecord(CUevent event, CUstream stream)
 {
     XDEBG("XEventRecord(event: %p, stream: %p)", event, stream);
     if (event == nullptr) return Driver::EventRecord(event, stream);
+    if (stream == nullptr) WaitBlockingXQueues();
 
-    CUresult result;
-    auto xevent = std::make_shared<CudaEventRecordCommand>(event);
-
-    if (stream == nullptr) {
-        WaitBlockingXQueues();
-        result = Driver::EventRecord(event, stream);
-    } else {
-        auto xq = HwQueueManager::GetXQueue(GetHwQueueHandle(stream));
-        if (xq == nullptr) {
-            result = Driver::EventRecord(event, stream);
-        } else {
-            xq->Submit(xevent);
-            result = CUDA_SUCCESS;
-        }
-    }
-
-    g_events.Add(event, xevent);
-    return result;
+    // Always dispatch directly — routing events through XQueue breaks
+    // cross-stream event sync (same bug as HIP, causes illegal memory access).
+    g_events.Add(event, std::make_shared<CudaEventRecordCommand>(event));
+    return Driver::EventRecord(event, stream);
 }
 
 CUresult XEventRecordWithFlags(CUevent event, CUstream stream, unsigned int flags)
 {
     XDEBG("XEventRecordWithFlags(event: %p, stream: %p, flags: %u)", event, stream, flags);
     if (event == nullptr) return Driver::EventRecordWithFlags(event, stream, flags);
+    if (stream == nullptr) WaitBlockingXQueues();
 
-    CUresult result;
-    auto xevent = std::make_shared<CudaEventRecordWithFlagsCommand>(event, flags);
-
-    if (stream == nullptr) {
-        WaitBlockingXQueues();
-        result = Driver::EventRecordWithFlags(event, stream, flags);
-    } else {
-        auto xq = HwQueueManager::GetXQueue(GetHwQueueHandle(stream));
-        if (xq == nullptr) {
-            result = Driver::EventRecordWithFlags(event, stream, flags);
-        } else {
-            xq->Submit(xevent);
-            result = CUDA_SUCCESS;
-        }
-    }
-
-    g_events.Add(event, xevent);
-    return result;
+    g_events.Add(event, std::make_shared<CudaEventRecordWithFlagsCommand>(event, flags));
+    return Driver::EventRecord(event, stream);
 }
 
 CUresult XEventSynchronize(CUevent event)
@@ -208,26 +180,13 @@ CUresult XStreamWaitEvent(CUstream stream, CUevent event, unsigned int flags)
     if (xevent == nullptr) return Driver::StreamWaitEvent(stream, event, flags);
 
     if (stream == nullptr) {
-        // sync a event on default stream
         WaitBlockingXQueues();
         xevent->Wait();
         return Driver::StreamWaitEvent(stream, event, flags);
     }
 
-    auto xq = HwQueueManager::GetXQueue(GetHwQueueHandle(stream));
-    if (xq == nullptr) {
-        // waiting stream is not an xqueue
-        if (xevent->GetXQueueHandle() == 0) {
-            // the event is not recorded on an xqueue
-            return Driver::StreamWaitEvent(stream, event, flags);
-        }
-        xevent->Wait();
-        return CUDA_SUCCESS;
-    }
-
-    auto cmd = std::make_shared<CudaEventWaitCommand>(xevent, flags);
-    xq->Submit(cmd);
-    return CUDA_SUCCESS;
+    xevent->Wait();
+    return Driver::StreamWaitEvent(stream, event, flags);
 }
 
 CUresult XEventDestroy(CUevent event)
