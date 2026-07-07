@@ -179,13 +179,8 @@ CUresult XStreamWaitEvent(CUstream stream, CUevent event, unsigned int flags)
     // the event is not recorded yet
     if (xevent == nullptr) return Driver::StreamWaitEvent(stream, event, flags);
 
-    if (stream == nullptr) {
-        WaitBlockingXQueues();
-        xevent->Wait();
-        return Driver::StreamWaitEvent(stream, event, flags);
-    }
-
-    xevent->Wait();
+    if (stream == nullptr) WaitBlockingXQueues();
+    xevent->Synchronize();
     return Driver::StreamWaitEvent(stream, event, flags);
 }
 
