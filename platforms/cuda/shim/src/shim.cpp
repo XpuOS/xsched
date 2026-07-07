@@ -52,9 +52,12 @@ CUresult XLaunchKernel(CUfunction f,
         WaitBlockingXQueues();
     }
 
-    auto xq = GetOrCreateXQueue(stream);
+    // Lookup only — XQueue is created by cudaLaunchKernel export (default
+    // stream) or XStreamCreate (non-default streams). Creating one here via
+    // GetOrCreateXQueue would spawn a LaunchWorker that interferes with CUDA
+    // context on the main thread.
+    auto xq = HwQueueManager::GetXQueue(GetHwQueueHandle(stream));
 
-    // Ready heartbeat
     if (xq) {
         static thread_local auto last_ready = std::chrono::steady_clock::time_point();
         auto now = std::chrono::steady_clock::now();
@@ -64,12 +67,10 @@ CUresult XLaunchKernel(CUfunction f,
                     xq->GetHandle(), std::chrono::system_clock::now()));
             last_ready = now;
         }
-    }
-
-    // Suspend gate
-    if (xq && xq->IsSuspended()) {
-        while (xq->IsSuspended()) {
-            std::this_thread::sleep_for(std::chrono::microseconds(100));
+        if (xq->IsSuspended()) {
+            while (xq->IsSuspended()) {
+                std::this_thread::sleep_for(std::chrono::microseconds(100));
+            }
         }
     }
 
@@ -89,7 +90,7 @@ CUresult XLaunchKernelEx(const CUlaunchConfig *config, CUfunction f, void **para
         WaitBlockingXQueues();
     }
 
-    auto xq = GetOrCreateXQueue(stream);
+    auto xq = HwQueueManager::GetXQueue(GetHwQueueHandle(stream));
 
     if (xq) {
         static thread_local auto last_ready = std::chrono::steady_clock::time_point();
