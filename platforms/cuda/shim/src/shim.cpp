@@ -249,8 +249,8 @@ CUresult XCtxSynchronize()
 CUresult XStreamCreate(CUstream *stream, unsigned int flags)
 {
     CUresult res = Driver::StreamCreate(stream, flags);
-    if (res != CUDA_SUCCESS) return res;
-    XQueueManager::AutoCreate([&](HwQueueHandle *hwq) { return CudaQueueCreate(hwq, *stream); });
+    // TEMP: AutoCreate disabled — reranker VLM model creates streams during
+    // inference, and LaunchWorker CtxSetCurrent interferes with active kernels.
     XDEBG("XStreamCreate(stream: %p, flags: 0x%x)", *stream, flags);
     return res;
 }
@@ -258,8 +258,7 @@ CUresult XStreamCreate(CUstream *stream, unsigned int flags)
 CUresult XStreamCreateWithPriority(CUstream *stream, unsigned int flags, int priority)
 {
     CUresult res = Driver::StreamCreateWithPriority(stream, flags, priority);
-    if (res != CUDA_SUCCESS) return res;
-    XQueueManager::AutoCreate([&](HwQueueHandle *hwq) { return CudaQueueCreate(hwq, *stream); });
+    // TEMP: AutoCreate disabled (same reason as XStreamCreate)
     XDEBG("XStreamCreateWithPriority(stream: %p, flags: 0x%x, priority: %d)",
           *stream, flags, priority);
     return res;
