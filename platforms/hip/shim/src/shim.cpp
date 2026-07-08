@@ -144,7 +144,9 @@ hipError_t XExtModuleLaunchKernel(hipFunction_t f, uint32_t gwx, uint32_t gwy, u
 
 void** XRegisterFatBinary(const void* data)
 {
-    KernelParamManager::Instance()->RegisterStaticCodeObject(data);
+    // Skip COMGR processing — our XLaunchKernel uses DirectLaunch
+    // (Driver::LaunchKernel) which lets the real HIP runtime handle
+    // kernel parameter translation internally.
     return Driver::RegisterFatBinary(data);
 }
 
