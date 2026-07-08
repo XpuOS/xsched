@@ -1,6 +1,7 @@
 #include <list>
 #include <thread>
 #include <chrono>
+#include <atomic>
 
 #include "xsched/xqueue.h"
 #include "xsched/utils/map.h"
@@ -20,6 +21,11 @@ namespace xsched::cuda
 {
 
 static utils::ObjectMap<CUevent, std::shared_ptr<CudaEventRecordCommand>> g_events;
+
+// Init-phase gate: XQueue creation is allowed only before the first kernel
+// launch. After init, dynamic stream creation during inference must not spawn
+// LaunchWorkers (they interfere with active CUDA kernels).
+static std::atomic<bool> cuda_init_done{false};
 
 void WaitBlockingXQueues()
 {
@@ -52,10 +58,11 @@ CUresult XLaunchKernel(CUfunction f,
         WaitBlockingXQueues();
     }
 
-    // Lookup only — XQueue is created by cudaLaunchKernel export (default
-    // stream) or XStreamCreate (non-default streams). Creating one here via
-    // GetOrCreateXQueue would spawn a LaunchWorker that interferes with CUDA
-    // context on the main thread.
+    // Mark init phase complete — first kernel launch has occurred.
+    // After this, XStreamCreate stops creating XQueues to avoid
+    // LaunchWorker interference during inference.
+    if (!cuda_init_done.load()) cuda_init_done.store(true);
+
     auto xq = HwQueueManager::GetXQueue(GetHwQueueHandle(stream));
 
     if (xq) {
@@ -89,6 +96,8 @@ CUresult XLaunchKernelEx(const CUlaunchConfig *config, CUfunction f, void **para
     if (stream == nullptr) {
         WaitBlockingXQueues();
     }
+
+    if (!cuda_init_done.load()) cuda_init_done.store(true);
 
     auto xq = HwQueueManager::GetXQueue(GetHwQueueHandle(stream));
 
@@ -249,8 +258,13 @@ CUresult XCtxSynchronize()
 CUresult XStreamCreate(CUstream *stream, unsigned int flags)
 {
     CUresult res = Driver::StreamCreate(stream, flags);
-    // TEMP: AutoCreate disabled — reranker VLM model creates streams during
-    // inference, and LaunchWorker CtxSetCurrent interferes with active kernels.
+    if (res != CUDA_SUCCESS) return res;
+    // Only create XQueue during init phase (before first kernel launch).
+    // After init, dynamic stream creation during inference must not spawn
+    // LaunchWorkers — they interfere with active CUDA kernels.
+    if (!cuda_init_done.load()) {
+        XQueueManager::AutoCreate([&](HwQueueHandle *hwq) { return CudaQueueCreate(hwq, *stream); });
+    }
     XDEBG("XStreamCreate(stream: %p, flags: 0x%x)", *stream, flags);
     return res;
 }
@@ -258,7 +272,10 @@ CUresult XStreamCreate(CUstream *stream, unsigned int flags)
 CUresult XStreamCreateWithPriority(CUstream *stream, unsigned int flags, int priority)
 {
     CUresult res = Driver::StreamCreateWithPriority(stream, flags, priority);
-    // TEMP: AutoCreate disabled (same reason as XStreamCreate)
+    if (res != CUDA_SUCCESS) return res;
+    if (!cuda_init_done.load()) {
+        XQueueManager::AutoCreate([&](HwQueueHandle *hwq) { return CudaQueueCreate(hwq, *stream); });
+    }
     XDEBG("XStreamCreateWithPriority(stream: %p, flags: 0x%x, priority: %d)",
           *stream, flags, priority);
     return res;

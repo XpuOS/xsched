@@ -62,7 +62,9 @@ void CudaQueueLv1::Synchronize()
 
 void CudaQueueLv1::OnXQueueCreate()
 {
-    CUDA_ASSERT(Driver::CtxSetCurrent(context_));
+    // No-op: XQueue is for tracking only, kernels go via DirectLaunch.
+    // CtxSetCurrent on the LaunchWorker thread would interfere with
+    // active CUDA operations on the main thread.
 }
 
 CUresult CudaQueueLv1::DirectLaunch(std::shared_ptr<CudaKernelCommand> kernel, CUstream stream)
