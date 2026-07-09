@@ -13,7 +13,7 @@ void HighestPriorityFirstPolicy::Sched(const Status &status)
     std::map<XDevice, Priority> running_prio_max;
     for (auto &status : status.xqueue_status) {
         if (!status.second->ready) continue;
-        if (now - status.second->ready_time > std::chrono::seconds(5)) continue;
+        if (now - status.second->ready_time > std::chrono::seconds(10)) continue;
         XQueueHandle handle = status.second->handle;
         Priority priority = GetPriority(handle);
 
@@ -47,7 +47,7 @@ void HighestPriorityFirstPolicy::Sched(const Status &status)
 
         // Stale ready → suspend it
         if (status.second->ready &&
-            now - status.second->ready_time > std::chrono::seconds(5)) {
+            now - status.second->ready_time > std::chrono::seconds(10)) {
             this->Suspend(handle);
             continue;
         }

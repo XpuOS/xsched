@@ -10,7 +10,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 LONG_PROMPT = "History: " + "verify " * 400 + ". Question: Explain quantum physics?"
 # 短 prompt: 约 20 token，KV cache 压力小
 SHORT_PROMPT = "Question: What is 2+2? Answer briefly."
-GEN_LEN = 256
+GEN_LEN = 1024
 
 
 class BenchmarkClient:
@@ -187,8 +187,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, required=True)
     parser.add_argument("--port", type=int, default=8001)
-    parser.add_argument("--num", type=int, default=10)
-    parser.add_argument("--concurrency", type=int, default=4)
+    parser.add_argument("--num", type=int, default=32)
+    parser.add_argument("--concurrency", type=int, default=8)
     parser.add_argument("--priority", type=int, default=None,
                         help="单优先级模式: 所有请求使用此 priority")
     parser.add_argument("--combined", action="store_true",

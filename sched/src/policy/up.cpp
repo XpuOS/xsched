@@ -138,7 +138,7 @@ void UtilizationPartitionPolicy::SwitchToAny(const Status &status)
         }
 
         // Stale ready → skip
-        if (now - xqueue.second->ready_time > std::chrono::seconds(5)) {
+        if (now - xqueue.second->ready_time > std::chrono::seconds(10)) {
             this->Suspend(xqueue.first);
             continue;
         }
