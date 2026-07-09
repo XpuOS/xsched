@@ -1,0 +1,8 @@
+add_subdirectory(assert)
+add_subdirectory(config)
+add_subdirectory(container)
+add_subdirectory(interprocess)
+add_subdirectory(intrusive)
+add_subdirectory(move)
+add_subdirectory(predef)
+add_subdirectory(winapi)

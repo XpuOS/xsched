@@ -1,0 +1,6 @@
+[submodule "3rdparty/boost-ipc"]
+	path = 3rdparty/boost-ipc
+	url = https://github.com/XpuOS/thirdparty-boost-ipc.git
+[submodule "3rdparty/gtest"]
+	path = 3rdparty/gtest
+	url = https://github.com/XpuOS/thirdparty-googletest.git

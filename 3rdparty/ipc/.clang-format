@@ -1,0 +1,17 @@
+Language: Cpp
+BasedOnStyle: WebKit
+
+# Comment
+AlignTrailingComments: true
+ReflowComments: true
+
+# Class
+AllowAllParametersOfDeclarationOnNextLine: true
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+
+# Single Line
+AllowShortBlocksOnASingleLine: true
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: All
+AllowShortIfStatementsOnASingleLine: true
+AllowShortLoopsOnASingleLine: true
