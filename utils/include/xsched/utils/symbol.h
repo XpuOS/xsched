@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vector>
 #include <string>
 #include <unordered_map>
 
@@ -11,11 +12,17 @@
 
 #include <dlfcn.h>
 
+#ifndef RTLD_DEEPBIND
+    #define XSCHED_RTLD_FLAGS (RTLD_NOW | RTLD_LOCAL)
+#else
+    #define XSCHED_RTLD_FLAGS (RTLD_NOW | RTLD_LOCAL | RTLD_DEEPBIND)
+#endif
+
 inline void *GetRealDlSym()
 {
     Dl_info info;
     XASSERT(dladdr((void *)dlvsym, &info) != 0, "dladdr() failed to get info of dlvsym");
-    void *handle = dlopen(info.dli_fname, RTLD_NOW | RTLD_LOCAL);
+    void *handle = dlopen(info.dli_fname, XSCHED_RTLD_FLAGS);
     if (handle == nullptr) {
         XERRO("fail to dlopen %s for dlsym", info.dli_fname);
         return nullptr;
@@ -55,40 +62,53 @@ inline void *RealDlSym(void *handle, const char *name)
 }
 
 #define DLSYM_INTERCEPT_ENTRY(symbol) {#symbol, (void *)symbol}
-#define DEFINE_DLSYM_INTERCEPT(intercept_symbol_map)                               \
-    EXPORT_C_FUNC void *dlsym(void *handle, const char *name)                      \
-    {                                                                              \
-        auto it = intercept_symbol_map.find(name);                                 \
-        if (it != intercept_symbol_map.end()) {                                    \
-            XDEBG("dlsym symbol replaced: %s -> %p", name, it->second);            \
-            return it->second;                                                     \
-        }                                                                          \
-        XDEBG("dlsym symbol ignored: %s", name);                                   \
-        return RealDlSym(handle, name);                                            \
+#define DLSYM_INTERCEPT_LIB(intercept_libs, ...) \
+    const static std::vector<std::string> intercept_libs = {__VA_ARGS__};
+#define DEFINE_DLSYM_INTERCEPT(intercept_symbol_map, intercept_libs) \
+    EXPORT_C_FUNC void *dlsym(void *handle, const char *name) \
+    { \
+        Dl_info info; \
+        void *caller = __builtin_return_address(0); \
+        if (caller != nullptr && dladdr(caller, &info) != 0 && info.dli_fname != nullptr) { \
+            const std::string path(info.dli_fname); \
+            for (const std::string &lib : intercept_libs) { \
+                if (path.find(lib) != std::string::npos) { \
+                    XDEBG("dlsym symbol ignored: %s required by %s", name, info.dli_fname); \
+                    return RealDlSym(handle, name); \
+                } \
+            } \
+        } \
+        auto it = intercept_symbol_map.find(name); \
+        if (it != intercept_symbol_map.end()) { \
+            XDEBG("dlsym symbol replaced: %s -> %p", name, it->second); \
+            return it->second; \
+        } \
+        XDEBG("dlsym symbol ignored: %s", name); \
+        return RealDlSym(handle, name); \
     }
 
-#define DEFINE_GET_SYMBOL_FUNC(func, env_name, search_names, search_dirs)          \
-    static void *func(const char *symbol_name)                                     \
-    {                                                                              \
-        static const std::vector<std::string> names = search_names;                \
-        static const std::vector<std::string> dirs = search_dirs;                  \
-        static const std::string dll_path = FindLibrary(env_name, names, dirs);    \
-        static void *dll_handle = dlopen(dll_path.c_str(), RTLD_NOW | RTLD_LOCAL); \
-        XASSERT(dll_handle != nullptr, "fail to dlopen %s", dll_path.c_str());     \
-        void *symbol = RealDlSym(dll_handle, symbol_name);                         \
-        XASSERT(symbol != nullptr, "fail to get symbol %s", symbol_name);          \
-        return symbol;                                                             \
+#define DEFINE_GET_SYMBOL_FUNC(func, env_name, search_names, search_dirs)       \
+    static void *func(const char *symbol_name)                                  \
+    {                                                                           \
+        static const std::vector<std::string> names = search_names;             \
+        static const std::vector<std::string> dirs = search_dirs;               \
+        static const std::string dll_path = FindLibrary(env_name, names, dirs); \
+        static void *dll_handle = dlopen(dll_path.c_str(), XSCHED_RTLD_FLAGS);  \
+        XASSERT(dll_handle != nullptr, "fail to dlopen %s", dll_path.c_str());  \
+        void *symbol = RealDlSym(dll_handle, symbol_name);                      \
+        XASSERT(symbol != nullptr, "fail to get symbol %s", symbol_name);       \
+        return symbol;                                                          \
     }
 
-#define DEFINE_CHECK_SYMBOL_FUNC(func, env_name, search_names, search_dirs)        \
-    static bool func(const char *symbol_name)                                      \
-    {                                                                              \
-        static const std::vector<std::string> names = search_names;                \
-        static const std::vector<std::string> dirs = search_dirs;                  \
-        static const std::string dll_path = FindLibrary(env_name, names, dirs);    \
-        static void *dll_handle = dlopen(dll_path.c_str(), RTLD_NOW | RTLD_LOCAL); \
-        XASSERT(dll_handle != nullptr, "fail to dlopen %s", dll_path.c_str());     \
-        void *symbol = RealDlSym(dll_handle, symbol_name);                         \
+#define DEFINE_CHECK_SYMBOL_FUNC(func, env_name, search_names, search_dirs)     \
+    static bool func(const char *symbol_name)                                   \
+    {                                                                           \
+        static const std::vector<std::string> names = search_names;             \
+        static const std::vector<std::string> dirs = search_dirs;               \
+        static const std::string dll_path = FindLibrary(env_name, names, dirs); \
+        static void *dll_handle = dlopen(dll_path.c_str(), XSCHED_RTLD_FLAGS);  \
+        XASSERT(dll_handle != nullptr, "fail to dlopen %s", dll_path.c_str());  \
+        void *symbol = RealDlSym(dll_handle, symbol_name);                      \
         return symbol != nullptr; \
     }
 

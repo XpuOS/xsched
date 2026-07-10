@@ -1,11 +1,11 @@
 #pragma once
 
+#include <set>
+#include <map>
+#include <list>
 #include <mutex>
 #include <memory>
 #include <vector>
-#include <chrono>
-#include <unordered_set>
-#include <unordered_map>
 #include <condition_variable>
 
 #include "xsched/types.h"
@@ -36,14 +36,16 @@ struct ProcessInfo
 struct ProcessStatus
 {
     ProcessInfo info;
-    std::unordered_set<XQueueHandle> running_xqueues;
-    std::unordered_set<XQueueHandle> suspended_xqueues;
+    std::set<XQueueHandle> running_xqueues;
+    std::set<XQueueHandle> suspended_xqueues;
+    std::set<XQueueHandle> xqueues_to_resume;
+    std::set<XQueueHandle> xqueues_to_suspend;
 };
 
 struct Status
 {
-    std::unordered_map<XQueueHandle, std::unique_ptr<XQueueStatus>> xqueue_status;
-    std::unordered_map<PID, std::unique_ptr<ProcessStatus>> process_status;
+    std::map<XQueueHandle, std::unique_ptr<XQueueStatus>> xqueue_status;
+    std::map<PID, std::unique_ptr<ProcessStatus>> process_status;
 };
 
 class StatusQuery

@@ -1,7 +1,26 @@
 #pragma once
 
 #include <string>
+#include <sstream>
+#include <cctype>
 #include <cstddef>
+#include <cstdint>
+#include <algorithm>
+
+inline std::string ToHex(uint64_t x)
+{
+    std::stringstream ss;
+    ss << "0x" << std::hex << x;
+    return ss.str();
+}
+
+inline std::string ToLower(const std::string &str)
+{
+    std::string lower = str;
+    std::transform(lower.begin(), lower.end(), lower.begin(),
+        [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    return lower;
+}
 
 /// @brief Shrink a string to a given max size. Shrink from the middle.
 /// The shrinked string will be in the form of "prefix...suffix".

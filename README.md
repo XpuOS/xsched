@@ -11,6 +11,8 @@
 
 ## Latest News
 
+- [2026/06] XSched supports CUDA Graph (compatible with TSG-based Level-3 preemption).
+- [2026/06] XSched adds support for CoreX ([Iluvatar](https://www.iluvatar.com/)) GPUs.
 - [2025/08] We migrated XSched to Windows and completed validation on CUDA, LevelZero, and OpenCL.
 - [2025/07] We integrated XSched into [llama.cpp](integration/llama.cpp) and [NVIDIA Triton](integration/triton) to enable priority-based scheduling between multiple inference requests.
 - [2025/07] We presented our XSched paper at [OSDI 2025](https://www.usenix.org/conference/osdi25/presentation/shen-weihang) and prepared several interesting demo videos: [Ascend910](https://github.com/user-attachments/assets/bc668f4d-33d9-4492-9900-8c3b10fdd1af), [GV100](https://github.com/user-attachments/assets/dffb821b-92e2-44c5-bd59-a6946b0c4d02), [Least-Laxity-First](https://github.com/user-attachments/assets/885886e1-1920-4fb1-aa2d-50f4f88cf660), and [Active-Window-First](https://github.com/user-attachments/assets/877aeb5f-35b6-4bc1-b553-d76525a8adb3).
@@ -25,7 +27,7 @@ XSched eliminates video stuttering in AI video conference applications on AI PCs
 
 - Hardware: [Intel Core Ultra NPU](https://www.intel.com/content/www/us/en/products/details/processors/core-ultra.html) (i.e., NPU 3720)
 - Workloads: fake-background-webcam ([LFBW](https://github.com/fangfufu/Linux-Fake-Background-Webcam)) and speech-to-text ([whisper.cpp](https://github.com/ggml-org/whisper.cpp))
-- Scheduling policy: a varient of [least-laxity-first](https://ieeexplore.ieee.org/document/726348) policy
+- Scheduling policy: a variant of [least-laxity-first](https://ieeexplore.ieee.org/document/726348) policy
 
 For more details, please see the 2nd case study in our [paper](docs/xsched-osdi25.pdf).
 
@@ -89,6 +91,14 @@ XSched is a preemptive scheduling framework for diverse XPUs (referring to vario
     <td align="center">🔘</td>
   </tr>
   <tr>
+    <td align="center" rowspan="1"><a href="platforms/corex">CoreX</a></td>
+    <td align="center">CoreX GPUs</td>
+    <td align="center" rowspan="1">✅</td>
+    <td align="center" rowspan="1">✅</td>
+    <td align="center">🔘</td>
+    <td align="center">❌</td>
+  </tr>
+  <tr>
     <td align="center" rowspan="1"><a href="platforms/hip">HIP</a></td>
     <td align="center">AMD GPUs</td>
     <td align="center" rowspan="1">✅</td>
@@ -128,7 +138,7 @@ XSched is a preemptive scheduling framework for diverse XPUs (referring to vario
     <td align="center">🔘</td>
   </tr>
   <tr>
-    <td align="center">Xillinx FPGAs</td>
+    <td align="center">Xilinx FPGAs</td>
     <td align="center">🔘</td>
     <td align="center">❌</td>
   </tr>
@@ -186,10 +196,10 @@ make
 make INSTALL_PATH=/path/to/install
 
 # build XSched along with platform-specific components (HAL, Shim, etc.)
-make cuda # or hip, levelzero, opencl, ascend, cudla, vpi
+make cuda # or corex, hip, levelzero, opencl, ascend, cudla, vpi
 # or specify PLATFORM
-make PLATFORM = cuda
-make PLATFORM = "cuda levelzero opencl" # build multiple platforms at once
+make PLATFORM=cuda
+make PLATFORM="cuda levelzero opencl" # build multiple platforms at once
 ```
 
 
@@ -219,7 +229,7 @@ Check out our [example list](examples/README.md) for more advanced use cases.
 
 <img src="/docs/img/xsched-framework.png" alt="XSched framework" width="600" />
 
-XSched consists of four key components: XPU shim (XShim), XPU task preemption module (XPreempt), XPU hardware adapter layer (XAL), and an XScheduler. XShim, XPreempt, and XAL are three dynamically linked libraries that are preloaded into each XPU application process, while XScheduler runs as a centric system service daemon.
+XSched consists of four key components: XPU shim (XShim), XPU task preemption module (XPreempt), XPU hardware adapter layer (XAL), and an XScheduler. XShim, XPreempt, and XAL are dynamically linked libraries preloaded into each XPU application process, while XScheduler runs as a central scheduling service.
 
 - **XShim:** named as `shim` in the code, intercepts XPU driver API calls and redirects commands to the XQueue ①, allowing applications to run on XSched without modifications (transparency).
 - **[XPreempt](preempt):** named as `preempt` in the code, implements XQueue interfaces based on the multi-level hardware model ②. Contains an [agent](preempt/src/sched/agent.cpp) that watches the state of XQueue (e.g., ready or idle) and generates scheduling events to notify the XScheduler via IPC ③. Also responsible for applying the scheduling operations (e.g., suspend or resume an XQueue) received from the XScheduler ⑤.
@@ -268,7 +278,7 @@ If you use XSched for your research, please cite our [paper](docs/xsched-osdi25.
 }
 ```
 
-The artifacts of XSched is published on [Github](https://github.com/XpuOS/xsched-artifacts) and [Zenodo](https://doi.org/10.5281/zenodo.15327992).
+The artifacts of XSched are published on [Github](https://github.com/XpuOS/xsched-artifacts) and [Zenodo](https://doi.org/10.5281/zenodo.15327992).
 
 ## Contact Us
 

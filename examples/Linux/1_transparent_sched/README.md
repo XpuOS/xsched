@@ -27,7 +27,7 @@ make hip INSTALL_PATH=<install_path>
 ## Build the Example
 
 ```bash
-cd xsched/examples/1_transparency
+cd xsched/examples/Linux/1_transparent_sched
 # cuda runtime and NVCC are required
 make cuda 
 # hip runtime and HIPCC are required
@@ -126,12 +126,12 @@ export XSCHED_AUTO_XQUEUE_THRESHOLD=16
 export XSCHED_AUTO_XQUEUE_BATCH_SIZE=8
 
 # Intercept the CUDA calls using the shim library (libcuda.so -> libshimcuda.so).
-# For cuda, libshimcuda.so implements all the symbols in libcuda.so, and we set
+# For CUDA, libshimcuda.so implements the CUDA symbols in libcuda.so, and we set
 # LD_LIBRARY_PATH to the path of the XSched library to intercept the CUDA calls.
 # Replace <install_path> with the path of the XSched installation directory.
 export LD_LIBRARY_PATH=<install_path>/lib:$LD_LIBRARY_PATH
-# For other platforms like opencl, we may use LD_PRELOAD to intercept the calls.
-export LD_PRELOAD=<install_path>/lib/libOpenCL.so:$LD_PRELOAD
+# For other platforms like opencl, use the platform shim with LD_PRELOAD to intercept the calls.
+# Example: export LD_PRELOAD=<install_path>/lib/libshimopencl.so:$LD_PRELOAD
 
 # run the app
 ./app
@@ -175,6 +175,8 @@ Task 7 completed in 172 ms
 ```
 
 The high priority app achieves a similar performance as the standalone execution, while the low priority app is slowed down.
+
+More configuration options and scheduling policies are available, please refer to the [protocol doc](../../../protocol/README.md) for more details.
 
 ## XCLI
 

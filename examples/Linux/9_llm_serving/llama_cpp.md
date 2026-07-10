@@ -35,13 +35,15 @@ make cuda
 ```
 
 Then, build the modified Llama.cpp Server.
+In XSched, a CUDA Graph is treated as a single command and therefore requires Level-3 TSG-based preemption, which is unsuitable for fine-grained scheduling control within a single process (see [vllm.md](vllm.md) for more details).
+Consequently, in this example, we disable CUDA Graphs in Llama.cpp.
 
 ```bash
 cd /
 git clone [git@github.com:XpuOS/llama.cpp.git](https://github.com/XpuOS/llama.cpp.git)
 cd llama.cpp
 git checkout -b xsched origin/xsched
-cmake -B build -DGGML_CUDA=on -DCMAKE_PREFIX_PATH=/xsched/output/lib
+cmake -B build -DGGML_CUDA=on -DGGML_CUDA_GRAPHS=OFF -DGGML_CUDA_NO_VMM=ON -DCMAKE_PREFIX_PATH=/xsched/output/lib
 cmake --build build -- -j$(nproc)
 ```
 

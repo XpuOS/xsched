@@ -1,9 +1,9 @@
 # Compiler and flags
 NVCC = nvcc
-NVCC_FLAGS = -O3 -std=c++11
+NVCC_FLAGS = -O3 -std=c++17
 
 HIPCC = hipcc
-HIPCC_FLAGS = -O3 -std=c++11
+HIPCC_FLAGS = -O3 -std=c++17
 
 # Target executable
 TARGET = app

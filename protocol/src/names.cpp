@@ -1,4 +1,6 @@
 #include <map>
+
+#include "xsched/utils/str.h"
 #include "xsched/protocol/def.h"
 #include "xsched/protocol/names.h"
 
@@ -57,29 +59,31 @@ static const std::map<XPolicyType, std::string> &PolicyNames() {
         { kPolicyUnknown                          , XSCHED_UNKNOWN_NAME     },
         { kPolicyHighestPriorityFirst             , XSCHED_POLICY_NAME_HPF  },
         { kPolicyHeterogeneousHighestPriorityFirst, XSCHED_POLICY_NAME_HHPF },
+        { kPolicyCPUHighestPriorityFirst          , XSCHED_POLICY_NAME_CHPF },
         { kPolicyUtilizationPartition             , XSCHED_POLICY_NAME_UP   },
         { kPolicyProcessUtilizationPartition      , XSCHED_POLICY_NAME_PUP  },
+        { kPolicyStrictProcessUtilizationPartition, XSCHED_POLICY_NAME_SPUP },
         { kPolicyKEarliestDeadlineFirst           , XSCHED_POLICY_NAME_KEDF },
         { kPolicyLaxity                           , XSCHED_POLICY_NAME_LAX  },
         { kPolicyActiveWindowFirst                , XSCHED_POLICY_NAME_AWF  },
-        { kPolicyCPUHighestPriorityFirst          , XSCHED_POLICY_NAME_CHPF },
+        { kPolicyCompletelyFairScheduler          , XSCHED_POLICY_NAME_CFS  },
+        { kPolicyMultiLevelFeedbackQueue          , XSCHED_POLICY_NAME_MLFQ },
         // NEW_POLICY: New policy type names go here.
-        { kPolicyCompletelyFairScheduler          , XSCHED_POLICY_NAME_CFS},
-        { kPolicyMultiLevelFeedbackQueue          , XSCHED_POLICY_NAME_MLFQ},
     };
     return kPolicyNames;
 }
 
 #define SEARCH_NAME(map, key) \
     static const std::string unk = XSCHED_UNKNOWN_NAME; \
-    auto it = map.find(key);                  \
-    if (it != map.end()) return it->second;   \
+    auto it = map.find(key); \
+    if (it != map.end()) return it->second; \
     return unk;
 
 #define SEARCH_KEY(map, val, unk) \
+    const std::string lower_val = ToLower(val); \
     for (auto it = map.begin(); it != map.end(); ++it) { \
-        if (it->second == val) return it->first;         \
-    }                                                    \
+        if (ToLower(it->second) == lower_val) return it->first; \
+    } \
     return unk;
 
 XPlatform GetPlatform(const std::string &name)

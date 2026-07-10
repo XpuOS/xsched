@@ -10,7 +10,7 @@ SHIM_SOFTLINK		= ON
 # BUILD_TEST		= ON / OFF : build test cases
 BUILD_TEST			= OFF
 
-# PLATFORM			= NONE / ascend / cuda / cudla / hip / levelzero / opencl / vpi / template
+# PLATFORM			= NONE / ascend / corex / cuda / cudla / hip / levelzero / opencl / vpi / template
 PLATFORM			= NONE
 
 ifeq (${OS}, Windows_NT)
@@ -60,6 +60,11 @@ clean:
 ascend:
 	${MAKE} clean
 	${MAKE} PLATFORM=ascend
+
+.PHONY: corex
+corex:
+	${MAKE} clean
+	${MAKE} PLATFORM=corex
 
 .PHONY: cuda
 cuda:

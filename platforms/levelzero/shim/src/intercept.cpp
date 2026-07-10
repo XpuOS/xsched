@@ -1434,4 +1434,7 @@ static const std::unordered_map<std::string, void *> intercept_symbol_map = {
     DLSYM_INTERCEPT_ENTRY(zelGetTracerApiProcAddrTable),
 };
 
-DEFINE_DLSYM_INTERCEPT(intercept_symbol_map);
+DLSYM_INTERCEPT_LIB(intercept_libs,
+    "libze_loader.so"
+);
+DEFINE_DLSYM_INTERCEPT(intercept_symbol_map, intercept_libs);

@@ -9,6 +9,7 @@
 #include "xsched/utils/common.h"
 #include "xsched/sched/protocol/hint.h"
 #include "xsched/sched/protocol/status.h"
+#include "xsched/sched/protocol/operation.h"
 
 namespace xsched::sched
 {
@@ -26,6 +27,7 @@ enum EventType
     kEventXQueueConfigUpdate = 8,
     kEventXQueueQuery        = 9,
     kEventXQueueQueryAll     = 10,
+    kEventOperationComplete  = 11,
 };
 
 struct EventMeta
@@ -44,6 +46,7 @@ public:
     virtual const void *Data() const = 0;
     virtual size_t      Size() const = 0;
     virtual EventType   Type() const = 0;
+    /// @brief Get the PID of the process who generates the event.
     virtual PID         Pid()  const = 0;
 
     static std::shared_ptr<const Event> CopyConstructor(const void *data);
@@ -391,6 +394,39 @@ private:
     {
         EventMeta    meta;
         StatusQuery *query_data;
+    };
+
+    EventData data_;
+};
+
+/// @brief Notify the completion of an operation.
+/// @note The event is sent after an operation is actually applied to XQueues,
+/// i.e., after executed in preempt::SchedExecutor::Execute().
+class OperationCompleteEvent : public Event
+{
+public:
+    OperationCompleteEvent(OperationId op_id):
+        data_{
+            .meta = {
+                .type = kEventOperationComplete,
+                .pid = GetProcessId()
+            },
+            .op_id = op_id
+        } {}
+    OperationCompleteEvent(const void *data): data_(*(const EventData *)data) {}
+    virtual ~OperationCompleteEvent() = default;
+    virtual const void *Data() const override { return (void *)&data_; }
+    virtual size_t      Size() const override { return sizeof(data_); }
+    virtual EventType   Type() const override { return kEventOperationComplete; }
+    virtual PID         Pid()  const override { return data_.meta.pid; }
+
+    OperationId OpId() const { return data_.op_id; }     
+
+private:
+    struct EventData
+    {
+        EventMeta   meta;
+        OperationId op_id;
     };
 
     EventData data_;

@@ -3,6 +3,7 @@
 #include "xsched/preempt/xqueue/xqueue.h"
 #include "xsched/preempt/xqueue/async_xqueue.h"
 
+using namespace xsched::utils;
 using namespace xsched::sched;
 using namespace xsched::preempt;
 
@@ -95,6 +96,15 @@ void AsyncXQueue::Suspend(int64_t flags)
     // Will not suspend if it is already suspended.
     bool expected = false;
     if (!suspended_.compare_exchange_strong(expected, true)) return;
+
+    if (flags & kQueueSuspendFlagWaitIdle) {
+        // Wait for all HwCommands to be completed,
+        // and the XQueue becomes idle before suspending.
+        cmd_buf_->WaitForNextIdle();
+    } else if (flags & kQueueSuspendFlagWaitAll) {
+        // Wait for all HwCommands to be completed before suspending.
+        this->WaitAll();
+    }
 
     launch_worker_->Pause();
     if (level_ >= kPreemptLevelDeactivate) kHwQueue->Deactivate();

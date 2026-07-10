@@ -46,9 +46,9 @@ Server::~Server()
 
 void Server::Run()
 {
-    std::string server_name(XSCHED_SERVER_CHANNEL_NAME);
-    recv_chan_ = std::make_unique<ipc::Node>(server_name.c_str(), ipc::NodeType::kReceiver);
-    self_chan_ = std::make_unique<ipc::Node>(server_name.c_str(), ipc::NodeType::kSender);
+    ipc::ChannelKey server_chn_key = (ipc::ChannelKey)XSCHED_SERVER_CHANNEL_KEY;
+    recv_chan_ = std::make_unique<ipc::Node>(server_chn_key, ipc::NodeType::kReceiver);
+    self_chan_ = std::make_unique<ipc::Node>(server_chn_key, ipc::NodeType::kSender);
 
     scheduler_->SetExecutor(std::bind(&Server::Execute, this, std::placeholders::_1));
     scheduler_->Run();
@@ -84,6 +84,9 @@ void Server::Stop()
         // recv_chan_ could be set to nullptr here by RecvWorker()
         recv_chan_->Remove();
     }
+
+    for (auto &it : client_chans_) it.second->Remove();
+    client_chans_.clear();
 }
 
 void Server::RecvWorker()
@@ -94,7 +97,7 @@ void Server::RecvWorker()
         std::shared_ptr<const Event> e = nullptr;
         auto data = recv_chan_->Receive();
         if(UNLIKELY(data == nullptr)) {
-            XDEBG("channel %s receive fail, exiting RecvWorker thread", recv_chan_->getName().c_str());
+            XDEBG("recv_chan_ receive failed, exiting RecvWorker thread");
             e = std::make_shared<SchedulerTerminateEvent>();
         } else {
             e = Event::CopyConstructor(data->Data());
@@ -116,11 +119,18 @@ void Server::RecvWorker()
         case kEventProcessCreate:
         {
             PID client_pid = e->Pid();
-            this->ProcessTerminate(client_pid); // to ensure no duplicate client process
-            std::string client_name = std::string(XSCHED_CLIENT_CHANNEL_PREFIX)
-                                    + std::to_string(client_pid);
-            auto client_chan = std::make_shared<ipc::Node>(client_name.c_str(), ipc::NodeType::kSender);
-            XINFO("client process " FMT_PID " connected", client_pid);
+
+            // ensure no duplicate client process
+            auto destroy_event = std::make_shared<ProcessDestroyEvent>(client_pid);
+            scheduler_->RecvEvent(destroy_event);
+            this->CleanUpProcess(client_pid);
+
+            auto process_create_event = std::dynamic_pointer_cast<const ProcessCreateEvent>(e);
+            XASSERT(process_create_event != nullptr, "event type not match");
+            ipc::ChannelKey client_chn_key = (ipc::ChannelKey)client_pid;
+            auto client_chan = std::make_shared<ipc::Node>(client_chn_key, ipc::NodeType::kSender);
+            XINFO("client process " FMT_PID " connected, cmdline: %s",
+                  client_pid, process_create_event->Cmdline());
 
             chan_mtx_.lock();
             client_chans_[client_pid] = client_chan;
@@ -160,6 +170,7 @@ void Server::ProcessTerminate(PID pid)
     auto e = std::make_shared<ProcessDestroyEvent>(pid);
     scheduler_->RecvEvent(e);
     this->CleanUpProcess(pid);
+    ipc::Channel::Remove((ipc::ChannelKey)pid);
 }
 
 void Server::SendHint(std::shared_ptr<const sched::Hint> hint)
@@ -364,7 +375,8 @@ void Server::PostXQueueConfig(const httplib::Request &req, httplib::Response &re
         return;
     }
 
-    Execute(std::make_shared<ConfigOperation>(status.pid, handle, level, threshold, batch_size));
+    Execute(std::make_shared<ConfigOperation>(scheduler_->NextOperationId(status.pid),
+        status.pid, handle, level, threshold, batch_size));
     res.set_content("{\"info\": \"success\"}", "application/json");
 }
 

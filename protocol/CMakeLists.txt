@@ -16,3 +16,7 @@ target_compile_options(protocol PRIVATE
     -Wextra
     -Werror
 )
+
+target_link_libraries(protocol PRIVATE
+    utils
+)

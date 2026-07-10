@@ -1,6 +1,7 @@
 #pragma once
 
 #include <mutex>
+#include <memory>
 #include <unordered_map>
 
 #include "xsched/types.h"
@@ -38,9 +39,6 @@ public:
     /// @return Whether the synchronization is supported and has been enabled successfully.
     virtual bool EnableSynchronization() = 0;
 
-    /// @brief Wait until the HwCommand actually become "completed", i.e., executed successfully.
-    virtual void Wait() final override;
-
     /// @brief A callback function that will be called before launching the HwCommand on the
     /// HwQueue. Can do synchronization here. For example, a cuStreamWaitEvent command can wait
     /// here until the CUDA event command is completed, to ensure that cuStreamWaitEvent() will
@@ -64,6 +62,9 @@ public:
     /// @brief Get the handle of the XQueue that the HwCommand is submitted to.
     /// @return The handle of the XQueue. 0 if the HwCommand is not submitted to any XQueue.
     XQueueHandle GetXQueueHandle() const { return xqueue_handle_; }
+
+    /// @brief Wait until the HwCommand actually become "completed", i.e., executed successfully.
+    virtual void Wait() final override;
 
     /// @brief A callback function that will be called when the HwCommand is submitted to XQueue.
     /// @param xqueue The pointer to the XQueue.

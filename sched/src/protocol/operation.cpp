@@ -1,6 +1,6 @@
 #include <cstring>
 
-#include "xsched/utils/xassert.h"
+#include "xsched/utils/log.h"
 #include "xsched/sched/protocol/operation.h"
 
 using namespace xsched::sched;
@@ -17,7 +17,7 @@ std::shared_ptr<const Operation> Operation::CopyConstructor(const void *data)
     case kOperationConfig:
         return std::make_shared<ConfigOperation>(data);
     default:
-        XASSERT(false, "unknown operation type: %d", meta->type);
+        XERRO("unsupported operation type: %d", meta->type);
         return nullptr;
     }
 }
@@ -30,7 +30,7 @@ SchedOperation::SchedOperation(const void *data)
     data_ = new_data;
 }
 
-SchedOperation::SchedOperation(const ProcessStatus &status)
+SchedOperation::SchedOperation(OperationId id, const ProcessStatus &status)
 {
     PID pid = status.info.pid;
     size_t running_cnt = status.running_xqueues.size();
@@ -41,6 +41,7 @@ SchedOperation::SchedOperation(const ProcessStatus &status)
     OperationData *data = (OperationData *)malloc(size);
     data_ = data;
 
+    data->meta.id = id;
     data->meta.type = kOperationSched;
     data->meta.pid = pid;
     data->size = size;
@@ -50,6 +51,27 @@ SchedOperation::SchedOperation(const ProcessStatus &status)
     xqueue_cnt = 0;
     for (auto &handle : status.running_xqueues) data->handles[xqueue_cnt++] = handle;
     for (auto &handle : status.suspended_xqueues) data->handles[xqueue_cnt++] = handle;
+}
+
+SchedOperation::SchedOperation(OperationId id, PID pid, SchedType type,
+                               const std::vector<XQueueHandle> &xqs)
+{
+    size_t xqueue_cnt = xqs.size();
+    size_t running_cnt = type == kSchedTypeResumeAll ? xqueue_cnt : 0;
+    size_t suspended_cnt = type == kSchedTypeSuspendAll ? xqueue_cnt : 0;
+
+    size_t size = offsetof(OperationData, handles) + xqueue_cnt * sizeof(XQueueHandle);
+    OperationData *data = (OperationData *)malloc(size);
+    data_ = data;
+
+    data->meta.id = id;
+    data->meta.type = kOperationSched;
+    data->meta.pid = pid;
+    data->size = size;
+    data->running_cnt = running_cnt;
+    data->suspended_cnt = suspended_cnt;
+
+    memcpy(data->handles, xqs.data(), xqueue_cnt * sizeof(XQueueHandle));
 }
 
 SchedOperation::~SchedOperation()
@@ -65,11 +87,12 @@ ConfigOperation::ConfigOperation(const void *data)
     data_ = new_data;
 }
 
-ConfigOperation::ConfigOperation(PID pid, XQueueHandle handle, XPreemptLevel level,
-                                 int64_t threshold, int64_t batch_size)
+ConfigOperation::ConfigOperation(OperationId id, PID pid, XQueueHandle handle,
+                                 XPreemptLevel level, int64_t threshold, int64_t batch_size)
 {
     OperationData *data = (OperationData *)malloc(ConfigOperation::Size());
 
+    data->meta.id = id;
     data->meta.type = kOperationConfig;
     data->meta.pid = pid;
     data->handle = handle;

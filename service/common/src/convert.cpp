@@ -4,13 +4,6 @@
 
 using namespace xsched::sched;
 
-std::string xsched::service::ToHex(uint64_t x)
-{
-    std::stringstream ss;
-    ss << "0x" << std::hex << x;
-    return ss.str();
-}
-
 void xsched::service::XQueueStatusToJson(Json::Value &json, const XQueueStatus &status)
 {
     json["handle"]     = (Json::UInt64)status.handle;

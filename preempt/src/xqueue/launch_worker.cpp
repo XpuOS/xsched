@@ -63,6 +63,14 @@ void LaunchWorker::ResumeAndDrop(int64_t drop_idx)
     cv_.notify_all();
 }
 
+void LaunchWorker::ForEachCommand(std::function<bool (std::shared_ptr<HwCommand>)> func)
+{
+    std::unique_lock<MutexLock> lock(*mtx_);
+    for (auto hw_cmd : cmd_log_) {
+        if (!func(hw_cmd)) break;
+    }
+}
+
 void LaunchWorker::SyncAll()
 {
     std::unique_lock<MutexLock> lock(*mtx_);

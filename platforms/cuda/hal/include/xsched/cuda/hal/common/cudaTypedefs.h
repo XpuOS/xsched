@@ -1207,7 +1207,7 @@ typedef CUresult (CUDAAPI *PFN_cuLogsDumpToMemory_v12090)(CUlogIterator *iterato
 #ifndef CUDAPROFILERTYPEDEFS_H
 #define CUDAPROFILERTYPEDEFS_H
 
-#include <cudaProfiler.h>
+#include "xsched/cuda/hal/common/cudaProfiler.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -1287,7 +1287,7 @@ typedef CUresult (CUDAAPI *PFN_cuProfilerStop_v4000)(void);
 #ifndef CUDAEGLTYPEDEFS_H
 #define CUDAEGLTYPEDEFS_H
 
-#include <cudaEGL.h>
+#include "xsched/cuda/hal/common/cudaEGL.h"
 
 #ifdef __cplusplus
 extern "C" {

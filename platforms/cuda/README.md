@@ -11,8 +11,8 @@
     <th align="center">Level-2</th>
     <th align="center">Level-3</th>
   </tr>
-<tr>
-    <td align="center" rowspan="4"><a href="platforms/cuda">CUDA</a></td>
+  <tr>
+    <td align="center" rowspan="4">CUDA</td>
     <td align="center">NVIDIA Ampere GPUs (sm86)</td>
     <td align="center" rowspan="4">✅</td>
     <td align="center" rowspan="4">✅</td>
@@ -38,4 +38,10 @@
 
 ## Usage
 
-Refer to the [example](examples/1_transparency/README.md).
+Build the CUDA platform adapter:
+
+```bash
+make cuda
+```
+
+For transparent scheduling, see the [Linux transparent scheduling example](../../examples/Linux/1_transparent_sched/README.md).

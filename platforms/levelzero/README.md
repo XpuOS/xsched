@@ -12,7 +12,7 @@
     <th align="center">Level-3</th>
   </tr>
   <tr>
-    <td align="center" rowspan="2">LevelZero</a></td>
+    <td align="center" rowspan="2">LevelZero</td>
     <td align="center">Intel GPUs</td>
     <td align="center" rowspan="2">✅</td>
     <td align="center" rowspan="2">✅</td>
@@ -26,33 +26,39 @@
   </tr>
 </table>
 
-## Usage
+## Build
 
-### 1. Compile project
+Build the Level Zero platform adapter:
 
 ```bash
 make levelzero
 ```
 
-### 2. Run XServer
+## Run
+
+Start `xserver` when using the global scheduler:
 
 ```bash
-cd output/bin
-export LD_LIBRARY_PATH=path/to/xsched/output/lib:$LD_LIBRARY_PATH;
-./xserver
+export LD_LIBRARY_PATH=/path/to/xsched/output/lib:$LD_LIBRARY_PATH
+/path/to/xsched/output/bin/xserver HPF 50000
 ```
 
-### 3. Set environment variables before running the application
+Set the transparent XQueue environment before running the application:
 
 ```bash
-export LD_LIBRARY_PATH=path/to/xsched/output/lib:$LD_LIBRARY_PATH;
-export XSCHED_SCHEDULER=GLB XSCHED_AUTO_XQUEUE=1;
+export LD_LIBRARY_PATH=/path/to/xsched/output/lib:$LD_LIBRARY_PATH
+export XSCHED_SCHEDULER=GLB
+export XSCHED_AUTO_XQUEUE=ON
+export XSCHED_AUTO_XQUEUE_LEVEL=1
+export XSCHED_AUTO_XQUEUE_PRIORITY=0 # change as you need
 ```
 
-### 4. Run the application
+Then run the application normally.
 
 ```bash
 # Take test as an example
 cd platforms/levelzero/test
 python3 npu.py
 ```
+
+See [transparent scheduling](../../examples/Linux/1_transparent_sched/README.md) for the general workflow.

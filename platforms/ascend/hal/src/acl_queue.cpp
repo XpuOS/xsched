@@ -25,17 +25,12 @@ void AclQueue::Launch(std::shared_ptr<preempt::HwCommand> hw_cmd)
 
 void AclQueue::Synchronize()
 {
-    aclrtContext cur_ctx = nullptr;
-    ACL_ASSERT(Driver::rtGetCurrentContext(&cur_ctx));
-    if (cur_ctx != context_) {
-        XWARN("stream context (%p) != current context (%p), override current", context_, cur_ctx);
-        ACL_ASSERT(Driver::rtSetCurrentContext(context_));
-    }
     ACL_ASSERT(Driver::rtSynchronizeStream(kStream));
 }
 
 void AclQueue::OnXQueueCreate()
 {
+    ACL_ASSERT(Driver::rtSetDevice(device_id_));
     ACL_ASSERT(Driver::rtSetCurrentContext(context_));
 }
 

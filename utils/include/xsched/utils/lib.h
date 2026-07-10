@@ -5,6 +5,7 @@
 #include <cstdlib>
 
 #include "xsched/utils/log.h"
+#include "xsched/utils/env.h"
 #include "xsched/utils/common.h"
 
 inline std::string FindLibrary(const std::string &env_name,
@@ -34,10 +35,11 @@ inline std::string FindLibrary(const std::string &env_name,
     };
 #endif
 
-    char *path = std::getenv(env_name.c_str());
-    if (path != nullptr) {
-        if (FileExists(path)) return std::string(path);
-        XWARN("lib set by env %s = %s not found, fallback to dir search", env_name.c_str(), path);
+    std::string path = GetEnv(env_name);
+    if (!path.empty()) {
+        if (FileExists(path)) return path;
+        XWARN("lib set by env %s = %s not found, fallback to dir search",
+              env_name.c_str(), path.c_str());
     }
 
     for (const auto &dir : search_dirs) {

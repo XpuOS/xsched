@@ -1,9 +1,9 @@
 # Compiler and flags
 NVCC = nvcc
-NVCC_FLAGS = -O3 -std=c++11
+NVCC_FLAGS = -O3 -std=c++17
 
 HIPCC = hipcc
-HIPCC_FLAGS = -O3 -std=c++11
+HIPCC_FLAGS = -O3 -std=c++17
 
 # HIP library path and name — override for your platform:
 #   Standard AMD ROCm:      make hip HIP_LIB_PATH=/opt/rocm/lib HIP_LIB=amdhip64

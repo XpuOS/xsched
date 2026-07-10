@@ -1,18 +1,21 @@
-cmake_minimum_required(VERSION 3.23)
+cmake_minimum_required(VERSION 3.14)
 
-project(XSched VERSION 1.0.0)
+project(XSched VERSION 1.2.0)
 
 option(SHIM_SOFTLINK     "Create softlink for shim library."     OFF)
 option(BUILD_TEST        "Build test cases."                     OFF)
 
-# Generate a compile_commands.json for Clang
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 set(CMAKE_C_FLAGS_RELEASE   "$ENV{CFLAGS}   -O3 -DRELEASE_MODE")
 set(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -DRELEASE_MODE")
 set(CMAKE_C_FLAGS_DEBUG     "$ENV{CFLAGS}   -O0 -g2 -ggdb -DDEBUG_MODE")
 set(CMAKE_CXX_FLAGS_DEBUG   "$ENV{CXXFLAGS} -O0 -g2 -ggdb -DDEBUG_MODE")
 set(XSCHED_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
+set(XSCHED_PYTHON_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/python)
 
 add_subdirectory(3rdparty)
 add_subdirectory(utils)
@@ -48,3 +51,4 @@ export(EXPORT XSchedTargets FILE ${CMAKE_CURRENT_BINARY_DIR}/XSchedTargets.cmake
 # Allow XSched to be imported by find_package(XSched) and used with XSched::libxxx
 install(EXPORT XSchedTargets NAMESPACE XSched:: DESTINATION lib/cmake/XSched)
 install(DIRECTORY ${XSCHED_INCLUDE_DIR}/ DESTINATION include)
+install(DIRECTORY ${XSCHED_PYTHON_DIR}/  DESTINATION lib/python)

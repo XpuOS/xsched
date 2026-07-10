@@ -1,6 +1,6 @@
 #include <cstring>
 
-#include "xsched/utils/xassert.h"
+#include "xsched/utils/log.h"
 #include "xsched/sched/protocol/hint.h"
 
 using namespace xsched::sched;
@@ -28,7 +28,7 @@ std::shared_ptr<const Hint> Hint::CopyConstructor(const void *data)
         return std::make_shared<WindowActiveHint>(data);
     // NEW_POLICY: New HintTypes handling goes here.
     default:
-        XASSERT(false, "unknown hint type: %d", meta->type);
+        XERRO("unknown hint type: %d", meta->type);
         return nullptr;
     }
 }

@@ -79,6 +79,8 @@ typedef enum {
 typedef enum {
     kQueueSuspendFlagNone        = 0x0000,
     kQueueSuspendFlagSyncHwQueue = 0x0001,
+    kQueueSuspendFlagWaitAll     = 0x0002,
+    kQueueSuspendFlagWaitIdle    = 0x0004,
     kQueueSuspendFlagMaskAll     = -1,
 } XQueueSuspendFlag;
 
@@ -101,15 +103,16 @@ typedef enum {
     kPolicyUnknown                           = 0,
     kPolicyHighestPriorityFirst              = 1,
     kPolicyHeterogeneousHighestPriorityFirst = 2,
-    kPolicyUtilizationPartition              = 3,
-    kPolicyProcessUtilizationPartition       = 4,
-    kPolicyKEarliestDeadlineFirst            = 5,
-    kPolicyLaxity                            = 6,
-    kPolicyActiveWindowFirst                 = 7,
-    kPolicyCPUHighestPriorityFirst           = 8,
+    kPolicyCPUHighestPriorityFirst           = 3,
+    kPolicyUtilizationPartition              = 4,
+    kPolicyProcessUtilizationPartition       = 5,
+    kPolicyStrictProcessUtilizationPartition = 6,
+    kPolicyKEarliestDeadlineFirst            = 7,
+    kPolicyLaxity                            = 8,
+    kPolicyActiveWindowFirst                 = 9,
+    kPolicyCompletelyFairScheduler           = 10,
+    kPolicyMultiLevelFeedbackQueue           = 11,
     // NEW_POLICY: New XPolicyTypes go here.
-    kPolicyCompletelyFairScheduler           = 9,
-    kPolicyMultiLevelFeedbackQueue           = 10,
 
     kPolicyMax,
 } XPolicyType;
@@ -132,9 +135,10 @@ typedef int32_t Utilization;
 
 /// @brief Timeslice is a positive integer, indicating the number of microseconds.
 typedef int64_t Timeslice;
-#define TIMESLICE_MIN        100    // 0.1 ms
-#define TIMESLICE_DEFAULT    5000   // 5 ms
-#define TIMESLICE_MAX        100000 // 100 ms
+#define TIMESLICE_MIN        100      // 0.1 ms
+#define TIMESLICE_DEFAULT    5000     // 5 ms
+#define TIMESLICE_MAX        10000000 // 10 s
+#define TIMESLICE_UNLIMITED  UINT64_MAX
 
 /// @brief Laxity is a positive integer, indicating the number of microseconds.
 typedef int64_t Laxity;

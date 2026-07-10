@@ -6,15 +6,15 @@
 #include "xsched/sched/policy/policy.h"
 #include "xsched/sched/policy/hpf.h"
 #include "xsched/sched/policy/hhpf.h"
+#include "xsched/sched/policy/chpf.h"
 #include "xsched/sched/policy/up.h"
 #include "xsched/sched/policy/pup.h"
 #include "xsched/sched/policy/kedf.h"
 #include "xsched/sched/policy/lax.h"
 #include "xsched/sched/policy/awf.h"
-#include "xsched/sched/policy/chpf.h"
-// NEW_POLICY: New policy headers go here.
 #include "xsched/sched/policy/cfs.h"
 #include "xsched/sched/policy/mlfq.h"
+// NEW_POLICY: New policy headers go here.
 
 using namespace xsched::sched;
 
@@ -45,6 +45,8 @@ std::unique_ptr<Policy> xsched::sched::CreatePolicy(XPolicyType type)
             return std::make_unique<HighestPriorityFirstPolicy>();
         case kPolicyHeterogeneousHighestPriorityFirst:
             return std::make_unique<HeterogeneousHighestPriorityFirstPolicy>();
+        case kPolicyCPUHighestPriorityFirst:
+            return std::make_unique<CPUHighestPriorityFirstPolicy>();
         case kPolicyUtilizationPartition:
             return std::make_unique<UtilizationPartitionPolicy>();
         case kPolicyProcessUtilizationPartition:
@@ -55,13 +57,11 @@ std::unique_ptr<Policy> xsched::sched::CreatePolicy(XPolicyType type)
             return std::make_unique<LaxityPolicy>();
         case kPolicyActiveWindowFirst:
             return std::make_unique<ActiveWindowFirstPolicy>();
-        case kPolicyCPUHighestPriorityFirst:
-            return std::make_unique<CPUHighestPriorityFirstPolicy>();
-        // NEW_POLICY: New PolicyTypes handling goes here.
         case kPolicyCompletelyFairScheduler:
             return std::make_unique<CompletelyFairSchedulerPolicy>();
         case kPolicyMultiLevelFeedbackQueue:
             return std::make_unique<MultiLevelFeedbackQueuePolicy>();
+        // NEW_POLICY: New PolicyTypes handling goes here.
         default:
             XASSERT(false, "invalid policy type: %d", type);
             return nullptr;

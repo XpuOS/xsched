@@ -3,6 +3,7 @@
 #include <string>
 
 #include "xsched/types.h"
+#include "xsched/protocol/def.h"
 
 namespace xsched::protocol
 {

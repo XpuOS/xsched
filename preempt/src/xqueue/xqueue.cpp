@@ -112,9 +112,7 @@ XResult XQueueManager::ForEach(std::function<XResult(std::shared_ptr<XQueue>)> f
 
 XResult XQueueManager::AutoCreate(std::function<XResult(HwQueueHandle *)> create_hwq)
 {
-    static char *env = std::getenv(XSCHED_AUTO_XQUEUE_ENV_NAME);
-    if (env == nullptr || strlen(env) == 0 || strcmp(env, "0") == 0 ||
-        strcasecmp(env, "off") == 0) {
+    if (!GetEnvOption(XSCHED_AUTO_XQUEUE_ENV_NAME, false)) {
         XDEBG("XQueue auto-create is disabled");
         return kXSchedSuccess;
     }
@@ -129,9 +127,9 @@ XResult XQueueManager::AutoCreate(std::function<XResult(HwQueueHandle *)> create
     XPreemptLevel level = XSCHED_DEFAULT_PREEMPT_LEVEL;
 
     // set level by env
-    int64_t env_int64 = 0;
-    bool env_set_level = GetEnvInt64(XSCHED_AUTO_XQUEUE_LEVEL_ENV_NAME, env_int64);
-    if (env_set_level) level = (XPreemptLevel)env_int64;
+    int64_t env_level = 0;
+    bool env_set_level = GetEnvInt64(XSCHED_AUTO_XQUEUE_LEVEL_ENV_NAME, env_level);
+    if (env_set_level) level = (XPreemptLevel)env_level;
 
     res = XQueueCreate(&xq, hwq, level, kQueueCreateFlagNone);
     if (res != kXSchedSuccess) {
@@ -228,9 +226,7 @@ XResult XQueueManager::AutoCreate(std::function<XResult(HwQueueHandle *)> create
 
 XResult XQueueManager::AutoDestroy(HwQueueHandle hwq_h)
 {
-    static char *env = std::getenv(XSCHED_AUTO_XQUEUE_ENV_NAME);
-    if (env == nullptr || strlen(env) == 0 || strcmp(env, "0") == 0 ||
-        strcasecmp(env, "off") == 0) {
+    if (!GetEnvOption(XSCHED_AUTO_XQUEUE_ENV_NAME, false)) {
         XDEBG("XQueue auto-destroy is disabled");
         return kXSchedSuccess;
     }
@@ -266,8 +262,20 @@ EXPORT_C_FUNC XResult XQueueDestroy(XQueueHandle xq)
     return XQueueManager::Del(xq);
 }
 
-EXPORT_C_FUNC XResult XQueueSetPreemptLevel(XQueueHandle xq, int64_t level)
+EXPORT_C_FUNC XResult XQueueGet(XQueueHandle *xq, HwQueueHandle hwq)
 {
+    if (xq == nullptr) return kXSchedErrorInvalidValue;
+    auto xq_shptr = HwQueueManager::GetXQueue(hwq);
+    if (xq_shptr == nullptr) return kXSchedErrorNotFound;
+    *xq = xq_shptr->GetHandle();
+    return kXSchedSuccess;
+}
+
+EXPORT_C_FUNC XResult XQueueSetPreemptLevel(XQueueHandle xq, XPreemptLevel level)
+{
+    if (level <= kPreemptLevelUnknown || level >= kPreemptLevelMax) {
+        return kXSchedErrorInvalidValue;
+    }
     std::shared_ptr<XQueue> xq_shptr = XQueueManager::Get(xq);
     if (xq_shptr == nullptr) {
         XWARN("XQueue with handle 0x" FMT_64X " does not exist", xq);
@@ -277,7 +285,7 @@ EXPORT_C_FUNC XResult XQueueSetPreemptLevel(XQueueHandle xq, int64_t level)
         XWARN("XQueue with handle 0x" FMT_64X " does not support dynamic level", xq);
         return kXSchedErrorNotSupported;
     }
-    xq_shptr->SetPreemptLevel((XPreemptLevel)level);
+    xq_shptr->SetPreemptLevel(level);
     return kXSchedSuccess;
 }
 

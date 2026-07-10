@@ -22,7 +22,7 @@ public:
 private:
     void Worker();
 
-    std::string client_chan_name_;
+    ipc::ChannelKey client_chn_key_;
     std::unique_ptr<std::thread> thread_;
     std::unique_ptr<ipc::Node> recv_chan_;
     std::unique_ptr<ipc::Node> send_chan_;

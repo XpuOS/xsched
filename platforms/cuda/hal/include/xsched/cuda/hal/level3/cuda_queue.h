@@ -1,21 +1,11 @@
 #pragma once
 
-#include <atomic>
-
 #include "xsched/cuda/hal/level2/cuda_queue.h"
 #include "xsched/cuda/hal/level3/interrupt.h"
 #include "xsched/cuda/hal/level3/tsg.h"
 
 namespace xsched::cuda
 {
-
-enum CudaLv3Implementation
-{
-    kCudaLv3ImplementationTrap,
-    kCudaLv3ImplementationTsg,
-};
-
-CudaLv3Implementation GetCudaLv3Implementation();
 
 class CudaQueueLv3Trap : public CudaQueueLv2
 {
