@@ -27,7 +27,8 @@ void SchedExecutor::Execute(std::shared_ptr<const sched::Operation> op)
 {
     OperationType type = op->Type();
     XASSERT(op->Pid() == GetProcessId(),
-            "operation %ld sent to the wrong process, target: %d, receiver %d",
+            "operation " FMT_64U " sent to the wrong process, target: "
+            FMT_PID ", receiver " FMT_PID,
             op->Id(), op->Pid(), GetProcessId());
     if (!executing_.load()) type = kOperationNone;
 

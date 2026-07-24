@@ -1,9 +1,14 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.13)
 
 project(XSched VERSION 1.2.0)
 
 option(SHIM_SOFTLINK     "Create softlink for shim library."     OFF)
 option(BUILD_TEST        "Build test cases."                     OFF)
+option(BUILD_SERVICE     "Build scheduler service and CLI tools." ON)
+
+if(BUILD_TEST)
+    enable_testing()
+endif()
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -22,9 +27,12 @@ add_subdirectory(utils)
 add_subdirectory(protocol)
 add_subdirectory(sched)
 add_subdirectory(preempt)
-add_subdirectory(service)
+if(BUILD_SERVICE)
+    add_subdirectory(service)
+endif()
 add_subdirectory(platforms)
 
+include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
 configure_package_config_file(

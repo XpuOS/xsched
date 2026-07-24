@@ -87,6 +87,11 @@
 #elif defined(__aarch64__) || defined(_M_ARM64)
     #define ARCH_AARCH64
     #define ARCH_STR "aarch64"
+#elif defined(__loongarch__)
+    #define ARCH_LOONGARCH64
+    #define ARCH_STR "loongarch64"
+#else
+    #error unsupported architecture
 #endif
 
 // operating system detection

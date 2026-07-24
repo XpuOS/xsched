@@ -141,7 +141,8 @@ public:
                 uint64_t intersect_begin = std::max(begin, cur_begin);
                 uint64_t intersect_end = std::min(end, cur_end);
                 XASSERT(intersect_begin < intersect_end,
-                        "[%lu, %lu] must intersect with [%lu, %lu]",
+                        "[" FMT_64U ", " FMT_64U "] must intersect with ["
+                        FMT_64U ", " FMT_64U "]",
                         begin, end, cur_begin, cur_end);
                 result[intersect_end] = intersect_begin;
 

@@ -74,10 +74,12 @@ void LocalScheduler::RecvEvent(std::shared_ptr<const Event> event)
         std::unique_lock<std::mutex> lock(op_mtx_);
         auto it = ops_.find(pid);
         if (it == ops_.end()) {
-            XWARN("operation %ld completed of unknown process %d", op_id, pid);
+            XWARN("operation " FMT_64U " completed of unknown process "
+                  FMT_PID, op_id, pid);
             return;
         }
-        XASSERT(op_id <= it->second.issued_id, "unknown operation %ld completed", op_id);
+        XASSERT(op_id <= it->second.issued_id,
+                "unknown operation " FMT_64U " completed", op_id);
         it->second.completed_id = std::max(it->second.completed_id, op_id);
         lock.unlock();
         op_cv_.notify_all();
