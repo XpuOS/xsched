@@ -24,6 +24,15 @@ XResult XQueueManager::Add(XQueueHandle *xq_hp, HwQueueHandle hwq_h, int64_t lev
         return kXSchedErrorNotFound;
     }
 
+    const XPreemptLevel max_level = hwq_shptr->GetMaxSupportedLevel();
+    if (level > max_level) {
+        XWARN("preempt level %d is not supported by HwQueue 0x" FMT_64X
+              ", max supported level is %d",
+              static_cast<int>(level), hwq_h,
+              static_cast<int>(max_level));
+        return kXSchedErrorNotSupported;
+    }
+
     if (hwq_shptr->GetXQueue() != nullptr) {
         XQueueHandle xq_h = hwq_shptr->GetXQueue()->GetHandle();
         auto it = xqs_.find(xq_h);
@@ -283,6 +292,19 @@ EXPORT_C_FUNC XResult XQueueSetPreemptLevel(XQueueHandle xq, XPreemptLevel level
     }
     if (!xq_shptr->GetFeatures(kQueueFeatureDynamicLevel)) {
         XWARN("XQueue with handle 0x" FMT_64X " does not support dynamic level", xq);
+        return kXSchedErrorNotSupported;
+    }
+    const auto hwq_shptr = xq_shptr->GetHwQueue();
+    if (hwq_shptr == nullptr) {
+        XWARN("HwQueue for XQueue 0x" FMT_64X " does not exist", xq);
+        return kXSchedErrorNotSupported;
+    }
+    const XPreemptLevel max_level = hwq_shptr->GetMaxSupportedLevel();
+    if (level > max_level) {
+        XWARN("preempt level %d is not supported by XQueue 0x" FMT_64X
+              ", max supported level is %d",
+              static_cast<int>(level), xq,
+              static_cast<int>(max_level));
         return kXSchedErrorNotSupported;
     }
     xq_shptr->SetPreemptLevel(level);
