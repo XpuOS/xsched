@@ -40,3 +40,7 @@ target_link_libraries(preempt
     PRIVATE sched
     PRIVATE protocol
 )
+
+if(BUILD_TEST)
+    add_subdirectory(test)
+endif()
