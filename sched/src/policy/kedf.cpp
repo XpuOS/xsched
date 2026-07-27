@@ -9,42 +9,67 @@ using namespace xsched::sched;
 
 void KEarliestDeadlineFirstPolicy::Sched(const Status &status)
 {
-    std::vector<DeadlineEntry> ddls;
-    ddls.reserve(status.xqueue_status.size());
+    std::vector<ProcessDeadlineEntry> ddls;
+    ddls.reserve(status.process_status.size());
 
-    // calculate the deadline of each xqueue
-    for (auto &status : status.xqueue_status) {
-        XQueueHandle handle = status.second->handle;
+    for (auto &process : status.process_status) {
+        PID pid = process.first;
         auto ddl = (std::chrono::system_clock::time_point::max)();
-        if (!status.second->ready) {
-            ddls.emplace_back(DeadlineEntry{.xqueue=handle,.deadline=ddl});
+
+        bool any_ready = false;
+        for (auto handle : process.second->running_xqueues) {
+            auto xq_it = status.xqueue_status.find(handle);
+            if (xq_it == status.xqueue_status.end()) continue;
+            if (!xq_it->second->ready) continue;
+            any_ready = true;
+            auto d_it = deadlines_.find(handle);
+            if (d_it == deadlines_.end()) continue;
+            auto xq_ddl = xq_it->second->ready_time + std::chrono::microseconds(d_it->second);
+            if (xq_ddl < ddl) ddl = xq_ddl;
+        }
+        for (auto handle : process.second->suspended_xqueues) {
+            auto xq_it = status.xqueue_status.find(handle);
+            if (xq_it == status.xqueue_status.end()) continue;
+            if (!xq_it->second->ready) continue;
+            any_ready = true;
+            auto d_it = deadlines_.find(handle);
+            if (d_it == deadlines_.end()) continue;
+            auto xq_ddl = xq_it->second->ready_time + std::chrono::microseconds(d_it->second);
+            if (xq_ddl < ddl) ddl = xq_ddl;
+        }
+
+        if (!any_ready) {
+            ddls.emplace_back(ProcessDeadlineEntry{.pid=pid,.deadline=(std::chrono::system_clock::time_point::max)()});
             continue;
         }
 
-        auto it = deadlines_.find(handle);
-        if (it == deadlines_.end()) {
-            ddls.emplace_back(DeadlineEntry{.xqueue=handle,.deadline=ddl});
-            continue;
-        }
-
-        ddl = status.second->ready_time + std::chrono::microseconds(it->second);
-        ddls.emplace_back(DeadlineEntry{.xqueue=handle,.deadline=ddl});
+        ddls.emplace_back(ProcessDeadlineEntry{.pid=pid,.deadline=ddl});
     }
 
-    // sort the xqueues by deadline, from the earliest to the latest
-    std::sort(ddls.begin(), ddls.end(), [](const DeadlineEntry &a, const DeadlineEntry &b) {
+    std::sort(ddls.begin(), ddls.end(), [](const ProcessDeadlineEntry &a, const ProcessDeadlineEntry &b) {
         return a.deadline < b.deadline;
     });
 
-    // resume the first k_ xqueues
     for (size_t i = 0; i < k_ && i < ddls.size(); ++i) {
-        this->Resume(ddls[i].xqueue);
+        SwitchProcess(ddls[i].pid, status);
     }
-
-    // suspend all other xqueues
     for (size_t i = k_; i < ddls.size(); ++i) {
-        this->Suspend(ddls[i].xqueue);
+        const auto it = status.process_status.find(ddls[i].pid);
+        if (it == status.process_status.end()) continue;
+        std::vector<XQueueHandle> running;
+        for (auto xq : it->second->running_xqueues) running.push_back(xq);
+        for (auto xq : running) this->Suspend(xq);
     }
+}
+
+void KEarliestDeadlineFirstPolicy::SwitchProcess(PID pid, const Status &status)
+{
+    const auto it = status.process_status.find(pid);
+    if (it == status.process_status.end()) return;
+
+    std::vector<XQueueHandle> suspended;
+    for (auto xq : it->second->suspended_xqueues) suspended.push_back(xq);
+    for (auto xq : suspended) this->Resume(xq);
 }
 
 void KEarliestDeadlineFirstPolicy::RecvHint(std::shared_ptr<const Hint> hint)

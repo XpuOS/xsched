@@ -9,9 +9,9 @@
 namespace xsched::sched
 {
 
-struct DeadlineEntry
+struct ProcessDeadlineEntry
 {
-    XQueueHandle xqueue;
+    PID pid;
     std::chrono::system_clock::time_point deadline;
 };
 
@@ -25,6 +25,8 @@ public:
     virtual void RecvHint(std::shared_ptr<const Hint> hint) override;
 
 private:
+    void SwitchProcess(PID pid, const Status &status);
+
     size_t k_ = 1;
     std::unordered_map<XQueueHandle, Deadline> deadlines_;
 };

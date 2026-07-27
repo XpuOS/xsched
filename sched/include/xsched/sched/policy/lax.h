@@ -25,7 +25,10 @@ private:
         Priority lax_prio;
         Priority crit_prio;
     };
-    std::unordered_map<XQueueHandle, LaxityInfo> laxity_infos_;
+    std::unordered_map<PID, LaxityInfo> laxity_infos_;
+    std::unordered_map<XQueueHandle, PID> handle_to_pid_;
+
+    void SwitchProcess(PID pid, const Status &status);
 };
 
 } // namespace xsched::sched
