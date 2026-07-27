@@ -22,12 +22,14 @@ public:
 
 private:
     std::chrono::microseconds GetBudget(Utilization util);
+    bool ProcessReady(PID pid, const Status &status);
     void SwitchToAny(const Status &status);
-    void SwitchTo(XQueueHandle handle, Utilization util, const Status &status);
+    void SwitchProcess(PID pid, Utilization util, const Status &status);
 
-    XQueueHandle cur_running_ = 0;
+    PID cur_running_ = 0;
     std::chrono::system_clock::time_point cur_end_;
-    std::map<XQueueHandle, Utilization> utils_;
+    std::map<PID, Utilization> utils_;
+    std::map<XQueueHandle, PID> handle_to_pid_;
     std::chrono::microseconds timeslice_ = 
         std::chrono::microseconds(TIMESLICE_DEFAULT);
 };
