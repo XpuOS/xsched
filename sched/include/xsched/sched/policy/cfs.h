@@ -26,8 +26,9 @@ public:
     virtual void RecvHint(std::shared_ptr<const Hint> hint) override;
 
 private:
-    std::unordered_map<XQueueHandle, CFSNode> cfs_infos_;
-    std::chrono::microseconds time_slice_{1000}; // set timeslice to 1ms
+    std::unordered_map<PID, CFSNode> cfs_infos_;
+    std::unordered_map<XQueueHandle, std::pair<Priority, double>> pending_hints_;
+    std::chrono::microseconds time_slice_{1000};
 };
 
 } // namespace xsched::sched

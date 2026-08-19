@@ -106,6 +106,8 @@ void LocalScheduler::SetPolicy(XPolicyType type)
     policy_->SetResumeFunc(std::bind(&LocalScheduler::Resume, this, std::placeholders::_1));
     policy_->SetAddTimerFunc(std::bind(&LocalScheduler::AddTimer, this, std::placeholders::_1));
     for (auto &status : status_.xqueue_status) Resume(status.first);
+    policy_->Sched(status_);
+    ExecuteOperations();
     this->Run();
     XINFO("policy changed from %s to %s", old.c_str(), GetPolicyTypeName(policy_type_).c_str());
 }

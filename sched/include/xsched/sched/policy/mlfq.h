@@ -9,21 +9,20 @@ namespace xsched {
 namespace sched {
 
 struct MLFQNode {
-    int priority = 0;               // Current priority level (0 is highest)
-    bool is_running = false;        // Whether it's currently running
-    bool was_ready_last_tick = false; // Edge detection for idle/ready
+    int priority = 0;
+    bool is_running = false;
+    bool was_ready_last_tick = false;
 
     using TimePoint = std::chrono::time_point<std::chrono::system_clock>;
-    TimePoint i_a;                  // (1) Time became idle
-    TimePoint p_a;                  // (2) Time of last priority update
-    TimePoint q_a;                  // (3) Time of most recent request
+    TimePoint i_a;
+    TimePoint p_a;
+    TimePoint q_a;
     
-    // For pending time tracking and time slice tracking
     std::chrono::microseconds accumulated_pending_time{0};
-    TimePoint last_pending_start;   // When it entered pending state
+    TimePoint last_pending_start;
 
     std::chrono::microseconds time_slice_used{0};
-    TimePoint last_resume_time;     // When it started running
+    TimePoint last_resume_time;
 };
 
 class MultiLevelFeedbackQueuePolicy : public Policy {
@@ -35,16 +34,13 @@ public:
     void RecvHint(std::shared_ptr<const Hint> hint) override;
 
 private:
-    std::map<XQueueHandle, MLFQNode> mlfq_infos_;
+    std::map<PID, MLFQNode> mlfq_infos_;
     
-    // Configuration
-    const int max_priority_ = 3;    // Levels 0, 1, 2, 3
-    const std::chrono::microseconds recovery_threshold_{100000}; // 100ms
-    const std::chrono::microseconds default_tick_{5000}; // 5ms scheduling tick
+    const int max_priority_ = 3;
+    const std::chrono::microseconds recovery_threshold_{100000};
+    const std::chrono::microseconds default_tick_{5000};
 
-    // Get time slice based on priority level
     std::chrono::microseconds get_time_slice(int prio) const {
-        // e.g., prio 0: 10ms, prio 1: 20ms, prio 2: 40ms, prio 3: 80ms
         return std::chrono::microseconds(10000 * (1 << prio));
     }
 };
