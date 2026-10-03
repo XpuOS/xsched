@@ -8,9 +8,10 @@
 
 using namespace xsched::cuda;
 
-DEFINE_EXPORT_C_REDIRECT_CALL(DriverWindows::ProfilerInitialize, CUresult, cuProfilerInitialize, const char *, configFile, const char *, outputFile, CUoutput_mode, outputMode);
-DEFINE_EXPORT_C_REDIRECT_CALL(DriverWindows::ProfilerStart, CUresult, cuProfilerStart);
-DEFINE_EXPORT_C_REDIRECT_CALL(DriverWindows::ProfilerStop, CUresult, cuProfilerStop);
+// Profiler functions are already defined in intercept.cpp
+// DEFINE_EXPORT_C_REDIRECT_CALL(DriverWindows::ProfilerInitialize, CUresult, cuProfilerInitialize, const char *, configFile, const char *, outputFile, CUoutput_mode, outputMode);
+// DEFINE_EXPORT_C_REDIRECT_CALL(DriverWindows::ProfilerStart, CUresult, cuProfilerStart);
+// DEFINE_EXPORT_C_REDIRECT_CALL(DriverWindows::ProfilerStop, CUresult, cuProfilerStop);
 DEFINE_EXPORT_C_REDIRECT_CALL(DriverWindows::GraphicsGLRegisterBuffer, CUresult, cuGraphicsGLRegisterBuffer, CUgraphicsResource *, pCudaResource, GLuint, buffer, unsigned int, Flags);
 DEFINE_EXPORT_C_REDIRECT_CALL(DriverWindows::GraphicsGLRegisterImage, CUresult, cuGraphicsGLRegisterImage, CUgraphicsResource *, pCudaResource, GLuint, image, GLenum, target, unsigned int, Flags);
 DEFINE_EXPORT_C_REDIRECT_CALL(DriverWindows::WGLGetDevice, CUresult, cuWGLGetDevice, CUdevice *, pDevice, HGPUNV, hGpu);
@@ -88,9 +89,9 @@ DEFINE_EXPORT_C_REDIRECT_CALL(DriverWindows::D3D9ResourceGetMappedPitch, CUresul
 DEFINE_EXPORT_C_REDIRECT_CALL(DriverWindows::D3D9MapVertexBuffer, CUresult, cuD3D9MapVertexBuffer, CUdeviceptr_v1 *, pDevPtr, unsigned int *, pSize, IDirect3DVertexBuffer9 *, pVB);
 
 static const std::unordered_map<std::string, void *> intercept_symbol_map = {
-    DLSYM_INTERCEPT_ENTRY(cuProfilerInitialize),
-    DLSYM_INTERCEPT_ENTRY(cuProfilerStart),
-    DLSYM_INTERCEPT_ENTRY(cuProfilerStop),
+//    DLSYM_INTERCEPT_ENTRY(cuProfilerInitialize),
+//    DLSYM_INTERCEPT_ENTRY(cuProfilerStart),
+//    DLSYM_INTERCEPT_ENTRY(cuProfilerStop),
     DLSYM_INTERCEPT_ENTRY(cuGraphicsGLRegisterBuffer),
     DLSYM_INTERCEPT_ENTRY(cuGraphicsGLRegisterImage),
     DLSYM_INTERCEPT_ENTRY(cuWGLGetDevice),

@@ -19,6 +19,10 @@ public:
     ContextEventPool(CUcontext ctx): ctx_(ctx) {}
     virtual ~ContextEventPool() = default;
 
+    /// @brief Destroy all cached events immediately. Called before the
+    /// context is physically destroyed, while the events are still valid.
+    void DrainAll();
+
 private:
     virtual void *Create() override;
 
@@ -32,6 +36,10 @@ public:
     
     static CUevent Pop(CUcontext ctx);
     static void Push(CUcontext ctx, CUevent event);
+
+    /// @brief Drop the pool of a context and destroy all its cached events.
+    /// Called right before the context is destroyed (e.g., XCtxDestroy).
+    static void Clear(CUcontext ctx);
 
 private:
     static std::mutex mutex_;
