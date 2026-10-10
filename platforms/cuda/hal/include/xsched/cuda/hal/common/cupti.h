@@ -848,7 +848,9 @@ CUptiResult CUPTIAPI cuptiGetVersion(uint32_t *version);
         __thread
 #define __import__
 #define __export__
+#ifndef __cdecl
 #define __cdecl
+#endif
 #define __annotate__(a) \
         __attribute__((a))
 #define __location__(a) \
@@ -11140,7 +11142,7 @@ int CUPTIAPI cuptiOpenMpInitialize_v2(ompt_function_lookup_t lookup, int initial
 #endif
 
 #define ACTIVITY_RECORD_ALIGNMENT 8
-#if defined(_WIN32) // Windows 32- and 64-bit
+#if defined(_WIN32) && !defined(__GNUC__) // Windows MSVC
 #define START_PACKED_ALIGNMENT __pragma(pack(push,1)) // exact fit - no padding
 #define PACKED_ALIGNMENT __declspec(align(ACTIVITY_RECORD_ALIGNMENT))
 #define END_PACKED_ALIGNMENT __pragma(pack(pop))

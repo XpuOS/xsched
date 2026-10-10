@@ -107,6 +107,8 @@ inline CUresult X##name##_ptsz(CUstream stream __VA_OPT__(,) FOR_EACH_PAIR_COMMA
 ////////////////////////////// kernel related //////////////////////////////
 CUresult XLaunchKernel(CUfunction f, unsigned int gdx, unsigned int gdy, unsigned int gdz, unsigned int bdx, unsigned int bdy, unsigned int bdz, unsigned int shmem, CUstream stream, void **params, void **extra);
 CUresult XLaunchKernel_ptsz(CUfunction f, unsigned int gdx, unsigned int gdy, unsigned int gdz, unsigned int bdx, unsigned int bdy, unsigned int bdz, unsigned int shmem, CUstream stream, void **params, void **extra);
+CUresult XLaunchCooperativeKernel(CUfunction f, unsigned int gdx, unsigned int gdy, unsigned int gdz, unsigned int bdx, unsigned int bdy, unsigned int bdz, unsigned int shmem, CUstream stream, void **params);
+CUresult XLaunchCooperativeKernel_ptsz(CUfunction f, unsigned int gdx, unsigned int gdy, unsigned int gdz, unsigned int bdx, unsigned int bdy, unsigned int bdz, unsigned int shmem, CUstream stream, void **params);
 CUresult XLaunchKernelEx(const CUlaunchConfig *config, CUfunction f, void **params, void **extra);
 CUresult XLaunchKernelEx_ptsz(const CUlaunchConfig *config, CUfunction f, void **params, void **extra);
 CUresult XLaunchHostFunc(CUstream stream, CUhostFn fn, void *data);
@@ -139,6 +141,11 @@ CUDA_SHIM_FUNC(MemAllocAsync, CudaMemoryAllocCommand, CUdeviceptr *, dptr, size_
 
 CUresult XMemFree_v2(CUdeviceptr dptr);
 
+/// Synchronous memcpy with the per-thread default stream semantics.
+CUresult XMemcpyHtoD_v2_ptds(CUdeviceptr dstDevice, const void *srcHost, size_t ByteCount);
+CUresult XMemcpyDtoH_v2_ptds(void *dstHost, CUdeviceptr srcDevice, size_t ByteCount);
+CUresult XMemcpyDtoD_v2_ptds(CUdeviceptr dstDevice, CUdeviceptr srcDevice, size_t ByteCount);
+
 ////////////////////////////// event related //////////////////////////////
 CUresult XEventRecord(CUevent event, CUstream stream);
 CUresult XEventRecord_ptsz(CUevent event, CUstream stream);
@@ -162,5 +169,18 @@ CUresult XStreamCreate(CUstream *stream, unsigned int flags);
 CUresult XStreamCreateWithPriority(CUstream *stream, unsigned int flags, int priority);
 CUresult XStreamDestroy(CUstream stream);
 CUresult XStreamDestroy_v2(CUstream stream);
+
+CUresult XCtxDestroy(CUcontext ctx);
+CUresult XCtxDestroy_v2(CUcontext ctx);
+CUresult XEventElapsedTime(float *ms, CUevent start, CUevent end);
+CUresult XEventElapsedTime_v2(float *ms, CUevent start, CUevent end);
+CUresult XMemcpyHtoD_v2(CUdeviceptr dstDevice, const void *srcHost, size_t ByteCount);
+CUresult XMemcpyDtoH_v2(void *dstHost, CUdeviceptr srcDevice, size_t ByteCount);
+CUresult XMemcpyDtoD_v2(CUdeviceptr dstDevice, CUdeviceptr srcDevice, size_t ByteCount);
+
+CUresult XDevicePrimaryCtxReset(CUdevice dev);
+CUresult XDevicePrimaryCtxReset_v2(CUdevice dev);
+CUresult XDevicePrimaryCtxRelease(CUdevice dev);
+CUresult XDevicePrimaryCtxRelease_v2(CUdevice dev);
 
 } // namespace xsched::cuda

@@ -8,6 +8,35 @@
 #include "xsched/cuda/hal/common/cuda_assert.h"
 #include "xsched/cuda/hal/common/cuda_command.h"
 
+#if defined(_WIN32)
+// On Windows, prebuilt libcuxtra_windows_amd64.a lacks cuXtraKernelGetFunction and cuXtraGetExtraBuffer.
+extern "C" {
+CUfunction cuXtraKernelGetFunction(CUkernel kernel) {
+    if (!kernel) return nullptr;
+    CUfunction func = nullptr;
+    if (xsched::cuda::Driver::KernelGetFunction(&func, kernel) == CUDA_SUCCESS) {
+        return func;
+    }
+    return (CUfunction)kernel;
+}
+
+void cuXtraGetExtraBuffer(void **extra, void **buffer, size_t *size) {
+    if (buffer) *buffer = nullptr;
+    if (size) *size = 0;
+    if (!extra) return;
+    for (size_t i = 0; extra[i] != CU_LAUNCH_PARAM_END; ++i) {
+        if (extra[i] == CU_LAUNCH_PARAM_BUFFER_POINTER) {
+            if (buffer) *buffer = extra[i + 1];
+            i++;
+        } else if (extra[i] == CU_LAUNCH_PARAM_BUFFER_SIZE) {
+            if (size) *size = *(size_t *)extra[i + 1];
+            i++;
+        }
+    }
+}
+}
+#endif
+
 using namespace xsched::cuda;
 
 CudaCommand::CudaCommand(preempt::XCommandProperties props)

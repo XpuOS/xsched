@@ -97,6 +97,30 @@ private:
     }
 };
 
+class CudaLaunchCooperativeKernelCommand : public CudaKernelCommand
+{
+public:
+    // cuLaunchCooperativeKernel has no "extra" parameter, so extra is always nullptr.
+    CudaLaunchCooperativeKernelCommand(CUfunction func,
+                                       unsigned int gdx, unsigned int gdy, unsigned int gdz,
+                                       unsigned int bdx, unsigned int bdy, unsigned int bdz,
+                                       unsigned int shm, void **params, bool deep_copy)
+        : CudaKernelCommand(func, params, nullptr, deep_copy)
+        , gdx_(gdx), gdy_(gdy), gdz_(gdz), bdx_(bdx), bdy_(bdy), bdz_(bdz), shm_(shm) {}
+    virtual ~CudaLaunchCooperativeKernelCommand() = default;
+    virtual unsigned int BlockCnt() const override { return gdx_ * gdy_ * gdz_; }
+
+private:
+    const unsigned int gdx_, gdy_, gdz_; // grid dimension
+    const unsigned int bdx_, bdy_, bdz_; // block dimension
+    const unsigned int shm_; // shared memory byte size
+    virtual CUresult Launch(CUstream stream) override
+    {
+        return Driver::LaunchCooperativeKernel(kFunc, gdx_, gdy_, gdz_, bdx_, bdy_, bdz_,
+                                               shm_, stream, params_);
+    }
+};
+
 class CudaKernelLaunchExCommand : public CudaKernelCommand
 {
 public:

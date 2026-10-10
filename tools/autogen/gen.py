@@ -34,6 +34,65 @@ if not libclang_path:
 print(f"Using libclang: {libclang_path}")
 clang.cindex.Config.set_library_file(libclang_path)
 
+# Hand-written interception targets.
+# platforms/cuda/shim/src/intercept.cpp redirects these symbols to the X*
+# implementations (defined in platforms/cuda/shim/src/shim.cpp) instead of the
+# default Driver:: passthrough. The list must stay in sync with the actual
+# hooks in intercept.cpp; regenerating without it would silently revert every
+# hook to a plain passthrough (losing XSched's scheduling/synchronization
+# logic). The redirect target follows the naming rule "X" + symbol[prefix_len:].
+HOOKED_SYMBOLS = {
+    # context / stream lifecycle and synchronization
+    "cuCtxSynchronize", "cuCtxDestroy", "cuCtxDestroy_v2",
+    "cuDevicePrimaryCtxRelease", "cuDevicePrimaryCtxRelease_v2",
+    "cuDevicePrimaryCtxReset", "cuDevicePrimaryCtxReset_v2",
+    "cuStreamCreate", "cuStreamCreateWithPriority",
+    "cuStreamDestroy", "cuStreamDestroy_v2",
+    "cuStreamSynchronize", "cuStreamSynchronize_ptsz",
+    "cuStreamQuery", "cuStreamQuery_ptsz",
+    # kernel launches (incl. ptsz variants and cooperative kernels)
+    "cuLaunchKernel", "cuLaunchKernel_ptsz",
+    "cuLaunchKernelEx", "cuLaunchKernelEx_ptsz",
+    "cuLaunchCooperativeKernel", "cuLaunchCooperativeKernel_ptsz",
+    "cuLaunchHostFunc", "cuLaunchHostFunc_ptsz",
+    # events
+    "cuEventRecord", "cuEventRecord_ptsz",
+    "cuEventRecordWithFlags", "cuEventRecordWithFlags_ptsz",
+    "cuEventQuery", "cuEventSynchronize",
+    "cuEventDestroy", "cuEventDestroy_v2",
+    "cuEventElapsedTime", "cuEventElapsedTime_v2",
+    # memory
+    "cuMemFree_v2", "cuMemFreeAsync", "cuMemFreeAsync_ptsz",
+    "cuMemAllocAsync", "cuMemAllocAsync_ptsz",
+    "cuMemcpyHtoD_v2", "cuMemcpyDtoH_v2", "cuMemcpyDtoD_v2",
+    "cuMemcpyHtoDAsync_v2", "cuMemcpyDtoHAsync_v2", "cuMemcpyDtoDAsync_v2",
+    "cuMemcpy2DAsync_v2", "cuMemcpy3DAsync_v2",
+    "cuMemcpyHtoD_v2_ptds", "cuMemcpyDtoH_v2_ptds", "cuMemcpyDtoD_v2_ptds",
+    "cuMemcpyHtoDAsync_v2_ptsz", "cuMemcpyDtoHAsync_v2_ptsz", "cuMemcpyDtoDAsync_v2_ptsz",
+    "cuMemcpy2DAsync_v2_ptsz", "cuMemcpy3DAsync_v2_ptsz",
+    "cuMemsetD8Async", "cuMemsetD16Async", "cuMemsetD32Async",
+    "cuMemsetD2D8Async", "cuMemsetD2D16Async", "cuMemsetD2D32Async",
+    "cuMemsetD8Async_ptsz", "cuMemsetD16Async_ptsz", "cuMemsetD32Async_ptsz",
+    "cuMemsetD2D8Async_ptsz", "cuMemsetD2D16Async_ptsz", "cuMemsetD2D32Async_ptsz",
+    # stream capture / graph launch
+    "cuStreamBeginCapture", "cuStreamBeginCapture_ptsz",
+    "cuStreamBeginCapture_v2", "cuStreamBeginCapture_v2_ptsz",
+    "cuStreamBeginCaptureToGraph", "cuStreamBeginCaptureToGraph_ptsz",
+    "cuStreamEndCapture", "cuStreamEndCapture_ptsz",
+    "cuStreamWaitEvent", "cuStreamWaitEvent_ptsz",
+    "cuGraphUpload", "cuGraphUpload_ptsz",
+    "cuGraphLaunch", "cuGraphLaunch_ptsz",
+    # proc address
+    "cuGetProcAddress", "cuGetProcAddress_v2",
+}
+
+
+def hook_target(function_name: str, prefix: str) -> str:
+    """Redirect hooked symbols to their X* implementation, others to Driver::."""
+    if function_name in HOOKED_SYMBOLS:
+        return f"X{function_name[len(prefix):]}"
+    return f"Driver::{function_name[len(prefix):]}"
+
 class TypeGenerator:
     """Handles generation of typedefs for complex types."""
     
@@ -141,11 +200,11 @@ class CodeGenerator:
 
         if len(params) == 0:
             self.driver_str += f"    DEFINE_STATIC_ADDRESS_CALL(GetSymbol(\"{function_name}\"), {return_type}, {function_name[self.prefix_len:]});\n"
-            self.intercept_str += f"DEFINE_EXPORT_C_REDIRECT_CALL(Driver::{function_name[self.prefix_len:]}, {return_type}, {function_name});\n"
+            self.intercept_str += f"DEFINE_EXPORT_C_REDIRECT_CALL({hook_target(function_name, self.prefix)}, {return_type}, {function_name});\n"
             return
 
         self.driver_str += f"    DEFINE_STATIC_ADDRESS_CALL(GetSymbol(\"{function_name}\"), {return_type}, {function_name[self.prefix_len:]}, {', '.join(param_types)});\n"
-        self.intercept_str += f"DEFINE_EXPORT_C_REDIRECT_CALL(Driver::{function_name[self.prefix_len:]}, {return_type}, {function_name}, {', '.join(param_types)});\n"
+        self.intercept_str += f"DEFINE_EXPORT_C_REDIRECT_CALL({hook_target(function_name, self.prefix)}, {return_type}, {function_name}, {', '.join(param_types)});\n"
 
     def find_functions(self, node: clang.cindex.Cursor) -> None:
         """Recursively find and process function declarations."""
