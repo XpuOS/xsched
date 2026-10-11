@@ -494,7 +494,7 @@ CUresult XStreamCreate(CUstream *stream, unsigned int flags)
     g_single_stream_ref_cnt++;
     *stream = g_single_stream;
     XDEBG("XStreamCreate(single stream: %p (ref: %ld), flags: 0x%x)",
-          *stream, g_single_stream_ref_cnt, flags);
+          *stream, (long)g_single_stream_ref_cnt, flags);
     return CUDA_SUCCESS;
 }
 
@@ -520,7 +520,7 @@ CUresult XStreamCreateWithPriority(CUstream *stream, unsigned int flags, int pri
     g_single_stream_ref_cnt++;
     *stream = g_single_stream;
     XDEBG("XStreamCreateWithPriority(single stream: %p (ref: %ld), flags: 0x%x, priority: %d)",
-          *stream, g_single_stream_ref_cnt, flags, priority);
+          *stream, (long)g_single_stream_ref_cnt, flags, priority);
     return CUDA_SUCCESS;
 }
 
@@ -541,7 +541,7 @@ CUresult XStreamDestroy(CUstream stream)
         g_single_stream = nullptr;
     }
     XDEBG("XStreamDestroy(single stream: %p (ref: %ld)) = %d",
-          stream, g_single_stream_ref_cnt, res);
+          stream, (long)g_single_stream_ref_cnt, res);
     return res;
 }
 
@@ -562,7 +562,7 @@ CUresult XStreamDestroy_v2(CUstream stream)
         g_single_stream = nullptr;
     }
     XDEBG("XStreamDestroy_v2(single stream: %p (ref: %ld)) = %d",
-          stream, g_single_stream_ref_cnt, res);
+          stream, (long)g_single_stream_ref_cnt, res);
     return res;
 }
 

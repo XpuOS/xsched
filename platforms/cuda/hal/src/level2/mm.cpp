@@ -59,6 +59,7 @@ ResizableBuffer::~ResizableBuffer()
 {
     CUcontext ctx = nullptr; // check if cuda driver has deinitialized
     if (Driver::CtxGetCurrent(&ctx) == CUDA_ERROR_DEINITIALIZED) return;
+    if (ctx == nullptr) return;
 
     CUDA_ASSERT(Driver::MemUnmap(ptr_, size_));
     for (auto h : handles_) CUDA_ASSERT(Driver::MemRelease(h.handle));
@@ -128,6 +129,7 @@ InstrMemAllocator::~InstrMemAllocator()
 {
     CUcontext ctx = nullptr; // check if cuda driver has deinitialized
     if (Driver::CtxGetCurrent(&ctx) == CUDA_ERROR_DEINITIALIZED) return;
+    if (ctx == nullptr) return;
     XASSERT(ctx == ctx_, "current context %p mismatch InstrMemAllocator context %p", ctx, ctx_);
     for (auto block : blocks_) cuXtraInstrMemBlockFree(ctx_, block);
 }
