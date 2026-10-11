@@ -179,3 +179,31 @@ CUresult CudaEventWaitCommand::Launch(CUstream stream)
     if (!event_) return CUDA_SUCCESS; // already waited in BeforeLaunch()
     return Driver::StreamWaitEvent(stream, event_, flags_);
 }
+
+#if defined(_WIN32)
+extern "C" {
+CUfunction cuXtraKernelGetFunction(CUkernel kernel)
+{
+    return reinterpret_cast<CUfunction>(kernel);
+}
+
+void cuXtraGetExtraBuffer(void **extra, void **buffer, size_t *size)
+{
+    if (buffer) *buffer = nullptr;
+    if (size) *size = 0;
+    if (!extra) return;
+    for (void **p = extra; *p != nullptr; ) {
+        void *tag = *p++;
+        if (tag == CU_LAUNCH_PARAM_BUFFER_POINTER) {
+            if (buffer) *buffer = *p;
+            p++;
+        } else if (tag == CU_LAUNCH_PARAM_BUFFER_SIZE) {
+            if (size) *size = *reinterpret_cast<size_t *>(*p);
+            p++;
+        } else {
+            p++;
+        }
+    }
+}
+}
+#endif

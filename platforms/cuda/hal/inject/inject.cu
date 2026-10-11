@@ -1,7 +1,13 @@
 #include <cstdint>
 
 #define INJECT_FUNC EXPORT_C_FUNC __device__ __noinline__
+#if defined(_MSC_VER)
+// MSVC (Windows host compiler) does not support GNU visibility attributes;
+// they are only needed to keep the symbols externally visible on ELF hosts.
+#define EXPORT_C_FUNC extern "C"
+#else
 #define EXPORT_C_FUNC extern "C" __attribute__((visibility("default")))
+#endif
 
 inline __device__ void nop();
 inline __device__ void exit();

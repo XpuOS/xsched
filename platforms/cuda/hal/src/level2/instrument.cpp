@@ -141,13 +141,15 @@ void InstrumentContext::Instrument(std::shared_ptr<CudaKernelCommand> kernel)
     // followed by the original kernel instructions
     cuXtraInstrMemcpyHtoD(ep_inst + check_size, kernel_host, kernel_size, op_stream_);
     
-    // the guardian instructions will use 32 regs per thread
+    // the guardian instructions need per-arch register and barrier floors
+    size_t req_regs = guardian_->RequiredRegs();
     size_t reg_cnt = cuXtraGetLocalRegsPerThread(func);
-    if (reg_cnt < 32) cuXtraSetLocalRegsPerThread(func, 32);
+    if (reg_cnt < req_regs) cuXtraSetLocalRegsPerThread(func, req_regs);
 
-    // the guardian instructions will use 1 barrier
+    // the guardian instructions need at least one barrier
+    size_t req_barriers = guardian_->RequiredBarriers();
     size_t barrier_cnt = cuXtraGetBarrierCnt(func);
-    if (barrier_cnt < 1) cuXtraSetBarrierCnt(func, 1);
+    if (barrier_cnt < req_barriers) cuXtraSetBarrierCnt(func, req_barriers);
 
     // flush instruction cache to take effect
     cuXtraInvalInstrCache(kCtx);
