@@ -12,6 +12,7 @@ file(GLOB_RECURSE CUDART_COMMON_SRCS
 add_library(cudart_common OBJECT ${CUDART_COMMON_SRCS})
 target_include_directories(cudart_common PRIVATE
     ${CUDA_INCLUDE_DIRS}
+    ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
     ${XSCHED_INCLUDE_DIR}
     ${CMAKE_CURRENT_LIST_DIR}/include
 )
@@ -37,13 +38,13 @@ foreach(CUDART_MAIN_SRC ${CUDART_MAIN_SRCS})
     # set_target_properties(${CUDART_TARGET} PROPERTIES CUDA_ARCHITECTURES "all")
     target_include_directories(${CUDART_TARGET} PRIVATE
         ${CUDA_INCLUDE_DIRS}
+        ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
         ${XSCHED_INCLUDE_DIR}
         ${CMAKE_CURRENT_LIST_DIR}/include
     )
     target_compile_options(${CUDART_TARGET} PRIVATE
-        -Wall
-        -Wextra
-        -Wno-deprecated-gpu-targets
+        $<$<COMPILE_LANGUAGE:CXX>:-Wall;-Wextra>
+        $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=-Wall,-Wextra;-Wno-deprecated-gpu-targets>
     )
     target_link_libraries(${CUDART_TARGET} PRIVATE
         ${CUDA_LIBRARIES}
@@ -58,3 +59,7 @@ foreach(CUDART_MAIN_SRC ${CUDART_MAIN_SRCS})
     )
     install(TARGETS ${CUDART_TARGET} RUNTIME DESTINATION bin/cuda)
 endforeach()
+
+if(TARGET sm120_channel_contract)
+    target_link_libraries(sm120_channel_contract PRIVATE cuda)
+endif()

@@ -39,6 +39,7 @@ private:
 
     std::atomic_bool suspended_ = { false };
     std::atomic_bool terminated_ = { false };
+    std::mutex preemption_mutex_;
 
     // The index of HwCommand starts from 1.
     std::atomic<int64_t> next_hw_cmd_idx_ = { 1 };

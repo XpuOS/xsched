@@ -2,9 +2,9 @@
 
 uint64_t GetClockRate()
 {
-    cudaDeviceProp prop;
-    CUDART_ASSERT(cudaGetDeviceProperties(&prop, 0));
-    return prop.clockRate * 1000;
+    int clock_rate_khz;
+    CUDART_ASSERT(cudaDeviceGetAttribute(&clock_rate_khz, cudaDevAttrClockRate, 0));
+    return static_cast<uint64_t>(clock_rate_khz) * 1000;
 }
 
 uint64_t ConvertClockCnt(uint64_t microseconds)

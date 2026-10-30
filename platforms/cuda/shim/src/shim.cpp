@@ -13,12 +13,18 @@
 #include "xsched/cuda/hal/common/levels.h"
 #include "xsched/cuda/hal/common/options.h"
 #include "xsched/cuda/hal/level1/cuda_queue.h"
+#include "xsched/cuda/hal/level3/channel.h"
 #include "xsched/cuda/hal/common/cuda_command.h"
 
 using namespace xsched::preempt;
 
 namespace xsched::cuda
 {
+
+CUresult XCtxDestroy(CUcontext ctx) { return CudaQueueLv3Channel::DestroyContext(ctx, true); }
+CUresult XCtxDestroy_v2(CUcontext ctx) { return CudaQueueLv3Channel::DestroyContext(ctx, false); }
+CUresult XDevicePrimaryCtxReset(CUdevice dev) { return CudaQueueLv3Channel::ResetPrimaryContext(dev, true); }
+CUresult XDevicePrimaryCtxReset_v2(CUdevice dev) { return CudaQueueLv3Channel::ResetPrimaryContext(dev, false); }
 
 static utils::ObjectMap<CUevent, std::shared_ptr<CudaEventRecordCommand>> g_events;
 
@@ -356,6 +362,13 @@ static CUresult XStreamWaitEventImpl(CUstream stream, CUevent event, unsigned in
         // waiting stream is not an xqueue
         if (xevent->GetXQueueHandle() == 0) {
             // the event is not recorded on an xqueue
+            return Driver::StreamWaitEvent(stream, event, flags);
+        }
+        auto source = XQueueManager::Get(xevent->GetXQueueHandle());
+        if (source && std::dynamic_pointer_cast<CudaQueueLv3Channel>(source->GetHwQueue())) {
+            // CHANNEL retains the native event across suspension. Only wait for
+            // submission; the CUDA dependency can wait for completion on the GPU.
+            xevent->WaitUntil(kCommandStateInFlight);
             return Driver::StreamWaitEvent(stream, event, flags);
         }
         xevent->Wait();

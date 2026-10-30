@@ -10,6 +10,11 @@
 namespace xsched::cuda
 {
 
+CUresult XCtxDestroy(CUcontext ctx);
+CUresult XCtxDestroy_v2(CUcontext ctx);
+CUresult XDevicePrimaryCtxReset(CUdevice dev);
+CUresult XDevicePrimaryCtxReset_v2(CUdevice dev);
+
 CUstream GetPTDS();
 void WaitBlockingXQueues();
 

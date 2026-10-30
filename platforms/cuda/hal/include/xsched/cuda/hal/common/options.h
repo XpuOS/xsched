@@ -7,6 +7,7 @@ enum CudaLv3Implementation
 {
     kCudaLv3ImplementationTrap,
     kCudaLv3ImplementationTsg,
+    kCudaLv3ImplementationChannel,
 };
 
 bool GetCudaSingleStreamPerProcessEnabled();

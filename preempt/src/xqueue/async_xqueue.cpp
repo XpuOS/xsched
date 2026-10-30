@@ -13,7 +13,8 @@ AsyncXQueue::AsyncXQueue(std::shared_ptr<HwQueue> hwq, XPreemptLevel level,
              kQueueFeatureAsyncSubmit      |
              (hwq->SupportDynamicLevel()   ? kQueueFeatureDynamicLevel : 0)  |
              kQueueFeatureDynamicThreshold | kQueueFeatureDynamicBatchSize   |
-             kQueueFeatureSyncSuspend      | kQueueFeatureResumeDropCommands ,
+             kQueueFeatureSyncSuspend      |
+             (hwq->SupportResumeDropCommands() ? kQueueFeatureResumeDropCommands : 0),
              hwq)
     , level_(level)
     , cmd_buf_(std::make_shared<CommandBuffer>(kHandle))
@@ -33,7 +34,8 @@ AsyncXQueue::~AsyncXQueue()
 {
     // If the XQueue is terminated, it should not be preempted.
     terminated_.store(true);
-    this->Resume(true);
+    this->Resume(kHwQueue->SupportResumeDropCommands()
+                     ? kQueueResumeFlagDropCommands : kQueueResumeFlagNone);
 
     auto destroy_command = std::make_shared<XQueueDestroyCommand>();
     cmd_buf_->Enqueue(destroy_command);
@@ -90,6 +92,7 @@ int64_t AsyncXQueue::GetHwCommandCount()
 
 void AsyncXQueue::Suspend(int64_t flags)
 {
+    std::lock_guard<std::mutex> lock(preemption_mutex_);
     // If the XQueue is already terminated, it should not be suspended.
     if (terminated_.load()) return;
 
@@ -109,11 +112,15 @@ void AsyncXQueue::Suspend(int64_t flags)
     launch_worker_->Pause();
     if (level_ >= kPreemptLevelDeactivate) kHwQueue->Deactivate();
     if (level_ >= kPreemptLevelInterrupt)  kHwQueue->Interrupt();
-    if (flags & kQueueSuspendFlagSyncHwQueue) kHwQueue->Synchronize();
+    if (flags & kQueueSuspendFlagSyncHwQueue) kHwQueue->SynchronizeOnSuspend();
 }
 
 void AsyncXQueue::Resume(int64_t flags)
 {
+    std::lock_guard<std::mutex> lock(preemption_mutex_);
+    XASSERT(!(flags & kQueueResumeFlagDropCommands) ||
+            GetFeatures(kQueueFeatureResumeDropCommands),
+            "HwQueue cannot discard retained in-flight commands");
     // Will not resume if it is not suspended.
     bool expected = true;
     if (!suspended_.compare_exchange_strong(expected, false)) return;

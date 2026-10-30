@@ -1,5 +1,6 @@
 #include "xsched/cuda/hal/level2/guardian.h"
 #include "xsched/cuda/hal/level3/trap.h"
+#include "xsched/cuda/hal/level3/channel.h"
 #include "xsched/cuda/hal/level3/cuda_queue.h"
 #include "xsched/cuda/hal/common/levels.h"
 #include "xsched/cuda/hal/common/driver.h"
@@ -71,6 +72,14 @@ std::shared_ptr<HwQueue> xsched::cuda::CudaQueueCreate(CUstream stream)
             current_ctx, stream_ctx);
     CUDA_ASSERT(Driver::CtxGetDevice(&dev));
 
+    if (GetCudaLv3Implementation() == kCudaLv3ImplementationChannel) {
+        if (GetArch(dev) != 120) {
+            XWARN("experimental CHANNEL backend requires sm120");
+            return nullptr;
+        }
+        return CudaQueueLv3Channel::Create(stream);
+    }
+
     switch (GetArch(dev)) {
     case 35: // Kepler: K20, K40, GTX TITAN
         return std::make_shared<CudaQueueLv2>(stream);
@@ -91,6 +100,10 @@ CUresult xsched::cuda::DirectLaunch(std::shared_ptr<CudaKernelCommand> kernel, C
 
     if (GetCudaLv3Implementation() == kCudaLv3ImplementationTsg) {
         return CudaQueueLv3Tsg::DirectLaunch(kernel, stream);
+    }
+
+    if (GetCudaLv3Implementation() == kCudaLv3ImplementationChannel) {
+        return CudaQueueLv1::DirectLaunch(kernel, stream);
     }
 
     CUdevice dev;

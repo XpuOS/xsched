@@ -15,6 +15,7 @@ xsched::cuda::CudaLv3Implementation xsched::cuda::GetCudaLv3Implementation()
         const std::string str = GetEnv(XSCHED_CUDA_LV3_IMPL_ENV_NAME);
         if (str.empty()) return kCudaLv3ImplementationTrap;
         if (str == "TSG") return kCudaLv3ImplementationTsg;
+        if (str == "CHANNEL") return kCudaLv3ImplementationChannel;
         XWARN("unknown CUDA Level-3 implementation: %s, use default (TRAP)", str.c_str());
         return kCudaLv3ImplementationTrap;
     }();

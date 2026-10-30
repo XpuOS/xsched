@@ -385,6 +385,9 @@ EXPORT_C_FUNC XResult XQueueResume(XQueueHandle xq, int64_t flags)
         XWARN("XQueue with handle 0x" FMT_64X " does not exist", xq);
         return kXSchedErrorNotFound;
     }
+    if ((flags & kQueueResumeFlagDropCommands) &&
+        !xq_shptr->GetFeatures(kQueueFeatureResumeDropCommands))
+        return kXSchedErrorNotSupported;
     xq_shptr->Resume(flags);
     return kXSchedSuccess;
 }

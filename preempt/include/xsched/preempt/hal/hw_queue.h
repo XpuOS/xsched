@@ -33,6 +33,12 @@ public:
     /// are flushed when deactivating the HwQueue, or killed when interrupting the HwQueue.
     virtual void Synchronize() = 0;
 
+    /// Confirm the suspension boundary; state-preserving backends need not finish commands.
+    virtual void SynchronizeOnSuspend() { Synchronize(); }
+
+    /// Whether resume can discard retained in-flight work.
+    virtual bool SupportResumeDropCommands() const { return true; }
+
     /// @brief Level-2 (kPreemptLevelDeactivate) interface. Deactivate the HwQueue to prevent new
     /// in-flight HwCommands in this HwQueue from being fetched and executed by the hardware. Can
     /// be implemented by stalling HwCommand dequeuing, or flushing away the in-flight HwCommands.
