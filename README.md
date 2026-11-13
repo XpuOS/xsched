@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./docs/img/xsched-logo-v.png" alt="xsched project logo" width="200"/>
+  <img src="./docs/img/xsched-logo-v.png" alt="xsched project logo" width="128"/>
 </p>
 
 # XSched: Preemptive Scheduling for Diverse XPUs
@@ -68,6 +68,22 @@ XSched is a preemptive scheduling framework for diverse XPUs (referring to vario
     <th align="center">Level-3</th>
   </tr>
   <tr>
+    <td align="center" rowspan="1"><a href="platforms/ascend">AscendCL</a></td>
+    <td align="center">Ascend NPUs</td>
+    <td align="center" rowspan="1">✅</td>
+    <td align="center" rowspan="1">✅</td>
+    <td align="center">🔘</td>
+    <td align="center">❌</td>
+  </tr>
+  <tr>
+    <td align="center" rowspan="1"><a href="platforms/corex">CoreX</a></td>
+    <td align="center">CoreX GPUs</td>
+    <td align="center" rowspan="1">✅</td>
+    <td align="center" rowspan="1">✅</td>
+    <td align="center">🔘</td>
+    <td align="center">❌</td>
+  </tr>
+  <tr>
     <td align="center" rowspan="4"><a href="platforms/cuda">CUDA</a></td>
     <td align="center">NVIDIA Ampere GPUs (sm86)</td>
     <td align="center" rowspan="4">✅</td>
@@ -91,11 +107,11 @@ XSched is a preemptive scheduling framework for diverse XPUs (referring to vario
     <td align="center">🔘</td>
   </tr>
   <tr>
-    <td align="center" rowspan="1"><a href="platforms/corex">CoreX</a></td>
-    <td align="center">CoreX GPUs</td>
+    <td align="center" rowspan="1"><a href="platforms/cudla">CUDLA</a></td>
+    <td align="center">NVIDIA DLA</td>
     <td align="center" rowspan="1">✅</td>
     <td align="center" rowspan="1">✅</td>
-    <td align="center">🔘</td>
+    <td align="center">❌</td>
     <td align="center">❌</td>
   </tr>
   <tr>
@@ -140,22 +156,6 @@ XSched is a preemptive scheduling framework for diverse XPUs (referring to vario
   <tr>
     <td align="center">Xilinx FPGAs</td>
     <td align="center">🔘</td>
-    <td align="center">❌</td>
-  </tr>
-  <tr>
-    <td align="center" rowspan="1"><a href="platforms/ascend">AscendCL</a></td>
-    <td align="center">Ascend NPUs</td>
-    <td align="center" rowspan="1">✅</td>
-    <td align="center" rowspan="1">✅</td>
-    <td align="center">🔘</td>
-    <td align="center">❌</td>
-  </tr>
-  <tr>
-    <td align="center" rowspan="1"><a href="platforms/cudla">cuDLA</a></td>
-    <td align="center">NVIDIA DLA</td>
-    <td align="center" rowspan="1">✅</td>
-    <td align="center" rowspan="1">✅</td>
-    <td align="center">❌</td>
     <td align="center">❌</td>
   </tr>
   <tr>
